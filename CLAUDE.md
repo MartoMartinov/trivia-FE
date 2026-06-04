@@ -1,0 +1,5 @@
+- app name is `Practical Machinist Trivia`
+- for desktop optimize for `1440p`
+- for mobile the minimal size is `360px CSS pixels`
+- translations - yes [english]
+- follow the instructions in `./AGENTS.md`
