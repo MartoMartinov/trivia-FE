@@ -10,27 +10,32 @@
   --ion-background-color:       #F7F8FA;
   --ion-card-background:        #ffffff;
   --ion-item-background:        #ffffff;
-  --ion-toolbar-background:     #0F1429;  // header is always dark navy
+  --ion-toolbar-background:     #0E1524;  // header is always dark navy
 
   // Text on light bg
-  --ion-text-color:             #1E2A3B;
-  --ion-text-color-rgb:         30,42,59;
+  --ion-text-color:             #0E1524;
+  --ion-text-color-rgb:         14,21,36;
 
   // Typography
   --ion-font-family:            'Inter', sans-serif;
 
   // Project tokens (mirrored from tailwind.css @theme)
-  --color-navy:        #0F1429;
-  --color-navymid:     #1E2A3B;
-  --color-ink:         #1E2A3B;
-  --color-orange:      #F34D23;
-  --color-orangesoft:  #FEF0EC;
-  --color-gold:        #F5B400;
-  --color-goldsoft:    #FFF8E8;
-  --color-paper:       #F7F8FA;
-  --color-cream:       #FFF8E8;
-  --color-line:        #E3E7EE;
-  --color-muted:       #6B7280;
-  --color-correct:     #16A34A;
-  --color-wrong:       #DC2626;
+  --color-navy:          #0E1524;
+  --color-navyband:      #1B213D;
+  --color-navymid:       #0E1524;
+  --color-ink:           #0E1524;
+  --color-orange:        #F34D23;
+  --color-orange-shade:  #C7421B;
+  --color-orangesoft:    #FFF5F0;
+  --color-gold:          #F5B400;
+  --color-goldsoft:      #FFF8E8;
+  --color-paper:         #F7F8FA;
+  --color-cream:         #FFF8E8;
+  --color-line:          #E5E7EB;
+  --color-muted:         #6B7280;
+  --color-muted-light:   #9CA3AF;
+  --color-correct:       #16A34A;
+  --color-correct-tint:  #E6F6EA;
+  --color-wrong:         #DC2323;
+  --color-wrong-tint:    #FEE2E2;
 }

@@ -7,6 +7,8 @@
     "EMAIL": "Email Address",
     "COMPANY": "Company",
     "PHONE": "Phone",
+    "CONSENT": "By playing, you agree to the ",
+    "CONSENT_LINK": "Terms and Conditions and Privacy Policy",
     "CONSENT_SHORT": "By playing, you agree to be added to the Practical Machinist list.",
     "SUBMIT": "Start Trivia →",
     "SUBMITTING": "Starting…",

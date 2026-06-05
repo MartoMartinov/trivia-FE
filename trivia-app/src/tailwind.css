@@ -1,41 +1,47 @@
-@import "tailwindcss";
+/* @import "tailwindcss"; */
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/preflight.css" layer(base);
+@import "tailwindcss/utilities.css" layer(utilities);
 @source "../src/**/*.{html,ts}";
 
 @theme {
   /* Brand */
-  --color-orange:      #F34D23;
-  --color-orangesoft:  #FEF0EC;
-  --color-gold:        #F5B400;
-  --color-goldsoft:    #FFF8E8;
-  --color-sandvik:     #DE0016;
+  --color-orange:        #F34D23;
+  --color-orange-shade:  #C7421B;
+  --color-orangesoft:    #FFF5F0;
+  --color-gold:          #F5B400;
+  --color-goldsoft:      #FFF8E8;
+  --color-sandvik:       #DE0016;
 
   /* Navy scale */
-  --color-navy:        #0F1429;
-  --color-navyband:    #1A2340;
-  --color-navymid:     #1E2A3B;
-  --color-ink:         #1E2A3B;
+  --color-navy:          #0E1524;
+  --color-navyband:      #1B213D;
+  --color-navymid:       #0E1524;
+  --color-ink:           #0E1524;
 
   /* Light / paper */
-  --color-paper:       #F7F8FA;
-  --color-cream:       #FFF8E8;
-  --color-line:        #E3E7EE;
-  --color-muted:       #6B7280;
-  --color-muted-light: #94A3B8;
+  --color-paper:         #F7F8FA;
+  --color-cream:         #FFF8E8;
+  --color-line:          #E5E7EB;
+  --color-muted:         #6B7280;
+  --color-muted-light:   #9CA3AF;
 
   /* Semantic */
-  --color-correct:     #16A34A;
-  --color-wrong:       #DC2626;
+  --color-correct:       #16A34A;
+  --color-correct-tint:  #E6F6EA;
+  --color-wrong:         #DC2323;
+  --color-wrong-tint:    #FEE2E2;
 
   /* Typography */
-  --font-sans:         'Inter', sans-serif;
+  --font-sans:           'Inter', sans-serif;
 
   /* Breakpoints */
-  --breakpoint-xs:     360px;
-  --breakpoint-sm:     640px;
-  --breakpoint-md:     768px;
-  --breakpoint-lg:     1024px;
-  --breakpoint-xl:     1280px;
-  --breakpoint-2xl:    1440px;
+  --breakpoint-xs:       360px;
+  --breakpoint-sm:       640px;
+  --breakpoint-md:       768px;
+  --breakpoint-lg:       1024px;
+  --breakpoint-xl:       1280px;
+  --breakpoint-2xl:      1440px;
 }
 
 @layer utilities {

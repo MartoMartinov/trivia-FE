@@ -1,73 +1,114 @@
 <ion-content [fullscreen]="true" style="--background: var(--color-navy)">
-  <pm-header />
 
-  <!-- ── Dark hero block (fills status-bar + header + hero) ── -->
-  <div class="bg-navy relative overflow-hidden pb-[96px]">
+  <div class="min-h-full bg-navy relative overflow-hidden flex flex-col">
 
+    <!-- ── Glows ─────────────────────────────────────────────────────────── -->
+    <!-- Mobile: small top-left orange glow -->
+    <div class="lg:hidden pointer-events-none absolute -top-[120px] -left-[160px]
+                w-[467px] h-[341px] rounded-full bg-orange/22 blur-[60px]"></div>
+    <!-- Desktop: large left-side orange ellipse -->
+    <div class="hidden lg:block pointer-events-none absolute top-[130px] -left-[160px]
+                w-[620px] h-[520px] rounded-[400px] bg-orange/18 blur-[80px]
+                2xl:top-[-81px]"></div>
 
-    <!-- Orange glow -->
-    <div class="pointer-events-none absolute -top-[120px] -left-[160px] w-[467px] h-[341px] rounded-full bg-orange/22 blur-[60px]"></div>
-    <!-- Navy-band glow -->
-    <div class="pointer-events-none absolute bottom-0 -left-[60px] w-[520px] h-[240px] rounded-full bg-[rgba(77,89,128,0.35)] blur-[50px]"></div>
+    <!-- ── Header ────────────────────────────────────────────────────────── -->
+    <pm-header class="flex-none relative z-20" />
+    <div class="hidden lg:block flex-none relative z-20 h-px bg-white/10"></div>
 
-    <!-- Hero text -->
-    <section class="relative z-[1] px-7 pt-9">
-      <h1 class="font-black leading-[1.04] text-white text-[42px] animate-rise">
-        <span class="block">Practical</span>
-        <span class="block">Machinist</span>
-        <span class="block text-orange">Trivia.</span>
-      </h1>
-      <p class="mt-5 text-[14px] leading-[1.55] text-white/70 max-w-xs animate-rise">
-        {{ 'REGISTER.HERO_SUBTITLE' | translate }}
-      </p>
-    </section>
+    <!-- ── Main content ──────────────────────────────────────────────────── -->
+    <!-- Mobile: column — hero on top, paper + form below                    -->
+    <!-- Desktop: row — hero left, form card right, vertically centered      -->
+    <div class="flex flex-col flex-1
+                lg:flex-row lg:items-center lg:justify-between lg:px-[62px]
+                2xl:px-[150px] 2xl:justify-center">
 
-  </div>
+      <!-- Hero text -->
+      <section class="relative z-[1] px-7 pt-9 pb-[96px]
+                      lg:px-0 lg:pt-0 lg:pb-0 lg:flex-none lg:max-w-[480px]
+                      2xl:max-w-[680px]">
+        <h1 class="font-black leading-none text-white text-[42px] lg:text-[52px] 2xl:text-[64px] animate-rise">
+          <span class="block">Practical</span>
+          <span class="block">Machinist</span>
+          <span class="block text-orange">Trivia.</span>
+        </h1>
+        <p class="mt-5 text-[14px] lg:text-[18px] 2xl:text-[21px] leading-[1.55] lg:leading-[1.45]
+                  text-white/70 max-w-xs lg:max-w-[416px] 2xl:max-w-[616px] animate-rise">
+          {{ 'REGISTER.HERO_SUBTITLE' | translate }}
+        </p>
+      </section>
 
-  <!-- ── Light content area (form + footnote) ── -->
-  <div class="bg-paper -mt-[74px] relative z-10 pb-10">
+      <!-- Form wrapper                                                       -->
+      <!-- Mobile: paper bg pulls up 74px over hero bottom                   -->
+      <!-- Desktop: transparent — white card floats on navy                  -->
+      <div class="bg-paper -mt-[74px] relative z-10 pb-10
+                  lg:bg-transparent lg:mt-0 lg:pb-0 lg:z-auto lg:flex-none lg:py-10">
 
-    <!-- Form card -->
-    <form [formGroup]="form" (ngSubmit)="submit()"
-          class="mx-6 bg-white rounded-[28px] p-8 shadow-[0_12px_40px_-8px_rgba(15,23,41,0.1)] border border-line animate-rise">
+        <form [formGroup]="form" (ngSubmit)="submit()"
+              class="mx-6 bg-white rounded-[28px] p-8 border border-line
+                     shadow-[0_12px_40px_-8px_rgba(15,23,41,0.1)] animate-rise
+                     lg:mx-0 lg:rounded-[24px] lg:border-0 lg:w-[420px]
+                     lg:shadow-[0_24px_60px_0px_rgba(0,0,0,0.25)]
+                     2xl:w-[460px]">
 
-      <h2 class="text-[22px] font-black text-ink mb-[18px]">{{ 'REGISTER.FORM_TITLE' | translate }}</h2>
+          <h2 class="text-[22px] lg:text-[26px] font-black text-ink mb-[18px]">
+            {{ 'REGISTER.FORM_TITLE' | translate }}
+          </h2>
 
-      <div class="mb-3">
-        <label class="pm-label">{{ 'REGISTER.FIRST_NAME' | translate }} <span class="text-orange">*</span></label>
-        <input class="pm-input" type="text" formControlName="firstName" placeholder="Jake" autocomplete="given-name" />
+          <div class="mb-3">
+            <label class="pm-label">{{ 'REGISTER.FIRST_NAME' | translate }} <span class="text-orange">*</span></label>
+            <input class="pm-input" type="text" formControlName="firstName"
+                   placeholder="Jake" autocomplete="given-name" />
+          </div>
+          <div class="mb-3">
+            <label class="pm-label">{{ 'REGISTER.LAST_NAME' | translate }} <span class="text-orange">*</span></label>
+            <input class="pm-input" type="text" formControlName="lastName"
+                   placeholder="Thompson" autocomplete="family-name" />
+          </div>
+          <div class="mb-3">
+            <label class="pm-label">{{ 'REGISTER.EMAIL' | translate }} <span class="text-orange">*</span></label>
+            <input class="pm-input" type="email" formControlName="email"
+                   placeholder="you@company.com" autocomplete="email" />
+          </div>
+          <div class="mb-3">
+            <label class="pm-label">{{ 'REGISTER.COMPANY' | translate }} <span class="text-orange">*</span></label>
+            <input class="pm-input" type="text" formControlName="company"
+                   placeholder="Company Name" autocomplete="organization" />
+          </div>
+          <div class="mb-3">
+            <label class="pm-label">{{ 'REGISTER.PHONE' | translate }}</label>
+            <input class="pm-input" type="tel" formControlName="phone"
+                   placeholder="(555) 123-4567" autocomplete="tel" />
+          </div>
+          <div class="mb-4">
+            <label class="pm-checkbox-row">
+              <input type="checkbox" class="pm-checkbox" formControlName="consent" />
+              <span class="pm-checkbox-label">{{ 'REGISTER.CONSENT' | translate }}<a href="#" target="_blank" rel="noopener noreferrer">{{ 'REGISTER.CONSENT_LINK' | translate }}</a><span class="text-orange"> *</span></span>
+            </label>
+          </div>
+
+          @if (hasError()) {
+            <p class="mt-1.5 text-xs text-wrong">{{ errorMessage() ?? ('REGISTER.ERROR_GENERIC' | translate) }}</p>
+          }
+
+          <button type="submit" class="pm-cta mt-[22px]" [disabled]="form.invalid || isPending()">
+            @if (isPending()) { {{ 'REGISTER.SUBMITTING' | translate }} }
+            @else { {{ 'REGISTER.SUBMIT' | translate }} }
+          </button>
+
+          <!-- Consent inside card on desktop -->
+          <p class="hidden lg:block mt-4 text-center text-[12px] leading-[1.4] text-muted">
+            {{ 'REGISTER.CONSENT_SHORT' | translate }}
+          </p>
+        </form>
+
+        <!-- Consent below card on mobile -->
+        <p class="lg:hidden mt-5 mb-2 text-center text-[11px] leading-[1.5] text-muted/70">
+          {{ 'REGISTER.CONSENT_SHORT' | translate }}
+        </p>
+
       </div>
-      <div class="mb-3">
-        <label class="pm-label">{{ 'REGISTER.LAST_NAME' | translate }} <span class="text-orange">*</span></label>
-        <input class="pm-input" type="text" formControlName="lastName" placeholder="Thompson" autocomplete="family-name" />
-      </div>
-      <div class="mb-3">
-        <label class="pm-label">{{ 'REGISTER.EMAIL' | translate }} <span class="text-orange">*</span></label>
-        <input class="pm-input" type="email" formControlName="email" placeholder="you@company.com" autocomplete="email" />
-      </div>
-      <div class="mb-3">
-        <label class="pm-label">{{ 'REGISTER.COMPANY' | translate }} <span class="text-orange">*</span></label>
-        <input class="pm-input" type="text" formControlName="company" placeholder="Company Name" autocomplete="organization" />
-      </div>
-      <div class="mb-3">
-        <label class="pm-label">{{ 'REGISTER.PHONE' | translate }} <span class="text-orange">*</span></label>
-        <input class="pm-input" type="tel" formControlName="phone" placeholder="(555) 123-4567" autocomplete="tel" />
-      </div>
 
-      @if (hasError()) {
-        <p class="mt-1.5 text-xs text-wrong">{{ errorMessage() ?? ('REGISTER.ERROR_GENERIC' | translate) }}</p>
-      }
-
-      <button type="submit" class="pm-cta mt-[22px]" [disabled]="form.invalid || isPending()">
-        @if (isPending()) { {{ 'REGISTER.SUBMITTING' | translate }} }
-        @else { {{ 'REGISTER.SUBMIT' | translate }} }
-      </button>
-    </form>
-
-    <!-- Footnote -->
-    <p class="mt-5 mb-2 text-center text-[11px] leading-[1.5] text-muted/70">
-      {{ 'REGISTER.CONSENT_SHORT' | translate }}
-    </p>
+    </div>
 
   </div>
 

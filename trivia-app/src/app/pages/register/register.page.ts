@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnDestroy } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { IonContent } from '@ionic/angular/standalone';
@@ -15,7 +15,8 @@ import { PmHeaderComponent } from '../../shared/components/pm-header/pm-header.c
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [IonContent, ReactiveFormsModule, TranslatePipe, PmHeaderComponent],
 })
-export class RegisterPage {
+export class RegisterPage implements OnDestroy {
+  private authCheckInterval: ReturnType<typeof setInterval> | null = null;
   private readonly authStore = inject(AuthStore);
   private readonly playerStore = inject(PlayerStore);
   private readonly router = inject(Router);
@@ -33,6 +34,10 @@ export class RegisterPage {
     consent: new FormControl(false, [Validators.requiredTrue]),
   });
 
+  ngOnDestroy(): void {
+    if (this.authCheckInterval) clearInterval(this.authCheckInterval);
+  }
+
   submit(): void {
     if (this.form.invalid || this.isPending()) return;
 
@@ -47,11 +52,10 @@ export class RegisterPage {
       consent: consent!,
     });
 
-    // navigate to game once authenticated
-    const sub = this.authStore.isAuthenticated;
-    const check = setInterval(() => {
-      if (sub()) {
-        clearInterval(check);
+    this.authCheckInterval = setInterval(() => {
+      if (this.authStore.isAuthenticated()) {
+        clearInterval(this.authCheckInterval!);
+        this.authCheckInterval = null;
         if (this.authStore.player()) {
           this.playerStore.setPlayer(this.authStore.player()!);
         }
