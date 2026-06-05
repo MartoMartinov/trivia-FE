@@ -36,7 +36,14 @@ export class ResultsPage implements OnInit {
     this.router.navigate(['/leaderboard']);
   }
 
-  playAgain(): void {
-    this.router.navigate(['/register']);
+  async share(): Promise<void> {
+    const score = this.scoring.formatScore(this.result()?.score ?? 0);
+    const text = `I just scored ${score} pts on Practical Machinist Trivia at IMTS. Beat me?`;
+    const nav = navigator as Navigator & { share?: (data: ShareData) => Promise<void> };
+    if (nav.share) {
+      try { await nav.share({ title: 'PM Trivia', text, url: window.location.origin }); } catch {}
+    } else {
+      try { await navigator.clipboard.writeText(text); } catch {}
+    }
   }
 }

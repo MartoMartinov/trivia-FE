@@ -2,9 +2,6 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { Router } from '@angular/router';
 import { IonContent } from '@ionic/angular/standalone';
 import { TranslatePipe } from '@ngx-translate/core';
-
-import { GameStore } from '../../core/stores/game/game.store';
-import { ApiService } from '../../core/services/api.service';
 import { PmHeaderComponent } from '../../shared/components/pm-header/pm-header.component';
 
 @Component({
@@ -16,20 +13,36 @@ import { PmHeaderComponent } from '../../shared/components/pm-header/pm-header.c
 })
 export class SponsorPage {
   private readonly router = inject(Router);
-  // GameStore from parent route provider
+
+  readonly videoStarted = signal(false);
+  readonly unlocked = signal(false);
+  readonly countdown = signal(30);
   readonly selectedIndex = signal<number | null>(null);
   readonly answered = signal(false);
-  readonly isCorrect = signal<boolean | null>(null);
 
-  skip(): void {
-    this.router.navigate(['/leaderboard']);
+  readonly choices = [
+    { index: 0, text: 'ProMill X200' },
+    { index: 1, text: 'UltraCut 500 Series' },
+    { index: 2, text: 'MaxTurn Pro Elite' },
+    { index: 3, text: 'PrecisionEdge Z1' },
+  ];
+
+  startVideo(): void {
+    if (this.videoStarted()) return;
+    this.videoStarted.set(true);
+    const total = 3000;
+    const start = Date.now();
+    const t = setInterval(() => {
+      const rem = Math.max(0, total - (Date.now() - start));
+      this.countdown.set(Math.ceil((rem / total) * 30));
+      if (rem <= 0) { clearInterval(t); this.unlocked.set(true); }
+    }, 80);
   }
 
-  selectAnswer(index: number, correctIndex: number, bonus: number): void {
-    if (this.answered()) return;
+  pick(index: number): void {
+    if (!this.unlocked() || this.answered()) return;
     this.selectedIndex.set(index);
     this.answered.set(true);
-    this.isCorrect.set(index === correctIndex);
-    setTimeout(() => this.router.navigate(['/leaderboard']), 1500);
+    setTimeout(() => this.router.navigate(['/results', 1001]), 1100);
   }
 }

@@ -1,11 +1,15 @@
-<ion-header>
-  <ion-toolbar>
-    <div class="flex items-center justify-center py-2">
-      <span class="text-xs font-bold tracking-widest text-slate-400 uppercase">Practical</span>
-      <div class="mx-2 w-px h-5 bg-dark-border"></div>
-      <span class="text-sm font-black tracking-wider text-pm-orange uppercase">Machinist</span>
-      <div class="mx-2 w-px h-5 bg-dark-border"></div>
-      <span class="text-xs font-bold tracking-widest text-slate-400 uppercase">Trivia</span>
+<header class="pm-bar">
+  <div class="flex items-center gap-3">
+    <img class="pm-bar-logo" src="assets/pm-logo.png" alt="Practical Machinist" />
+    <span class="w-px h-6 bg-white/25"></span>
+    <span class="pm-bar-tag">{{ tag }}</span>
+  </div>
+  <!-- IMTS branding -->
+  <div class="flex items-center gap-1.5">
+    <div class="w-5 h-5 rounded grid grid-cols-2 grid-rows-2 gap-px overflow-hidden">
+      <div class="bg-[#E8333A]"></div><div class="bg-[#F5A623]"></div>
+      <div class="bg-[#4CAF50]"></div><div class="bg-[#2196F3]"></div>
     </div>
-  </ion-toolbar>
-</ion-header>
+    <span class="text-[13px] font-black text-white tracking-[0.1em]">IMTS</span>
+  </div>
+</header>

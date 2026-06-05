@@ -4,49 +4,53 @@
     "FORM_TITLE": "Let's play.",
     "FIRST_NAME": "First Name",
     "LAST_NAME": "Last Name",
-    "EMAIL": "Email",
+    "EMAIL": "Email Address",
     "COMPANY": "Company",
-    "PHONE": "Phone (optional)",
-    "CONSENT": "I agree to receive communications from Practical Machinist and consent to my data being used for this event.",
-    "SUBMIT": "Start Playing →",
+    "PHONE": "Phone",
+    "CONSENT_SHORT": "By playing, you agree to be added to the Practical Machinist list.",
+    "SUBMIT": "Start Trivia →",
     "SUBMITTING": "Starting…",
-    "ERROR_GENERIC": "Something went wrong. Please try again.",
-    "LEADERBOARD_LINK_PRE": "Already played? View the ",
-    "LEADERBOARD_LINK": "leaderboard"
+    "ERROR_GENERIC": "Please fill out every field with a valid value."
   },
   "GAME": {
     "LOADING": "Loading questions…",
-    "SCORE": "Score",
-    "STREAK": "Streak",
-    "QUESTION": "Question",
-    "WRONG": "Wrong!"
+    "TIME_LEFT": "TIME LEFT",
+    "SCORE": "SCORE",
+    "MULTIPLIER": "MULTIPLIER!",
+    "ANSWERED": "ANSWERED"
   },
   "SPONSOR": {
-    "BONUS_BADGE": "Bonus Question",
+    "BONUS_BADGE": "BONUS QUESTION 1/2",
+    "SPONSORED": "SPONSORED",
     "PRESENTED_BY": "Presented by",
-    "QUESTION_PLACEHOLDER": "Which Sandvik Coromant product is rated #1 for precision milling applications?",
-    "CHOICE_A": "ProMill X200",
-    "CHOICE_B": "UltraCut 500 Series",
-    "CHOICE_C": "MaxTurn Pro Elite",
-    "CHOICE_D": "PrecisionEdge Z1",
-    "SKIP": "Skip bonus question"
+    "QUESTION_PLACEHOLDER": "Which of our products is rated #1 for precision milling applications?",
+    "UNLOCK_HINT": "Watch the sponsor video to unlock the bonus question"
   },
   "RESULTS": {
     "LOADING": "Loading results…",
+    "FINAL_SCORE": "FINAL SCORE",
+    "RANK": "Rank",
     "OF": "of",
-    "FINAL_SCORE": "Final Score",
-    "SPONSOR_BONUS": "sponsor bonus",
-    "BREAKDOWN": "Breakdown",
-    "CORRECT": "Correct answers",
-    "BEST_STREAK": "Best streak",
-    "VIEW_LEADERBOARD": "View Leaderboard",
-    "PLAY_AGAIN": "Play Again"
+    "TODAY": "today",
+    "ANSWERED": "ANSWERED",
+    "BEST_STREAK": "BEST STREAK",
+    "SP_BONUS": "SP. BONUS",
+    "PRIZE_TITLE": "Top 3 today win a prize",
+    "PRIZE_BODY": "We'll text the winners at the end of the day.",
+    "VIEW_LEADERBOARD": "Today's Leaderboard",
+    "SHARE": "Send a friend to the booth",
+    "COME_BACK": "Come back tomorrow.",
+    "COME_BACK_BODY": "New trivia every day at the booth. One play per day.",
+    "FOOTER": "Daily leaderboard resets at midnight · Winners notified by SMS"
   },
   "LEADERBOARD": {
+    "TITLE": "Leaderboard",
+    "PLAYERS_TODAY": "players today",
+    "RESETS": "resets at midnight",
     "TODAY": "Today",
     "THIS_WEEK": "This Week",
-    "PLAYERS": "players",
     "LOADING": "Loading leaderboard…",
-    "PLAY_NOW": "Play Now →"
+    "BACK_TO_PLAY": "Back to your score",
+    "FOOTER": "Resets at midnight · Top 3 win sponsor prizes"
   }
 }

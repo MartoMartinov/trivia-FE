@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { IonContent } from '@ionic/angular/standalone';
 import { TranslatePipe } from '@ngx-translate/core';
@@ -18,6 +18,8 @@ export class LeaderboardPage implements OnInit {
   readonly store = inject(LeaderboardStore);
   private readonly router = inject(Router);
 
+  readonly topRows = computed(() => this.store.rows().slice(0, 10));
+
   ngOnInit(): void {
     this.store.startPolling(undefined);
   }
@@ -28,5 +30,18 @@ export class LeaderboardPage implements OnInit {
 
   goToRegister(): void {
     this.router.navigate(['/register']);
+  }
+
+  initials(displayName: string): string {
+    const parts = displayName.trim().split(/\s+/);
+    return ((parts[0]?.[0] ?? '') + (parts[1]?.[0] ?? '')).toUpperCase();
+  }
+
+  rankBadgeClass(rank: number, isCurrentPlayer: boolean): string {
+    if (isCurrentPlayer) return 'bg-orange text-white';
+    if (rank === 1) return 'bg-gold text-navy';
+    if (rank === 2) return 'bg-[#CBD5E1] text-navy';
+    if (rank === 3) return 'bg-[#FFB783] text-navy';
+    return 'bg-paper text-ink';
   }
 }

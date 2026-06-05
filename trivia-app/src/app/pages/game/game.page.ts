@@ -1,13 +1,14 @@
 import {
   ChangeDetectionStrategy, Component, computed, inject, OnDestroy, OnInit, signal,
 } from '@angular/core';
+import { UpperCasePipe } from '@angular/common';
 import { Router } from '@angular/router';
 import { IonContent } from '@ionic/angular/standalone';
 import { TranslatePipe } from '@ngx-translate/core';
 
 import { GameStore } from '../../core/stores/game/game.store';
-import { ScoringService } from '../../core/services/scoring.service';
 import { PmHeaderComponent } from '../../shared/components/pm-header/pm-header.component';
+import type { LastResult } from '../../core/stores/game/game.slice';
 
 @Component({
   selector: 'app-game',
@@ -15,14 +16,16 @@ import { PmHeaderComponent } from '../../shared/components/pm-header/pm-header.c
   styleUrls: ['game.page.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [GameStore],
-  imports: [IonContent, TranslatePipe, PmHeaderComponent],
+  imports: [IonContent, TranslatePipe, UpperCasePipe, PmHeaderComponent],
 })
 export class GamePage implements OnInit, OnDestroy {
   readonly gameStore = inject(GameStore);
-  private readonly scoring = inject(ScoringService);
   private readonly router = inject(Router);
 
   readonly selectedIndex = signal<number | null>(null);
+  // Local result display — cleared before moving to next question
+  readonly lastResult = signal<LastResult | null>(null);
+
   readonly timeLeft = signal(90);
   readonly timeLeftPct = computed(() => (this.timeLeft() / 90) * 100);
 
@@ -65,28 +68,29 @@ export class GamePage implements OnInit, OnDestroy {
     if (!question) return;
 
     this.selectedIndex.set(index);
+    this.lastResult.set(null);
 
     this.gameStore.submitAnswer({ questionId: question.id, choiceIndex: index });
 
-    setTimeout(() => {
-      this.selectedIndex.set(null);
-      if (!this.gameStore.hasMoreQuestions()) {
-        this.endGame();
+    // poll for result then advance
+    const poll = setInterval(() => {
+      const result = this.gameStore.lastResult();
+      if (result) {
+        this.lastResult.set(result);
+        clearInterval(poll);
+        setTimeout(() => {
+          this.selectedIndex.set(null);
+          this.lastResult.set(null);
+          if (!this.gameStore.hasMoreQuestions()) {
+            this.endGame();
+          }
+        }, 1100);
       }
-    }, 1200);
+    }, 100);
   }
 
   formatTime(seconds: number): string {
     const m = Math.floor(seconds / 60);
     return `${m}:${String(seconds % 60).padStart(2, '0')}`;
-  }
-
-  getChoiceClass(index: number): string {
-    const selected = this.selectedIndex();
-    const result = this.gameStore.lastResult();
-    if (selected === null) return 'border-dark-border hover:border-pm-orange/50 cursor-pointer';
-    if (result && index === result.correctIndex) return 'border-green-500 bg-green-500/10';
-    if (index === selected && result && !result.correct) return 'border-red-500 bg-red-500/10';
-    return 'border-dark-border opacity-50';
   }
 }

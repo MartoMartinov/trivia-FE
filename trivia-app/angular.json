@@ -23,7 +23,7 @@
               { "glob": "**/*", "input": "src/assets", "output": "assets" },
               { "glob": "**/*.svg", "input": "node_modules/ionicons/dist/ionicons/svg", "output": "./svg" }
             ],
-            "styles": ["src/tailwind.css", "src/global.scss"],
+            "styles": ["src/tailwind-out.css", "src/global.scss"],
             "scripts": []
           },
           "configurations": {

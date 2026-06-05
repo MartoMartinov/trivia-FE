@@ -1,61 +1,87 @@
-<pm-header />
+<ion-content [fullscreen]="true">
+  <div class="min-h-full bg-paper flex flex-col">
 
-<ion-content>
-  <div class="px-4 py-6 flex flex-col gap-4">
+    <pm-header />
 
-    <!-- Scope toggle -->
-    <div class="flex bg-dark-card rounded-lg p-1 gap-1">
-      <button
-        class="flex-1 py-2 rounded-md text-sm font-semibold transition-all duration-200"
-        [class]="store.activeScope() === 'today' ? 'bg-pm-orange text-white' : 'text-slate-400'"
-        (click)="setScope('today')">
-        {{ 'LEADERBOARD.TODAY' | translate }}
-      </button>
-      <button
-        class="flex-1 py-2 rounded-md text-sm font-semibold transition-all duration-200"
-        [class]="store.activeScope() === 'week' ? 'bg-pm-orange text-white' : 'text-slate-400'"
-        (click)="setScope('week')">
-        {{ 'LEADERBOARD.THIS_WEEK' | translate }}
-      </button>
-    </div>
+    <!-- Hero (navy) -->
+    <section class="relative bg-navy overflow-hidden px-6 pt-7 pb-9">
+      <div class="pointer-events-none absolute -top-20 -left-20 w-[440px] h-[260px] rounded-full bg-orange/30 blur-3xl"></div>
+      <div class="relative z-[1]">
+        <h1 class="text-[38px] font-black text-white leading-none">{{ 'LEADERBOARD.TITLE' | translate }}</h1>
+        <p class="mt-1.5 text-[13px] font-medium text-white/60">
+          {{ store.totalPlayers() }} {{ 'LEADERBOARD.PLAYERS_TODAY' | translate }} · {{ 'LEADERBOARD.RESETS' | translate }}
+        </p>
+        <div class="mt-4 inline-grid grid-cols-2 bg-white/12 rounded-full p-1 w-[230px]">
+          <button class="py-2 rounded-full text-[14px] font-bold transition-all"
+                  [class]="store.activeScope() === 'today' ? 'bg-white text-navy' : 'text-white/70'"
+                  (click)="setScope('today')">
+            {{ 'LEADERBOARD.TODAY' | translate }}
+          </button>
+          <button class="py-2 rounded-full text-[14px] font-bold transition-all"
+                  [class]="store.activeScope() === 'week' ? 'bg-white text-navy' : 'text-white/70'"
+                  (click)="setScope('week')">
+            {{ 'LEADERBOARD.THIS_WEEK' | translate }}
+          </button>
+        </div>
+      </div>
+    </section>
 
-    <!-- Stats -->
-    <div class="text-center text-xs text-slate-500">
-      {{ store.totalPlayers() }} {{ 'LEADERBOARD.PLAYERS' | translate }}
-    </div>
+    <!-- List -->
+    <div class="px-6 pt-4 pb-8">
 
-    <!-- Loading -->
-    @if (store.isPending()) {
-      <div class="text-center text-slate-400 text-sm py-8">{{ 'LEADERBOARD.LOADING' | translate }}</div>
-    }
+      @if (store.isPending()) {
+        <div class="text-center text-muted text-sm py-8">{{ 'LEADERBOARD.LOADING' | translate }}</div>
+      }
 
-    <!-- Rows -->
-    @if (!store.isPending()) {
-      <div class="flex flex-col gap-2">
-        @for (row of store.rows(); track row.rank) {
-          <div
-            class="pm-card flex items-center gap-3 py-3"
-            [class]="row.isCurrentPlayer ? 'border border-pm-orange/50 bg-pm-orange/5' : ''">
-            <div class="w-8 text-center">
-              @if (row.rank <= 3) {
-                <span class="text-lg">{{ ['🥇','🥈','🥉'][row.rank - 1] }}</span>
-              } @else {
-                <span class="text-sm font-bold text-slate-500">#{{ row.rank }}</span>
-              }
+      @if (!store.isPending()) {
+        <div class="bg-white rounded-2xl border border-line overflow-hidden">
+          @for (row of topRows(); track row.rank; let last = $last) {
+            <div class="flex items-center gap-3 px-4 h-16"
+                 [class.border-b]="!last" [class.border-line]="!last">
+              <span class="w-8 h-8 rounded-lg grid place-items-center font-black text-[14px] shrink-0"
+                    [class]="rankBadgeClass(row.rank, row.isCurrentPlayer ?? false)">
+                {{ row.rank }}
+              </span>
+              <span class="w-10 h-10 rounded-full grid place-items-center font-bold text-[13px] shrink-0"
+                    [class]="(row.isCurrentPlayer) ? 'bg-orange text-white' : 'bg-[#E3E7EE] text-navy'">
+                {{ initials(row.displayName) }}
+              </span>
+              <div class="flex-1 min-w-0">
+                <div class="font-semibold text-[15px] text-ink truncate">{{ row.displayName }}</div>
+                <div class="text-[11px] text-muted truncate">{{ row.company }}</div>
+              </div>
+              <span class="font-black text-[17px] tabular"
+                    [class]="(row.isCurrentPlayer) ? 'text-orange' : 'text-ink'">
+                {{ row.score.toLocaleString() }}
+              </span>
             </div>
-            <div class="flex-1 min-w-0">
-              <div class="text-sm font-semibold text-white truncate">{{ row.displayName }}</div>
-              <div class="text-xs text-slate-500 truncate">{{ row.company }}</div>
+          }
+        </div>
+
+        @if (store.currentPlayerRow()) {
+          <div class="mt-5 rounded-2xl bg-orangesoft border-2 border-orange overflow-hidden">
+            <div class="flex items-center gap-3 px-4 h-16">
+              <span class="w-8 h-8 rounded-lg grid place-items-center font-black text-[14px] shrink-0 bg-orange text-white">
+                {{ store.currentPlayerRow()!.rank }}
+              </span>
+              <span class="w-10 h-10 rounded-full grid place-items-center font-bold text-[13px] shrink-0 bg-orange text-white">
+                {{ initials(store.currentPlayerRow()!.displayName) }}
+              </span>
+              <div class="flex-1 min-w-0">
+                <div class="font-semibold text-[15px] text-ink">You</div>
+                <div class="text-[11px] text-muted">{{ store.currentPlayerRow()!.company }}</div>
+              </div>
+              <span class="font-black text-[17px] tabular text-orange">{{ store.currentPlayerRow()!.score.toLocaleString() }}</span>
             </div>
-            <div class="text-sm font-black text-pm-orange">{{ row.score.toLocaleString() }}</div>
           </div>
         }
-      </div>
-    }
 
-    <button class="pm-btn-primary mt-4" (click)="goToRegister()">
-      {{ 'LEADERBOARD.PLAY_NOW' | translate }}
-    </button>
+        <div class="mt-7">
+          <button class="pm-cta-outline" (click)="goToRegister()">← {{ 'LEADERBOARD.BACK_TO_PLAY' | translate }}</button>
+          <p class="text-center text-[11px] text-muted mt-4">{{ 'LEADERBOARD.FOOTER' | translate }}</p>
+        </div>
+      }
 
+    </div>
   </div>
 </ion-content>

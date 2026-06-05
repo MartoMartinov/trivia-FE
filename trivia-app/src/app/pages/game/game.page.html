@@ -1,87 +1,84 @@
-<pm-header />
+<ion-content [fullscreen]="true">
+  <div class="min-h-full bg-paper flex flex-col">
 
-<ion-content>
-  @if (gameStore.isLoading()) {
-    <div class="flex items-center justify-center h-full">
-      <div class="text-slate-400 text-sm">{{ 'GAME.LOADING' | translate }}</div>
-    </div>
-  }
+    <pm-header />
 
-  @if (!gameStore.isLoading() && gameStore.currentQuestion()) {
-    <div class="flex flex-col h-full px-4 py-4 gap-4">
+    @if (gameStore.isLoading()) {
+      <div class="flex items-center justify-center flex-1">
+        <p class="text-muted text-sm">{{ 'GAME.LOADING' | translate }}</p>
+      </div>
+    }
 
-      <!-- HUD -->
-      <div class="flex items-center justify-between">
-        <div class="text-center">
-          <div class="text-xs text-slate-500 uppercase tracking-wider">{{ 'GAME.SCORE' | translate }}</div>
-          <div class="text-xl font-black text-white">{{ gameStore.score() }}</div>
-        </div>
+    @if (!gameStore.isLoading() && gameStore.currentQuestion()) {
 
-        <!-- Timer -->
-        <div class="flex flex-col items-center gap-1">
-          <div class="text-2xl font-black" [class]="timeLeft() <= 10 ? 'text-pm-orange' : 'text-white'">
-            {{ formatTime(timeLeft()) }}
-          </div>
-          <div class="w-32 h-1.5 bg-dark-border rounded-full overflow-hidden">
-            <div
-              class="h-full rounded-full transition-all duration-500"
-              [class]="timeLeft() <= 10 ? 'bg-pm-orange' : 'bg-pm-gold'"
-              [style.width.%]="timeLeftPct()">
+      <!-- HUD (dark navy) -->
+      <section class="relative bg-navy overflow-hidden">
+        <div class="pointer-events-none absolute -top-10 -left-24 w-[431px] h-[198px] rounded-full bg-orange/30 blur-3xl"></div>
+        <div class="relative z-[1] px-6 py-5">
+          <div class="flex justify-between items-start">
+            <div>
+              <div class="text-[11px] font-bold tracking-[0.16em] text-white/70 uppercase">{{ 'GAME.TIME_LEFT' | translate }}</div>
+              <div class="text-[40px] font-black leading-tight tabular"
+                   [class]="timeLeft() <= 10 ? 'text-[#FCA5A5]' : 'text-white'">
+                {{ formatTime(timeLeft()) }}
+              </div>
+            </div>
+            <div class="text-right">
+              <div class="text-[11px] font-bold tracking-[0.16em] text-white/70 uppercase">{{ 'GAME.SCORE' | translate }}</div>
+              <div class="text-[40px] font-black leading-tight tabular text-orange">{{ gameStore.score() }}</div>
             </div>
           </div>
-        </div>
-
-        <!-- Streak -->
-        <div class="text-center">
-          <div class="text-xs text-slate-500 uppercase tracking-wider">{{ 'GAME.STREAK' | translate }}</div>
-          <div class="text-xl font-black text-pm-gold">{{ gameStore.multiplierLabel() }}</div>
-        </div>
-      </div>
-
-      <!-- Progress -->
-      <div class="w-full h-1 bg-dark-border rounded-full overflow-hidden">
-        <div
-          class="h-full bg-pm-orange rounded-full transition-all duration-300"
-          [style.width.%]="gameStore.progress() * 100">
-        </div>
-      </div>
-
-      <!-- Question -->
-      <div class="pm-card flex-1">
-        <div class="text-xs text-slate-500 uppercase tracking-wider mb-3">
-          {{ 'GAME.QUESTION' | translate }} {{ gameStore.currentIndex() + 1 }} / {{ gameStore.questions().length }}
-        </div>
-        <p class="text-white font-semibold text-lg leading-snug">
-          {{ gameStore.currentQuestion()!.prompt }}
-        </p>
-
-        <!-- Last result feedback -->
-        @if (gameStore.lastResult()) {
-          <div class="mt-3" [class]="gameStore.lastResult()!.correct ? 'text-green-400' : 'text-red-400'">
-            <span class="text-sm font-bold">
-              {{ gameStore.lastResult()!.correct ? ('+' + gameStore.lastResult()!.pointsEarned) : ('GAME.WRONG' | translate) }}
-            </span>
-          </div>
-        }
-      </div>
-
-      <!-- Answers -->
-      <div class="grid grid-cols-1 gap-3">
-        @for (choice of gameStore.currentQuestion()!.choices; track choice.index) {
-          <button
-            class="pm-card text-left transition-all duration-200 border"
-            [class]="getChoiceClass(choice.index)"
-            (click)="selectAnswer(choice.index)">
-            <div class="flex items-center gap-3">
-              <span class="w-7 h-7 rounded-full border border-dark-border flex items-center justify-center text-xs font-bold text-slate-400">
-                {{ 'ABCD'[choice.index] }}
+          @if (gameStore.streak() >= 2) {
+            <div class="flex justify-center mt-3.5">
+              <span class="inline-flex items-center gap-2 bg-orange text-white px-3.5 py-1.5 rounded-full text-[11px] font-extrabold tracking-wider animate-pop">
+                <span class="w-2 h-2 rounded-full bg-white"></span>
+                {{ gameStore.multiplierLabel() }} {{ 'GAME.MULTIPLIER' | translate }}
               </span>
-              <span class="text-sm text-white font-medium">{{ choice.text }}</span>
             </div>
-          </button>
-        }
+          }
+        </div>
+      </section>
+
+      <!-- Timer bar -->
+      <div class="h-1.5 bg-navymid overflow-hidden">
+        <div class="h-full bg-orange transition-[width] duration-500 ease-linear"
+             [style.width.%]="timeLeftPct()"></div>
       </div>
 
-    </div>
-  }
+      <!-- Question body -->
+      <div class="px-6 pt-4 pb-8">
+        <div class="flex justify-between items-center">
+          <span class="pm-chip">
+            <span class="w-1.5 h-1.5 rounded-full bg-orange"></span>
+            {{ gameStore.currentQuestion()!.difficulty | uppercase }}
+          </span>
+          <span class="text-[11px] font-bold tracking-[0.16em] text-muted uppercase">
+            {{ 'GAME.ANSWERED' | translate }} {{ gameStore.totalAnswers() }}
+          </span>
+        </div>
+
+        <h1 class="mt-5 font-black text-ink leading-[1.25] text-[20px] animate-rise">
+          {{ gameStore.currentQuestion()!.prompt }}
+        </h1>
+
+        <div class="mt-5 grid gap-3">
+          @for (choice of gameStore.currentQuestion()!.choices; track choice.index) {
+            <div class="pm-answer"
+                 [class.is-selected]="selectedIndex() === choice.index && lastResult() === null"
+                 [class.is-correct]="lastResult() !== null && choice.index === lastResult()!.correctIndex"
+                 [class.is-wrong]="lastResult() !== null && selectedIndex() === choice.index && !lastResult()!.correct"
+                 [class.is-disabled]="selectedIndex() !== null && lastResult() !== null && choice.index !== lastResult()!.correctIndex && choice.index !== selectedIndex()"
+                 (click)="selectAnswer(choice.index)">
+              <span class="pm-answer-letter">{{ 'ABCD'[choice.index] }}</span>
+              <span class="pm-answer-text">{{ choice.text }}</span>
+              @if (lastResult() !== null && choice.index === lastResult()!.correctIndex) {
+                <span class="ml-auto text-correct font-bold">✓</span>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+  </div>
 </ion-content>

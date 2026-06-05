@@ -1,44 +1,92 @@
-<pm-header />
+<ion-content [fullscreen]="true">
+  <div class="min-h-full bg-paper flex flex-col">
 
-<ion-content>
-  <div class="px-4 py-6 flex flex-col gap-6">
+    <pm-header />
 
-    <!-- Bonus badge -->
-    <div class="pm-badge-warning self-start text-sm">⚡ {{ 'SPONSOR.BONUS_BADGE' | translate }}</div>
-
-    <!-- Sponsor info -->
-    <div class="pm-card text-center">
-      <p class="text-xs text-slate-500 uppercase tracking-wider mb-1">{{ 'SPONSOR.PRESENTED_BY' | translate }}</p>
-      <p class="text-white font-bold text-lg">Sandvik Coromant</p>
-    </div>
-
-    <!-- Question -->
-    <div class="pm-card">
-      <p class="text-white font-semibold text-base leading-snug">
-        {{ 'SPONSOR.QUESTION_PLACEHOLDER' | translate }}
-      </p>
-    </div>
-
-    <!-- Answers -->
-    <div class="flex flex-col gap-3">
-      @for (label of ['A','B','C','D']; track label; let i = $index) {
-        <button
-          class="pm-card text-left border transition-all duration-200"
-          [class]="selectedIndex() === null ? 'border-dark-border hover:border-pm-orange/50 cursor-pointer' : 'border-dark-border opacity-50'"
-          (click)="selectAnswer(i, 1, 200)">
-          <div class="flex items-center gap-3">
-            <span class="w-7 h-7 rounded-full border border-dark-border flex items-center justify-center text-xs font-bold text-slate-400">
-              {{ label }}
-            </span>
-            <span class="text-sm text-white">{{ 'SPONSOR.CHOICE_' + label | translate }}</span>
+    <!-- HUD (gold glow) -->
+    <section class="relative bg-navy overflow-hidden">
+      <div class="pointer-events-none absolute -top-10 left-1/2 -translate-x-1/2 w-[420px] h-[200px] rounded-full bg-gold/30 blur-3xl"></div>
+      <div class="relative z-[1] px-6 py-5">
+        <div class="flex justify-between items-start">
+          <div>
+            <div class="text-[11px] font-bold tracking-[0.16em] text-white/70 uppercase">{{ 'GAME.TIME_LEFT' | translate }}</div>
+            <div class="text-[40px] font-black leading-tight tabular text-white">0:30</div>
           </div>
-        </button>
+          <div class="text-right">
+            <div class="text-[11px] font-bold tracking-[0.16em] text-white/70 uppercase">{{ 'GAME.SCORE' | translate }}</div>
+            <div class="text-[40px] font-black leading-tight tabular text-gold">1,250</div>
+          </div>
+        </div>
+        <div class="flex justify-center mt-3.5">
+          <span class="inline-flex items-center gap-2 bg-gold text-navy px-3.5 py-1.5 rounded-full text-[11px] font-extrabold tracking-wider animate-pop">
+            ★ +200 PTS
+          </span>
+        </div>
+      </div>
+    </section>
+    <div class="h-1.5 bg-navymid overflow-hidden"><div class="h-full bg-gold w-1/2"></div></div>
+
+    <div class="px-6 pt-4 flex justify-between items-center">
+      <span class="inline-flex items-center gap-2 bg-gold text-navy px-3 py-1.5 rounded-full text-[11px] font-extrabold tracking-wider">
+        <span class="w-2 h-2 rounded-full bg-navy"></span>{{ 'SPONSOR.BONUS_BADGE' | translate }}
+      </span>
+      <span class="text-[11px] font-bold tracking-[0.12em] text-muted uppercase">{{ 'SPONSOR.SPONSORED' | translate }}</span>
+    </div>
+
+    <div class="px-6 pt-4 pb-8">
+      <!-- Video placeholder -->
+      <div (click)="startVideo()"
+           class="relative h-[200px] rounded-2xl overflow-hidden grid place-items-center cursor-pointer bg-gradient-to-br from-navyband to-navy">
+        @if (!videoStarted()) {
+          <div class="w-16 h-16 rounded-full bg-gold grid place-items-center text-navy text-2xl shadow-lg">▶</div>
+          <span class="absolute right-3 bottom-3 bg-navy/80 text-white text-[11px] font-bold px-2.5 py-1 rounded-md">0:30</span>
+        }
+        @if (videoStarted() && !unlocked()) {
+          <div class="text-center text-white">
+            <div class="text-[56px] font-black tabular">{{ countdown() }}</div>
+            <div class="text-xs opacity-70 mt-1.5">Playing sponsor reel…</div>
+          </div>
+        }
+        @if (unlocked()) {
+          <div class="text-center text-gold font-black">
+            <div class="text-[44px]">✓</div>
+            <div class="text-sm mt-1.5 tracking-wide">Bonus unlocked</div>
+          </div>
+        }
+      </div>
+
+      <!-- Sponsor strip -->
+      <div class="mt-4 bg-white rounded-2xl border border-line p-3.5 flex items-center gap-3">
+        <div class="w-11 h-11 rounded-xl bg-sandvik grid place-items-center text-white font-black italic text-lg shrink-0">SC</div>
+        <div>
+          <div class="text-[11px] font-extrabold tracking-[0.15em] text-muted uppercase">{{ 'SPONSOR.PRESENTED_BY' | translate }}</div>
+          <div class="text-[19px] font-black text-ink">Sandvik Coromant</div>
+        </div>
+      </div>
+
+      <h2 class="mt-5 font-black text-ink leading-[1.25] text-[20px]">
+        {{ 'SPONSOR.QUESTION_PLACEHOLDER' | translate }}
+      </h2>
+
+      <div class="mt-5 grid gap-3 transition-opacity"
+           [class.opacity-50]="!unlocked()" [class.pointer-events-none]="!unlocked()">
+        @for (choice of choices; track choice.index) {
+          <div class="pm-answer"
+               [class.is-selected]="selectedIndex() === choice.index && !answered()"
+               [class.is-correct]="answered() && choice.index === 1"
+               [class.is-wrong]="answered() && selectedIndex() === choice.index && choice.index !== 1"
+               [class.is-disabled]="answered() && choice.index !== 1 && choice.index !== selectedIndex()"
+               (click)="pick(choice.index)">
+            <span class="pm-answer-letter">{{ 'ABCD'[choice.index] }}</span>
+            <span class="pm-answer-text">{{ choice.text }}</span>
+          </div>
+        }
+      </div>
+
+      @if (!unlocked()) {
+        <p class="mt-4 text-center text-sm text-muted">🔒 {{ 'SPONSOR.UNLOCK_HINT' | translate }}</p>
       }
     </div>
-
-    <button class="pm-btn-clear mt-2" (click)="skip()">
-      {{ 'SPONSOR.SKIP' | translate }}
-    </button>
 
   </div>
 </ion-content>

@@ -1,43 +1,14 @@
-ion-button {
-  --border-radius: 8px;
-  font-weight: 600;
-}
-
-ion-card {
-  --border-radius: 12px;
-  margin: 0;
-}
-
-ion-list {
-  background: var(--color-dark-card);
-}
-
-ion-item {
-  --background: var(--color-dark-card);
-  --padding-start: 16px;
-  --inner-padding-end: 16px;
-  --color: var(--ion-text-color);
+ion-content {
+  --background: var(--color-paper);
 }
 
 ion-toolbar {
-  --border-width: 0 0 1px 0;
-  --border-color: var(--color-dark-border);
+  --background: var(--color-navy);
+  --border-width: 0;
+  --color: #ffffff;
 }
 
-ion-content {
-  --background: var(--color-dark-bg);
-}
-
-ion-tab-bar {
-  &::part(background) {
-    border-top: 1px solid var(--color-dark-border);
-  }
-}
-
-ion-input {
-  --background: #1e2330;
-  --color: var(--ion-text-color);
-  --border-radius: 8px;
-  --padding-start: 14px;
-  --padding-end: 14px;
+ion-button {
+  --border-radius: 12px;
+  font-weight: 800;
 }
