@@ -1,0 +1,52 @@
+{
+  "REGISTER": {
+    "HERO_SUBTITLE": "You have 90 seconds. Answer as many as you can — build streaks, multiply your score, win prizes.",
+    "FORM_TITLE": "Let's play.",
+    "FIRST_NAME": "First Name",
+    "LAST_NAME": "Last Name",
+    "EMAIL": "Email",
+    "COMPANY": "Company",
+    "PHONE": "Phone (optional)",
+    "CONSENT": "I agree to receive communications from Practical Machinist and consent to my data being used for this event.",
+    "SUBMIT": "Start Playing →",
+    "SUBMITTING": "Starting…",
+    "ERROR_GENERIC": "Something went wrong. Please try again.",
+    "LEADERBOARD_LINK_PRE": "Already played? View the ",
+    "LEADERBOARD_LINK": "leaderboard"
+  },
+  "GAME": {
+    "LOADING": "Loading questions…",
+    "SCORE": "Score",
+    "STREAK": "Streak",
+    "QUESTION": "Question",
+    "WRONG": "Wrong!"
+  },
+  "SPONSOR": {
+    "BONUS_BADGE": "Bonus Question",
+    "PRESENTED_BY": "Presented by",
+    "QUESTION_PLACEHOLDER": "Which Sandvik Coromant product is rated #1 for precision milling applications?",
+    "CHOICE_A": "ProMill X200",
+    "CHOICE_B": "UltraCut 500 Series",
+    "CHOICE_C": "MaxTurn Pro Elite",
+    "CHOICE_D": "PrecisionEdge Z1",
+    "SKIP": "Skip bonus question"
+  },
+  "RESULTS": {
+    "LOADING": "Loading results…",
+    "OF": "of",
+    "FINAL_SCORE": "Final Score",
+    "SPONSOR_BONUS": "sponsor bonus",
+    "BREAKDOWN": "Breakdown",
+    "CORRECT": "Correct answers",
+    "BEST_STREAK": "Best streak",
+    "VIEW_LEADERBOARD": "View Leaderboard",
+    "PLAY_AGAIN": "Play Again"
+  },
+  "LEADERBOARD": {
+    "TODAY": "Today",
+    "THIS_WEEK": "This Week",
+    "PLAYERS": "players",
+    "LOADING": "Loading leaderboard…",
+    "PLAY_NOW": "Play Now →"
+  }
+}

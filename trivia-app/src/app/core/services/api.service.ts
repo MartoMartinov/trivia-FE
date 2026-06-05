@@ -1,0 +1,50 @@
+import { inject, Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { environment } from '../../../environments/environment';
+import type {
+  RegisterRequest,
+  LoginResponse,
+  StartSessionResponse,
+  SubmitAnswerRequest,
+  SubmitAnswerResponse,
+  CompleteSessionResponse,
+  SessionResultDto,
+  LeaderboardResponse,
+  LeaderboardScope,
+  BoothDisplayResponse,
+} from '../models/api.models';
+
+@Injectable({ providedIn: 'root' })
+export class ApiService {
+  private readonly http = inject(HttpClient);
+  private readonly base = environment.apiUrl;
+
+  register(req: RegisterRequest): Observable<LoginResponse> {
+    return this.http.post<LoginResponse>(`${this.base}/auth/register`, req);
+  }
+
+  startSession(): Observable<StartSessionResponse> {
+    return this.http.post<StartSessionResponse>(`${this.base}/sessions/start`, {});
+  }
+
+  submitAnswer(sessionId: number, req: SubmitAnswerRequest): Observable<SubmitAnswerResponse> {
+    return this.http.post<SubmitAnswerResponse>(`${this.base}/sessions/${sessionId}/answers`, req);
+  }
+
+  completeSession(sessionId: number): Observable<CompleteSessionResponse> {
+    return this.http.post<CompleteSessionResponse>(`${this.base}/sessions/${sessionId}/complete`, {});
+  }
+
+  getSessionResult(sessionId: number): Observable<SessionResultDto> {
+    return this.http.get<SessionResultDto>(`${this.base}/sessions/${sessionId}/result`);
+  }
+
+  getLeaderboard(scope: LeaderboardScope = 'today'): Observable<LeaderboardResponse> {
+    return this.http.get<LeaderboardResponse>(`${this.base}/leaderboard`, { params: { scope } });
+  }
+
+  getBoothDisplay(token: string): Observable<BoothDisplayResponse> {
+    return this.http.get<BoothDisplayResponse>(`${this.base}/booth-display`, { params: { token } });
+  }
+}

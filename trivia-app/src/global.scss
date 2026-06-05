@@ -1,0 +1,22 @@
+// 1. Ionic core (required)
+@import "@ionic/angular/css/core.css";
+@import "@ionic/angular/css/normalize.css";
+@import "@ionic/angular/css/structure.css";
+@import "@ionic/angular/css/typography.css";
+
+// 2. Optional Ionic utilities
+@import "@ionic/angular/css/padding.css";
+@import "@ionic/angular/css/float-elements.css";
+@import "@ionic/angular/css/text-alignment.css";
+
+// 3. Custom fonts
+@import "theme/custom/base/fonts";
+
+// 4. Design tokens / Ionic variable overrides
+@import "theme/variables";
+
+// 5. Ionic component overrides
+@import "theme/ionic/index";
+
+// 6. Shared component classes
+@import "theme/custom/base/global";

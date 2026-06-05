@@ -1,0 +1,53 @@
+<pm-header />
+
+<ion-content>
+  @if (isLoading()) {
+    <div class="flex items-center justify-center h-full">
+      <div class="text-slate-400 text-sm">{{ 'RESULTS.LOADING' | translate }}</div>
+    </div>
+  }
+
+  @if (!isLoading() && result()) {
+    <div class="px-4 py-6 flex flex-col gap-5">
+
+      <!-- Rank pill -->
+      <div class="flex justify-center">
+        <div class="bg-pm-orange/10 border border-pm-orange/30 rounded-full px-6 py-2">
+          <span class="text-pm-orange font-black text-lg">#{{ result()!.rank }}</span>
+          <span class="text-slate-400 text-sm ml-2">{{ 'RESULTS.OF' | translate }} {{ result()!.totalPlayers }}</span>
+        </div>
+      </div>
+
+      <!-- Score -->
+      <div class="pm-card text-center">
+        <div class="text-xs text-slate-500 uppercase tracking-wider mb-1">{{ 'RESULTS.FINAL_SCORE' | translate }}</div>
+        <div class="text-5xl font-black text-white">{{ scoring.formatScore(result()!.score) }}</div>
+        @if (result()!.sponsorBonus > 0) {
+          <div class="text-sm text-pm-gold mt-1">+{{ result()!.sponsorBonus }} {{ 'RESULTS.SPONSOR_BONUS' | translate }}</div>
+        }
+      </div>
+
+      <!-- Breakdown -->
+      <div class="pm-card">
+        <div class="text-sm font-bold text-white mb-3">{{ 'RESULTS.BREAKDOWN' | translate }}</div>
+        <div class="flex justify-between text-sm py-2 border-b border-dark-border">
+          <span class="text-slate-400">{{ 'RESULTS.CORRECT' | translate }}</span>
+          <span class="text-white font-semibold">{{ result()!.correctAnswers }} / {{ result()!.totalAnswers }}</span>
+        </div>
+        <div class="flex justify-between text-sm py-2">
+          <span class="text-slate-400">{{ 'RESULTS.BEST_STREAK' | translate }}</span>
+          <span class="text-pm-gold font-semibold">{{ result()!.bestStreak }}×</span>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <button class="pm-btn-primary" (click)="goToLeaderboard()">
+        {{ 'RESULTS.VIEW_LEADERBOARD' | translate }}
+      </button>
+      <button class="pm-btn-clear" (click)="playAgain()">
+        {{ 'RESULTS.PLAY_AGAIN' | translate }}
+      </button>
+
+    </div>
+  }
+</ion-content>

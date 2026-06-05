@@ -1,0 +1,43 @@
+:root {
+  // Ionic color system
+  --ion-color-primary:          #F34D23;
+  --ion-color-primary-rgb:      243,77,35;
+  --ion-color-primary-contrast: #ffffff;
+  --ion-color-primary-shade:    #d64420;
+  --ion-color-primary-tint:     #f45f39;
+
+  --ion-color-secondary:        #F5B400;
+  --ion-color-secondary-rgb:    245,180,0;
+  --ion-color-secondary-contrast: #000000;
+  --ion-color-secondary-shade:  #d89e00;
+  --ion-color-secondary-tint:   #f6bc1a;
+
+  --ion-color-success:          #22c55e;
+  --ion-color-warning:          #F5B400;
+  --ion-color-danger:           #ef4444;
+
+  // Surfaces
+  --ion-background-color:       #0d0f14;
+  --ion-card-background:        #161920;
+  --ion-item-background:        #161920;
+  --ion-toolbar-background:     #0d0f14;
+  --ion-tab-bar-background:     #0d0f14;
+  --ion-tab-bar-color-selected: #F34D23;
+
+  // Text
+  --ion-text-color:             #f1f5f9;
+  --ion-text-color-rgb:         241,245,249;
+
+  // Typography
+  --ion-font-family:            'Inter', sans-serif;
+
+  // Project tokens (mirrored in tailwind.css @theme)
+  --color-dark-bg:              #0d0f14;
+  --color-dark-card:            #161920;
+  --color-dark-border:          #1e2330;
+  --color-text-muted:           #6b7280;
+  --color-pm-orange:            #F34D23;
+  --color-pm-navy:              #1E2A3B;
+  --color-pm-navy-dark:         #0F1429;
+  --color-pm-gold:              #F5B400;
+}

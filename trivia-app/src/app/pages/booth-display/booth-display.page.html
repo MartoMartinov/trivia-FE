@@ -1,0 +1,44 @@
+<ion-content>
+  @if (data()) {
+    <div class="h-full bg-pm-navy-deep flex flex-col p-10 gap-8">
+
+      <!-- Header -->
+      <div class="flex items-center justify-between">
+        <div>
+          <div class="text-pm-orange font-black text-4xl tracking-tight">Practical Machinist</div>
+          <div class="text-slate-400 text-xl font-semibold tracking-widest uppercase">Trivia Challenge</div>
+        </div>
+        <div class="text-right">
+          <div class="text-slate-500 text-sm uppercase tracking-wider">{{ data()!.eventName }}</div>
+          <div class="text-slate-400 text-sm">{{ data()!.totalPlayers }} players today</div>
+        </div>
+      </div>
+
+      <!-- Leaderboard -->
+      <div class="flex-1 grid grid-cols-2 gap-4 content-start">
+        @for (row of data()!.rows; track row.rank) {
+          <div class="flex items-center gap-4 bg-dark-card rounded-xl px-5 py-4">
+            <div class="w-10 text-center">
+              @if (row.rank <= 3) {
+                <span class="text-3xl">{{ ['🥇','🥈','🥉'][row.rank - 1] }}</span>
+              } @else {
+                <span class="text-xl font-black text-slate-500">#{{ row.rank }}</span>
+              }
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="text-white font-bold text-lg truncate">{{ row.displayName }}</div>
+              <div class="text-slate-500 text-sm truncate">{{ row.company }}</div>
+            </div>
+            <div class="text-pm-orange font-black text-xl">{{ row.score.toLocaleString() }}</div>
+          </div>
+        }
+      </div>
+
+      <!-- Footer CTA -->
+      <div class="text-center">
+        <div class="text-slate-400 text-lg">Scan to play → <span class="text-pm-orange font-bold">practicalmachinist.com/trivia</span></div>
+      </div>
+
+    </div>
+  }
+</ion-content>

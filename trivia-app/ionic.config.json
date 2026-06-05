@@ -1,0 +1,7 @@
+{
+  "name": "trivia-app",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "angular"
+}

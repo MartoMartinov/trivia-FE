@@ -1,0 +1,87 @@
+<pm-header />
+
+<ion-content>
+  @if (gameStore.isLoading()) {
+    <div class="flex items-center justify-center h-full">
+      <div class="text-slate-400 text-sm">{{ 'GAME.LOADING' | translate }}</div>
+    </div>
+  }
+
+  @if (!gameStore.isLoading() && gameStore.currentQuestion()) {
+    <div class="flex flex-col h-full px-4 py-4 gap-4">
+
+      <!-- HUD -->
+      <div class="flex items-center justify-between">
+        <div class="text-center">
+          <div class="text-xs text-slate-500 uppercase tracking-wider">{{ 'GAME.SCORE' | translate }}</div>
+          <div class="text-xl font-black text-white">{{ gameStore.score() }}</div>
+        </div>
+
+        <!-- Timer -->
+        <div class="flex flex-col items-center gap-1">
+          <div class="text-2xl font-black" [class]="timeLeft() <= 10 ? 'text-pm-orange' : 'text-white'">
+            {{ formatTime(timeLeft()) }}
+          </div>
+          <div class="w-32 h-1.5 bg-dark-border rounded-full overflow-hidden">
+            <div
+              class="h-full rounded-full transition-all duration-500"
+              [class]="timeLeft() <= 10 ? 'bg-pm-orange' : 'bg-pm-gold'"
+              [style.width.%]="timeLeftPct()">
+            </div>
+          </div>
+        </div>
+
+        <!-- Streak -->
+        <div class="text-center">
+          <div class="text-xs text-slate-500 uppercase tracking-wider">{{ 'GAME.STREAK' | translate }}</div>
+          <div class="text-xl font-black text-pm-gold">{{ gameStore.multiplierLabel() }}</div>
+        </div>
+      </div>
+
+      <!-- Progress -->
+      <div class="w-full h-1 bg-dark-border rounded-full overflow-hidden">
+        <div
+          class="h-full bg-pm-orange rounded-full transition-all duration-300"
+          [style.width.%]="gameStore.progress() * 100">
+        </div>
+      </div>
+
+      <!-- Question -->
+      <div class="pm-card flex-1">
+        <div class="text-xs text-slate-500 uppercase tracking-wider mb-3">
+          {{ 'GAME.QUESTION' | translate }} {{ gameStore.currentIndex() + 1 }} / {{ gameStore.questions().length }}
+        </div>
+        <p class="text-white font-semibold text-lg leading-snug">
+          {{ gameStore.currentQuestion()!.prompt }}
+        </p>
+
+        <!-- Last result feedback -->
+        @if (gameStore.lastResult()) {
+          <div class="mt-3" [class]="gameStore.lastResult()!.correct ? 'text-green-400' : 'text-red-400'">
+            <span class="text-sm font-bold">
+              {{ gameStore.lastResult()!.correct ? ('+' + gameStore.lastResult()!.pointsEarned) : ('GAME.WRONG' | translate) }}
+            </span>
+          </div>
+        }
+      </div>
+
+      <!-- Answers -->
+      <div class="grid grid-cols-1 gap-3">
+        @for (choice of gameStore.currentQuestion()!.choices; track choice.index) {
+          <button
+            class="pm-card text-left transition-all duration-200 border"
+            [class]="getChoiceClass(choice.index)"
+            (click)="selectAnswer(choice.index)">
+            <div class="flex items-center gap-3">
+              <span class="w-7 h-7 rounded-full border border-dark-border flex items-center justify-center text-xs font-bold text-slate-400">
+                {{ 'ABCD'[choice.index] }}
+              </span>
+              <span class="text-sm text-white font-medium">{{ choice.text }}</span>
+            </div>
+          </button>
+        }
+      </div>
+
+    </div>
+  }
+</ion-content>

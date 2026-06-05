@@ -1,0 +1,44 @@
+<pm-header />
+
+<ion-content>
+  <div class="px-4 py-6 flex flex-col gap-6">
+
+    <!-- Bonus badge -->
+    <div class="pm-badge-warning self-start text-sm">⚡ {{ 'SPONSOR.BONUS_BADGE' | translate }}</div>
+
+    <!-- Sponsor info -->
+    <div class="pm-card text-center">
+      <p class="text-xs text-slate-500 uppercase tracking-wider mb-1">{{ 'SPONSOR.PRESENTED_BY' | translate }}</p>
+      <p class="text-white font-bold text-lg">Sandvik Coromant</p>
+    </div>
+
+    <!-- Question -->
+    <div class="pm-card">
+      <p class="text-white font-semibold text-base leading-snug">
+        {{ 'SPONSOR.QUESTION_PLACEHOLDER' | translate }}
+      </p>
+    </div>
+
+    <!-- Answers -->
+    <div class="flex flex-col gap-3">
+      @for (label of ['A','B','C','D']; track label; let i = $index) {
+        <button
+          class="pm-card text-left border transition-all duration-200"
+          [class]="selectedIndex() === null ? 'border-dark-border hover:border-pm-orange/50 cursor-pointer' : 'border-dark-border opacity-50'"
+          (click)="selectAnswer(i, 1, 200)">
+          <div class="flex items-center gap-3">
+            <span class="w-7 h-7 rounded-full border border-dark-border flex items-center justify-center text-xs font-bold text-slate-400">
+              {{ label }}
+            </span>
+            <span class="text-sm text-white">{{ 'SPONSOR.CHOICE_' + label | translate }}</span>
+          </div>
+        </button>
+      }
+    </div>
+
+    <button class="pm-btn-clear mt-2" (click)="skip()">
+      {{ 'SPONSOR.SKIP' | translate }}
+    </button>
+
+  </div>
+</ion-content>
