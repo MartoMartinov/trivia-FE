@@ -4,9 +4,8 @@ import { from, Observable, switchMap } from 'rxjs';
 import { SecureStorage } from '@aparajita/capacitor-secure-storage';
 import type { AuthStrategy } from './auth.strategy.model';
 import type { AccessTokenResponse, LoginResponse } from '../models/api.models';
+import { STORAGE_KEYS } from '../constants/storage-keys';
 import { environment } from '../../../environments/environment';
-
-const REFRESH_TOKEN_KEY = 'pm_refresh_token';
 
 @Injectable()
 export class NativeAuthStrategy implements AuthStrategy {
@@ -16,7 +15,7 @@ export class NativeAuthStrategy implements AuthStrategy {
   readonly platformHeader = 'native' as const;
 
   refresh(): Observable<AccessTokenResponse> {
-    return from(SecureStorage.get(REFRESH_TOKEN_KEY)).pipe(
+    return from(SecureStorage.get(STORAGE_KEYS.REFRESH_TOKEN)).pipe(
       switchMap((token) =>
         this.http.post<AccessTokenResponse>(
           `${environment.apiUrl}/auth/refresh`,
@@ -28,11 +27,11 @@ export class NativeAuthStrategy implements AuthStrategy {
 
   async persistAfterLogin(res: LoginResponse): Promise<void> {
     if (res.refreshToken) {
-      await SecureStorage.set(REFRESH_TOKEN_KEY, res.refreshToken);
+      await SecureStorage.set(STORAGE_KEYS.REFRESH_TOKEN, res.refreshToken);
     }
   }
 
   async clear(): Promise<void> {
-    await SecureStorage.remove(REFRESH_TOKEN_KEY);
+    await SecureStorage.remove(STORAGE_KEYS.REFRESH_TOKEN);
   }
 }

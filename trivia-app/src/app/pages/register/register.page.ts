@@ -1,9 +1,12 @@
-import { ChangeDetectionStrategy, Component, inject, OnDestroy } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnDestroy, OnInit } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { IonContent } from '@ionic/angular/standalone';
 import { TranslatePipe } from '@ngx-translate/core';
 
+import { SecureStorage } from '@aparajita/capacitor-secure-storage';
+
+import { STORAGE_KEYS } from '../../core/constants/storage-keys';
 import { AuthStore } from '../../core/stores/auth/auth.store';
 import { PlayerStore } from '../../core/stores/player/player.store';
 import { PmHeaderComponent } from '../../shared/components/pm-header/pm-header.component';
@@ -15,7 +18,7 @@ import { PmHeaderComponent } from '../../shared/components/pm-header/pm-header.c
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [IonContent, ReactiveFormsModule, TranslatePipe, PmHeaderComponent],
 })
-export class RegisterPage implements OnDestroy {
+export class RegisterPage implements OnInit, OnDestroy {
   private authCheckInterval: ReturnType<typeof setInterval> | null = null;
   private readonly authStore = inject(AuthStore);
   private readonly playerStore = inject(PlayerStore);
@@ -35,6 +38,13 @@ export class RegisterPage implements OnDestroy {
     consent: new FormControl(false, [Validators.requiredTrue]),
   });
 
+  async ngOnInit(): Promise<void> {
+    try {
+      const saved = await SecureStorage.get(STORAGE_KEYS.REGISTRATION);
+      if (typeof saved === 'string') this.form.patchValue(JSON.parse(saved));
+    } catch {}
+  }
+
   ngOnDestroy(): void {
     if (this.authCheckInterval) clearInterval(this.authCheckInterval);
   }
@@ -43,6 +53,8 @@ export class RegisterPage implements OnDestroy {
     if (this.form.invalid || this.isPending()) return;
 
     const { firstName, lastName, email, company, phone, consent } = this.form.getRawValue();
+
+    SecureStorage.set(STORAGE_KEYS.REGISTRATION, JSON.stringify({ firstName, lastName, email, company, phone })).catch(() => {});
 
     this.authStore.register({
       firstName: firstName!,

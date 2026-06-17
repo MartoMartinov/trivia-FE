@@ -1,9 +1,9 @@
 export const environment = {
   production: false,
   staging: false,
-  apiUrl: 'http://localhost:8000/api/en',
+  apiUrl: 'http://localhost:3000/api/trivia',
   appName: 'Practical Machinist Trivia',
-  useMockApi: true,
+  useMockApi: false,
   // Public game URL the booth QR code points to (spec §8.3).
   playUrl: 'https://practicalmachinist.com/trivia',
   // QR image endpoint; `{data}`/`{size}` placeholders are substituted at render time.
