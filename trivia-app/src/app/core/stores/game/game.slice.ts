@@ -9,11 +9,23 @@ export interface LastResult {
   multiplier: number;
 }
 
+export interface LastSponsorResult {
+  correct: boolean;
+  correctIndex: number;
+  bonusPoints: number;
+}
+
 export interface GameSlice {
   sessionId: number | null;
   endsAt: string | null;
+  /** Total session length in seconds — drives the timer denominator (spec §9.3). */
+  durationSeconds: number;
+  /** Pre-game countdown in seconds (spec §3.4). */
+  countdownSeconds: number;
   questions: QuestionDto[];
   sponsorQuestion: SponsorQuestionDto | null;
+  /** Whether the sponsored bonus question has already been answered this session. */
+  sponsorAnswered: boolean;
   currentIndex: number;
   score: number;
   streak: number;
@@ -22,14 +34,18 @@ export interface GameSlice {
   totalAnswers: number;
   status: GameStatus;
   lastResult: LastResult | null;
+  lastSponsorResult: LastSponsorResult | null;
   sponsorBonus: number;
 }
 
 export const initialGameSlice: GameSlice = {
   sessionId: null,
   endsAt: null,
+  durationSeconds: 0,
+  countdownSeconds: 0,
   questions: [],
   sponsorQuestion: null,
+  sponsorAnswered: false,
   currentIndex: 0,
   score: 0,
   streak: 0,
@@ -38,5 +54,6 @@ export const initialGameSlice: GameSlice = {
   totalAnswers: 0,
   status: 'idle',
   lastResult: null,
+  lastSponsorResult: null,
   sponsorBonus: 0,
 };

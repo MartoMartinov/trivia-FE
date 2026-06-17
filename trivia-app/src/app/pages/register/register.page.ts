@@ -30,7 +30,8 @@ export class RegisterPage implements OnDestroy {
     lastName: new FormControl('', [Validators.required, Validators.minLength(2)]),
     email: new FormControl('', [Validators.required, Validators.email]),
     company: new FormControl('', [Validators.required]),
-    phone: new FormControl(''),
+    // Phone is required (spec §3.2). Pattern allows digits, spaces, and common separators.
+    phone: new FormControl('', [Validators.required, Validators.pattern(/^[+]?[\d\s()-]{7,}$/)]),
     consent: new FormControl(false, [Validators.requiredTrue]),
   });
 

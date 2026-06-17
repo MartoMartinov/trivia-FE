@@ -1,8 +1,14 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { IonContent } from '@ionic/angular/standalone';
 import { TranslatePipe } from '@ngx-translate/core';
+
+import { GameStore } from '../../core/stores/game/game.store';
 import { PmHeaderComponent } from '../../shared/components/pm-header/pm-header.component';
+
+// Length of the simulated sponsor reel when no real video media is supplied (mock/demo).
+const PLACEHOLDER_REEL_SECONDS = 5;
+const REVEAL_DELAY_MS = 1100;
 
 @Component({
   selector: 'app-sponsor',
@@ -11,38 +17,67 @@ import { PmHeaderComponent } from '../../shared/components/pm-header/pm-header.c
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [IonContent, TranslatePipe, PmHeaderComponent],
 })
-export class SponsorPage {
+export class SponsorPage implements OnInit {
+  readonly gameStore = inject(GameStore);
   private readonly router = inject(Router);
+
+  readonly sponsorQuestion = this.gameStore.sponsorQuestion;
+  readonly result = this.gameStore.lastSponsorResult;
+
+  readonly sponsorInitials = computed(() => {
+    const name = this.sponsorQuestion()?.sponsor.name ?? '';
+    return name.split(/\s+/).map((word) => word[0] ?? '').slice(0, 2).join('').toUpperCase();
+  });
 
   readonly videoStarted = signal(false);
   readonly unlocked = signal(false);
-  readonly countdown = signal(30);
+  // Real seconds remaining in the reel — the label always matches actual elapsed time.
+  readonly secondsLeft = signal(0);
   readonly selectedIndex = signal<number | null>(null);
-  readonly answered = signal(false);
 
-  readonly choices = [
-    { index: 0, text: 'ProMill X200' },
-    { index: 1, text: 'UltraCut 500 Series' },
-    { index: 2, text: 'MaxTurn Pro Elite' },
-    { index: 3, text: 'PrecisionEdge Z1' },
-  ];
+  ngOnInit(): void {
+    // Direct navigation without a pending sponsor round → fall straight through to results.
+    if (!this.gameStore.hasSponsorRound()) {
+      this.finish();
+    }
+  }
 
   startVideo(): void {
     if (this.videoStarted()) return;
     this.videoStarted.set(true);
-    const total = 3000;
-    const start = Date.now();
-    const t = setInterval(() => {
-      const rem = Math.max(0, total - (Date.now() - start));
-      this.countdown.set(Math.ceil((rem / total) * 30));
-      if (rem <= 0) { clearInterval(t); this.unlocked.set(true); }
-    }, 80);
+    this.secondsLeft.set(PLACEHOLDER_REEL_SECONDS);
+    const tick = setInterval(() => {
+      const next = this.secondsLeft() - 1;
+      if (next <= 0) {
+        clearInterval(tick);
+        this.secondsLeft.set(0);
+        this.unlocked.set(true);
+      } else {
+        this.secondsLeft.set(next);
+      }
+    }, 1000);
   }
 
   pick(index: number): void {
-    if (!this.unlocked() || this.answered()) return;
+    if (!this.unlocked() || this.selectedIndex() !== null || this.gameStore.isPending()) return;
+    const question = this.sponsorQuestion();
+    if (!question) return;
+
     this.selectedIndex.set(index);
-    this.answered.set(true);
-    setTimeout(() => this.router.navigate(['/results', 1001]), 1100);
+    this.gameStore.submitSponsorAnswer({ questionId: question.id, choiceIndex: index });
+
+    // Wait for the authoritative result, reveal it, then complete the session.
+    const poll = setInterval(() => {
+      if (this.gameStore.lastSponsorResult()) {
+        clearInterval(poll);
+        setTimeout(() => this.finish(), REVEAL_DELAY_MS);
+      }
+    }, 100);
+  }
+
+  private finish(): void {
+    const sessionId = this.gameStore.sessionId();
+    this.gameStore.completeSession(undefined);
+    this.router.navigate(['/results', sessionId]);
   }
 }

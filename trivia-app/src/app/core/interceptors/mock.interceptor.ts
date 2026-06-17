@@ -35,6 +35,7 @@ const MOCK_QUESTIONS = [
   {
     id: 3, prompt: 'In CNC machining, what does the "G00" command represent?',
     difficulty: 'hard',
+    imageUrl: 'https://placehold.co/800x420/0E1524/F34D23?text=CNC+Control+Panel',
     choices: [
       { index: 0, text: 'Dwell' },
       { index: 1, text: 'Rapid positioning' },
@@ -54,7 +55,7 @@ const MOCK_QUESTIONS = [
   },
   {
     id: 5, prompt: 'What is the primary purpose of a chamfer on a machined part?',
-    difficulty: 'hard_plus',
+    difficulty: 'hard',
     choices: [
       { index: 0, text: 'Increase weight' },
       { index: 1, text: 'Ease assembly & remove burrs' },
@@ -76,9 +77,25 @@ const MOCK_QUESTIONS = [
 
 const CORRECT_ANSWERS: Record<number, number> = { 1: 0, 2: 1, 3: 1, 4: 1, 5: 1, 6: 1 };
 
+// Base points per difficulty (spec §5.1), mirrored from ScoringService.
+const BASE_POINTS_BY_DIFFICULTY: Record<string, number> = {
+  easy: 100, medium: 150, hard: 200, hard_plus: 250,
+};
+const DIFFICULTY_BY_QUESTION_ID: Record<number, string> =
+  MOCK_QUESTIONS.reduce<Record<number, string>>((map, q) => {
+    map[q.id] = q.difficulty;
+    return map;
+  }, {});
+
+const SESSION_DURATION_SECONDS = 90;
+const SESSION_COUNTDOWN_SECONDS = 3;
+
+const SPONSOR_CORRECT_INDEX = 1;
+
 const MOCK_SPONSOR_QUESTION = {
   id: 1,
   prompt: 'Which Sandvik Coromant product is rated #1 for precision milling applications?',
+  difficulty: 'hard_plus',
   choices: [
     { index: 0, text: 'ProMill X200' },
     { index: 1, text: 'UltraCut 500 Series' },
@@ -97,6 +114,17 @@ const MOCK_SPONSOR_QUESTION = {
   },
 };
 
+const MOCK_SPONSOR_CARDS = [
+  {
+    id: 1, name: 'Sandvik Coromant', tagline: 'Precision milling, perfected.',
+    primaryColor: '#DE0016', logoUrl: '',
+  },
+  {
+    id: 2, name: 'Haas Automation', tagline: 'Built for the shop floor.',
+    primaryColor: '#C8102E', logoUrl: '',
+  },
+];
+
 const MOCK_LEADERBOARD_ROWS = [
   { rank: 1, displayName: 'Maria S.', company: 'Acme Machining', score: 1820 },
   { rank: 2, displayName: 'Jake T.', company: 'Precision Parts Co.', score: 1450 },
@@ -112,6 +140,8 @@ const MOCK_LEADERBOARD_ROWS = [
 
 let mockScore = 0;
 let mockStreak = 0;
+let mockMaxStreak = 0;
+let mockSponsorBonus = 0;
 let mockSessionId = 1001;
 
 function matchesRoute(url: string, method: string, pattern: string, patternMethod: string): boolean {
@@ -134,7 +164,7 @@ export const mockInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, ne
 
   // POST /auth/register
   if (matchesRoute(url, method, '/auth/register', 'POST')) {
-    mockScore = 0; mockStreak = 0;
+    mockScore = 0; mockStreak = 0; mockMaxStreak = 0; mockSponsorBonus = 0;
     return respond({
       accessToken: 'mock-access-token',
       accessExpiresAt: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
@@ -157,11 +187,13 @@ export const mockInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, ne
 
   // POST /sessions/start
   if (matchesRoute(url, method, '/sessions/start', 'POST')) {
-    mockScore = 0; mockStreak = 0;
+    mockScore = 0; mockStreak = 0; mockMaxStreak = 0; mockSponsorBonus = 0;
     mockSessionId++;
     return respond({
       sessionId: mockSessionId,
-      endsAt: new Date(Date.now() + 90 * 1000).toISOString(),
+      endsAt: new Date(Date.now() + SESSION_DURATION_SECONDS * 1000).toISOString(),
+      durationSeconds: SESSION_DURATION_SECONDS,
+      countdownSeconds: SESSION_COUNTDOWN_SECONDS,
       questions: MOCK_QUESTIONS,
       sponsorQuestion: MOCK_SPONSOR_QUESTION,
     });
@@ -173,11 +205,13 @@ export const mockInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, ne
     const correct = CORRECT_ANSWERS[body.questionId] === body.choiceIndex;
     if (correct) {
       mockStreak++;
+      mockMaxStreak = Math.max(mockMaxStreak, mockStreak);
     } else {
       mockStreak = 0;
     }
     const multiplier = mockStreak >= 6 ? 2.5 : mockStreak >= 4 ? 2 : mockStreak >= 2 ? 1.5 : 1;
-    const points = correct ? Math.round(100 * multiplier) : 0;
+    const basePoints = BASE_POINTS_BY_DIFFICULTY[DIFFICULTY_BY_QUESTION_ID[body.questionId]] ?? 100;
+    const points = correct ? Math.round(basePoints * multiplier) : 0;
     mockScore += points;
     return respond({
       correct,
@@ -189,6 +223,22 @@ export const mockInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, ne
     });
   }
 
+  // POST /sessions/:id/sponsor-answer
+  if (matchesRoute(url, method, '/sessions/:id/sponsor-answer', 'POST')) {
+    const body = req.body as { questionId: number; choiceIndex: number };
+    const correct = SPONSOR_CORRECT_INDEX === body.choiceIndex;
+    // Sponsor scoring uses a fixed bonus (spec §5.3 Option B) — independent of streak.
+    const bonusPoints = correct ? MOCK_SPONSOR_QUESTION.bonusPoints : 0;
+    mockSponsorBonus += bonusPoints;
+    mockScore += bonusPoints;
+    return respond({
+      correct,
+      correctIndex: SPONSOR_CORRECT_INDEX,
+      bonusPoints,
+      score: mockScore,
+    });
+  }
+
   // POST /sessions/:id/complete
   if (matchesRoute(url, method, '/sessions/:id/complete', 'POST')) {
     return respond({
@@ -196,10 +246,10 @@ export const mockInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, ne
       score: mockScore,
       correctAnswers: 4,
       totalAnswers: 6,
-      bestStreak: mockStreak,
+      bestStreak: mockMaxStreak,
       rank: 3,
       totalPlayers: 11,
-      sponsorBonus: 0,
+      sponsorBonus: mockSponsorBonus,
     });
   }
 
@@ -210,10 +260,10 @@ export const mockInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, ne
       score: mockScore,
       correctAnswers: 4,
       totalAnswers: 6,
-      bestStreak: mockStreak,
+      bestStreak: mockMaxStreak,
       rank: 3,
       totalPlayers: 11,
-      sponsorBonus: 0,
+      sponsorBonus: mockSponsorBonus,
       player: MOCK_PLAYER,
     });
   }
@@ -230,11 +280,16 @@ export const mockInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, ne
 
   // GET /booth-display
   if (matchesRoute(url, method, '/booth-display', 'GET')) {
+    const top = MOCK_LEADERBOARD_ROWS.slice(0, 10);
+    const avgScore = Math.round(top.reduce((sum, r) => sum + r.score, 0) / top.length);
     return respond({
-      rows: MOCK_LEADERBOARD_ROWS.slice(0, 10),
+      rows: top,
       totalPlayers: 11,
       eventName: 'IMTS 2026',
       resetsAt: new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString(),
+      avgScore,
+      hotStreak: { displayName: 'Maria S.', company: 'Acme Machining', streak: 6 },
+      sponsorCards: MOCK_SPONSOR_CARDS,
     });
   }
 

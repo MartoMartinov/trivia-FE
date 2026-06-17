@@ -47,6 +47,8 @@ export interface QuestionDto {
   prompt: string;
   difficulty: Difficulty;
   choices: ChoiceDto[];
+  /** Optional question image (spec §9.5). Null/absent for text-only questions. */
+  imageUrl?: string | null;
   // correctIndex is intentionally absent — returned only in SubmitAnswerResponse
 }
 
@@ -71,6 +73,10 @@ export interface SponsorQuestionDto {
 export interface StartSessionResponse {
   sessionId: number;
   endsAt: string; // ISO
+  /** Total session length in seconds (spec §9.3, admin-configurable). Drives the timer denominator. */
+  durationSeconds: number;
+  /** Pre-game "get ready" countdown in seconds (spec §3.4). 0 disables it. */
+  countdownSeconds: number;
   questions: QuestionDto[];
   sponsorQuestion: SponsorQuestionDto | null;
 }
@@ -87,6 +93,20 @@ export interface SubmitAnswerResponse {
   score: number;
   streak: number;
   multiplier: number;
+}
+
+export interface SubmitSponsorAnswerRequest {
+  questionId: number;
+  choiceIndex: number;
+}
+
+export interface SubmitSponsorAnswerResponse {
+  correct: boolean;
+  correctIndex: number;
+  /** Bonus points awarded for the sponsored question (0 when incorrect). */
+  bonusPoints: number;
+  /** Authoritative running session score after the sponsor bonus is applied. */
+  score: number;
 }
 
 export interface CompleteSessionResponse {
@@ -133,9 +153,31 @@ export interface LeaderboardResponse {
 
 // ── Booth display ─────────────────────────────────────────────────────────────
 
+/** The player currently on the hottest correct-answer streak (spec §8.2 hot-streak panel). */
+export interface HotStreakDto {
+  displayName: string;
+  company: string;
+  streak: number;
+}
+
+/** A sponsor card shown on the booth screen (spec §8.2 sponsor cards). */
+export interface SponsorCardDto {
+  id: number;
+  name: string;
+  tagline: string;
+  primaryColor: string;
+  logoUrl: string;
+}
+
 export interface BoothDisplayResponse {
   rows: LeaderboardRowDto[];
   totalPlayers: number;
   eventName: string;
   resetsAt: string;
+  /** Average score across today's players (spec §8.2). */
+  avgScore: number;
+  /** Current hottest streak, or null when nobody has a streak yet. */
+  hotStreak: HotStreakDto | null;
+  /** Active sponsor cards to rotate/display on the booth screen. */
+  sponsorCards: SponsorCardDto[];
 }

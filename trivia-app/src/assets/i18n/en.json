@@ -16,15 +16,20 @@
   },
   "GAME": {
     "LOADING": "Loading questions…",
+    "GET_READY": "GET READY",
     "TIME_LEFT": "TIME LEFT",
     "SCORE": "SCORE",
     "MULTIPLIER": "MULTIPLIER!",
     "ANSWERED": "ANSWERED"
   },
   "SPONSOR": {
+    "BONUS_ROUND": "BONUS ROUND",
     "BONUS_BADGE": "BONUS QUESTION 1/2",
     "SPONSORED": "SPONSORED",
     "PRESENTED_BY": "Presented by",
+    "PTS": "PTS",
+    "PLAYING": "Playing sponsor reel…",
+    "UNLOCKED": "Bonus unlocked",
     "QUESTION_PLACEHOLDER": "Which of our products is rated #1 for precision milling applications?",
     "UNLOCK_HINT": "Watch the sponsor video to unlock the bonus question"
   },
@@ -54,5 +59,15 @@
     "LOADING": "Loading leaderboard…",
     "BACK_TO_PLAY": "Back to your score",
     "FOOTER": "Resets at midnight · Top 3 win sponsor prizes"
+  },
+  "BOOTH": {
+    "TITLE": "Live Leaderboard",
+    "RESETS": "Resets at midnight",
+    "PLAYERS_TODAY": "Played Today",
+    "AVG_SCORE": "Avg Score",
+    "HOT_STREAK": "Hot Streak",
+    "STREAK_SUFFIX": "in a row",
+    "SCAN_TO_PLAY": "Scan to play",
+    "SPONSORS": "Sponsors"
   }
 }

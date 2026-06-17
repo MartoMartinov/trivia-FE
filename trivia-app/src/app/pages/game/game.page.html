@@ -3,13 +3,21 @@
 
     <pm-header />
 
-    @if (gameStore.isLoading()) {
+    @if (phase() === 'loading') {
       <div class="flex items-center justify-center flex-1">
         <p class="text-muted text-sm">{{ 'GAME.LOADING' | translate }}</p>
       </div>
     }
 
-    @if (!gameStore.isLoading() && gameStore.currentQuestion()) {
+    <!-- Pre-game countdown (spec §3.4) -->
+    @if (phase() === 'countdown') {
+      <div class="flex flex-col items-center justify-center flex-1 bg-navy text-center px-6">
+        <div class="text-[13px] font-bold tracking-[0.18em] text-white/60 uppercase">{{ 'GAME.GET_READY' | translate }}</div>
+        <div class="mt-3 text-[120px] font-black leading-none tabular text-orange">{{ countdownValue() }}</div>
+      </div>
+    }
+
+    @if (phase() === 'playing' && gameStore.currentQuestion()) {
 
       <!-- HUD (dark navy) -->
       <section class="relative bg-navy overflow-hidden">
@@ -55,9 +63,15 @@
             {{ gameStore.currentQuestion()!.difficulty | uppercase }}
           </span>
           <span class="text-[11px] font-bold tracking-[0.16em] text-muted uppercase">
-            {{ 'GAME.ANSWERED' | translate }} {{ gameStore.totalAnswers() }}
+            {{ 'GAME.ANSWERED' | translate }} {{ gameStore.totalAnswers() }} / {{ gameStore.questions().length }}
           </span>
         </div>
+
+        @if (gameStore.currentQuestion()!.imageUrl) {
+          <img [src]="gameStore.currentQuestion()!.imageUrl"
+               class="mt-5 w-full h-[180px] object-cover rounded-2xl border border-line animate-rise"
+               alt="" />
+        }
 
         <h1 class="mt-5 font-black text-ink leading-[1.25] text-[20px] animate-rise">
           {{ gameStore.currentQuestion()!.prompt }}

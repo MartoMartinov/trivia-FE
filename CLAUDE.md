@@ -13,3 +13,7 @@
 - in the leaderboard the current player is shown with his position and the total score.
 - in booth display tv there is no current player.
 - look into admin panel and backend related specification if it is required to implement the frontend
+- save the data fields on registration to storage, so if the user logs in again it will be pre-filled.
+- the sponsor video will come from BE as url
+- the booth display must be without token and free to access to everybody
+- there is fields for brand color and text color in admin panel, sponsor name and url, logo, and video url

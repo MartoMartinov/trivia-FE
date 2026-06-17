@@ -21,7 +21,7 @@ export class LeaderboardPage implements OnInit {
   readonly topRows = computed(() => this.store.rows().slice(0, 10));
 
   ngOnInit(): void {
-    this.store.startPolling(undefined);
+    this.store.startPolling(this.store.activeScope());
   }
 
   setScope(scope: 'today' | 'week'): void {

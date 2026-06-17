@@ -125,3 +125,30 @@ Game ends only when `questions[]` is exhausted or the timer hits 0. There's no c
 | D3 | bestStreak on complete | DEBT | Mock returns current, not max |
 
 *Admin Panel (§9) and SMS/Email System Settings (§12) are out of scope for this frontend codebase.*
+
+---
+
+## Resolution log — 2026-06-10 (implementation pass)
+
+All 15 findings implemented; `ng build` is clean. Mock + API models were extended so the
+flow works end-to-end against `mockInterceptor`.
+
+| # | Status | How it was resolved |
+|---|---|---|
+| B1 | ✅ Fixed | `GameStore` is now root-scoped and shared across game/sponsor. After the standard questions, `game.page` routes to `/sponsor` when `hasSponsorRound()`. `sponsor.page` reads the sponsor question from the store, submits via new `submitSponsorAnswer` → `/sessions/:id/sponsor-answer`, applies the bonus (`applySponsorResult`), then completes the session and navigates to results. |
+| B2 | ✅ Fixed | `ScoringService.BASE_POINTS_BY_DIFFICULTY` (100/150/200/250) + `computePoints(difficulty, streak)`. Mock awards `basePoints × multiplier` from each question's difficulty. |
+| B3 | ✅ Fixed | `durationSeconds` added to the session contract + slice; timer counts down from it and `timeLeftPct` divides by it (no more literal 90). |
+| B4 | ✅ Fixed | `QuestionDto.imageUrl` added; game template renders an image slot above the prompt; mock question 3 carries an image. |
+| B5 | ✅ Fixed | `BoothDisplayResponse` extended with `avgScore`, `hotStreak`, `sponsorCards`; booth page now shows a dynamic QR code (configurable endpoint → `playUrl`), reset note, played count, avg score, hot-streak panel, sponsor cards, and uses `TranslatePipe`. Also switched booth to real theme tokens (the old `pm-*` classes didn't exist). |
+| G1 | ✅ Fixed | `countdownSeconds` in the session contract drives a pre-game "GET READY" countdown before the timed session begins. |
+| G2 | ✅ Fixed | HUD now shows `answered / total`. |
+| G3 | ✅ Addressed | Session length is driven by the returned `questions[]`; the per-session count is surfaced in the HUD. (Admin-configurable cap remains a backend concern.) |
+| M1 | ✅ Fixed | Phone is `Validators.required` + a basic pattern. |
+| M2 | ✅ Fixed | Results "ANSWERED" tile now binds `totalAnswers`. |
+| M3 | ✅ Fixed | Standard mock question no longer uses `hard_plus`; the tier is reserved for sponsor scoring (250). |
+| M4 | ✅ Fixed | Sponsor reel counts real seconds (`secondsLeft` decremented 1/s); label always matches elapsed time. |
+| D1 | ✅ Fixed | Leaderboard polling is keyed by scope via `switchMap`; a tab switch tears down the old timer and fetches the new scope immediately. |
+| D2 | ✅ Fixed | `hasEnded` guard ensures only one of the answer-advance / timer-expiry paths ends the session. |
+| D3 | ✅ Fixed | Mock tracks `mockMaxStreak` and returns it as `bestStreak`. |
+
+> The booth QR uses an external image endpoint (`api.qrserver.com`, configurable in `environment`). Swap to a bundled encoder if offline booth reliability is required.

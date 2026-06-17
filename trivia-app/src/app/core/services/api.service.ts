@@ -8,6 +8,8 @@ import type {
   StartSessionResponse,
   SubmitAnswerRequest,
   SubmitAnswerResponse,
+  SubmitSponsorAnswerRequest,
+  SubmitSponsorAnswerResponse,
   CompleteSessionResponse,
   SessionResultDto,
   LeaderboardResponse,
@@ -30,6 +32,15 @@ export class ApiService {
 
   submitAnswer(sessionId: number, req: SubmitAnswerRequest): Observable<SubmitAnswerResponse> {
     return this.http.post<SubmitAnswerResponse>(`${this.base}/sessions/${sessionId}/answers`, req);
+  }
+
+  submitSponsorAnswer(
+    sessionId: number,
+    req: SubmitSponsorAnswerRequest,
+  ): Observable<SubmitSponsorAnswerResponse> {
+    return this.http.post<SubmitSponsorAnswerResponse>(
+      `${this.base}/sessions/${sessionId}/sponsor-answer`, req,
+    );
   }
 
   completeSession(sessionId: number): Observable<CompleteSessionResponse> {

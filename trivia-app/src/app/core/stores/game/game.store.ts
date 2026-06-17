@@ -8,6 +8,7 @@ import { initialGameSlice } from './game.slice';
 import {
   setSessionStarted,
   applyAnswerResult,
+  applySponsorResult,
   setSponsorBonus,
   setGameCompleted,
   resetGame,
@@ -15,9 +16,11 @@ import {
 import { withRequestStatus, setPending, setFulfilled, setError } from '../features/with-request-status.feature';
 import { withLoading } from '../features/with-loading.feature';
 import { ApiService } from '../../services/api.service';
-import type { SubmitAnswerRequest } from '../../models/api.models';
+import type { SubmitAnswerRequest, SubmitSponsorAnswerRequest } from '../../models/api.models';
 
+// Root-scoped: a single session spans the game and sponsor pages, so both must share state.
 export const GameStore = signalStore(
+  { providedIn: 'root' },
   withState(initialGameSlice),
   withLoading(),
   withRequestStatus(),
@@ -33,6 +36,9 @@ export const GameStore = signalStore(
       return total > 0 ? store.currentIndex() / total : 0;
     }),
     hasMoreQuestions: computed(() => store.currentIndex() < store.questions().length),
+    // A sponsored bonus round is pending when the session carries a sponsor question
+    // that hasn't been answered yet (spec §4).
+    hasSponsorRound: computed(() => !!store.sponsorQuestion() && !store.sponsorAnswered()),
     multiplierLabel: computed(() => {
       const s = store.streak();
       if (s >= 6) return '2.5×';
@@ -90,6 +96,28 @@ export const GameStore = signalStore(
       ),
     );
 
+    const submitSponsorAnswer = rxMethod<SubmitSponsorAnswerRequest>((req$) =>
+      req$.pipe(
+        tap(() => patchState(store, setPending())),
+        exhaustMap((req) => {
+          const sessionId = store.sessionId();
+          if (!sessionId) throw new Error('No active session');
+          return api.submitSponsorAnswer(sessionId, req).pipe(
+            tapResponse({
+              next: (res) => {
+                patchState(store, applySponsorResult(res));
+                patchState(store, setFulfilled());
+              },
+              error: (err: unknown) => {
+                const msg = (err as { error?: { message?: string } })?.error?.message ?? null;
+                patchState(store, setError(msg ?? undefined));
+              },
+            }),
+          );
+        }),
+      ),
+    );
+
     const completeSession = rxMethod<void>((trigger$) =>
       trigger$.pipe(
         exhaustMap(() => {
@@ -108,6 +136,7 @@ export const GameStore = signalStore(
     return {
       startSession,
       submitAnswer,
+      submitSponsorAnswer,
       completeSession,
       setSponsorBonus: (bonus: number) => patchState(store, setSponsorBonus(bonus)),
       reset: () => patchState(store, resetGame()),
