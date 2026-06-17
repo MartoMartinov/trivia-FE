@@ -10,5 +10,10 @@ export const translationGuard: CanActivateFn = () => {
     return of(true);
   }
 
-  return from(translate.use('en').toPromise().then(() => true));
+  return from(
+    translate
+      .use('en')
+      .toPromise()
+      .then(() => true),
+  );
 };

@@ -1,12 +1,24 @@
 import { computed, inject } from '@angular/core';
-import { signalStore, withState, withComputed, withMethods, withHooks, patchState } from '@ngrx/signals';
+import {
+  signalStore,
+  withState,
+  withComputed,
+  withMethods,
+  withHooks,
+  patchState,
+} from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { tapResponse } from '@ngrx/operators';
 import { exhaustMap, tap } from 'rxjs';
 
 import { initialAuthSlice } from './auth.slice';
 import { setAuthFromLogin, setAccessToken, clearAuth } from './auth.updaters';
-import { withRequestStatus, setPending, setFulfilled, setError } from '../features/with-request-status.feature';
+import {
+  withRequestStatus,
+  setPending,
+  setFulfilled,
+  setError,
+} from '../features/with-request-status.feature';
 import { withLoading } from '../features/with-loading.feature';
 import { ApiService } from '../../services/api.service';
 import { AuthStrategyService } from '../../auth/auth-strategy.service';
@@ -43,7 +55,9 @@ export const AuthStore = signalStore(
                 patchState(store, setFulfilled());
               },
               error: (err: unknown) => {
-                const msg = (err as { error?: { message?: string } })?.error?.message ?? null;
+                const msg =
+                  (err as { error?: { message?: string } })?.error?.message ??
+                  null;
                 patchState(store, setError(msg ?? undefined));
               },
               finalize: () => patchState(store, { isLoading: false }),
@@ -58,7 +72,11 @@ export const AuthStore = signalStore(
         exhaustMap(() =>
           strategy.refresh().pipe(
             tapResponse({
-              next: (res) => patchState(store, setAccessToken(res.accessToken, res.accessExpiresAt)),
+              next: (res) =>
+                patchState(
+                  store,
+                  setAccessToken(res.accessToken, res.accessExpiresAt),
+                ),
               error: () => patchState(store, clearAuth()),
             }),
           ),

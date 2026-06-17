@@ -2,7 +2,7 @@ import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { from, Observable, switchMap } from 'rxjs';
 import { SecureStorage } from '@aparajita/capacitor-secure-storage';
-import type { AuthStrategy } from './auth.strategy';
+import type { AuthStrategy } from './auth.strategy.model';
 import type { AccessTokenResponse, LoginResponse } from '../models/api.models';
 import { environment } from '../../../environments/environment';
 

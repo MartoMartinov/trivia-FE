@@ -27,11 +27,20 @@ export class ApiService {
   }
 
   startSession(): Observable<StartSessionResponse> {
-    return this.http.post<StartSessionResponse>(`${this.base}/sessions/start`, {});
+    return this.http.post<StartSessionResponse>(
+      `${this.base}/sessions/start`,
+      {},
+    );
   }
 
-  submitAnswer(sessionId: number, req: SubmitAnswerRequest): Observable<SubmitAnswerResponse> {
-    return this.http.post<SubmitAnswerResponse>(`${this.base}/sessions/${sessionId}/answers`, req);
+  submitAnswer(
+    sessionId: number,
+    req: SubmitAnswerRequest,
+  ): Observable<SubmitAnswerResponse> {
+    return this.http.post<SubmitAnswerResponse>(
+      `${this.base}/sessions/${sessionId}/answers`,
+      req,
+    );
   }
 
   submitSponsorAnswer(
@@ -39,23 +48,35 @@ export class ApiService {
     req: SubmitSponsorAnswerRequest,
   ): Observable<SubmitSponsorAnswerResponse> {
     return this.http.post<SubmitSponsorAnswerResponse>(
-      `${this.base}/sessions/${sessionId}/sponsor-answer`, req,
+      `${this.base}/sessions/${sessionId}/sponsor-answer`,
+      req,
     );
   }
 
   completeSession(sessionId: number): Observable<CompleteSessionResponse> {
-    return this.http.post<CompleteSessionResponse>(`${this.base}/sessions/${sessionId}/complete`, {});
+    return this.http.post<CompleteSessionResponse>(
+      `${this.base}/sessions/${sessionId}/complete`,
+      {},
+    );
   }
 
   getSessionResult(sessionId: number): Observable<SessionResultDto> {
-    return this.http.get<SessionResultDto>(`${this.base}/sessions/${sessionId}/result`);
+    return this.http.get<SessionResultDto>(
+      `${this.base}/sessions/${sessionId}/result`,
+    );
   }
 
-  getLeaderboard(scope: LeaderboardScope = 'today'): Observable<LeaderboardResponse> {
-    return this.http.get<LeaderboardResponse>(`${this.base}/leaderboard`, { params: { scope } });
+  getLeaderboard(
+    scope: LeaderboardScope = 'today',
+  ): Observable<LeaderboardResponse> {
+    return this.http.get<LeaderboardResponse>(`${this.base}/leaderboard`, {
+      params: { scope },
+    });
   }
 
   getBoothDisplay(token: string): Observable<BoothDisplayResponse> {
-    return this.http.get<BoothDisplayResponse>(`${this.base}/booth-display`, { params: { token } });
+    return this.http.get<BoothDisplayResponse>(`${this.base}/booth-display`, {
+      params: { token },
+    });
   }
 }

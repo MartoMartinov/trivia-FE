@@ -1,11 +1,19 @@
 import { inject } from '@angular/core';
-import { HttpInterceptorFn, HttpRequest, HttpHandlerFn, HttpErrorResponse } from '@angular/common/http';
+import {
+  HttpInterceptorFn,
+  HttpRequest,
+  HttpHandlerFn,
+  HttpErrorResponse,
+} from '@angular/common/http';
 import { throwError, catchError, switchMap } from 'rxjs';
 import { AuthStore } from '../stores/auth/auth.store';
 import { AuthStrategyService } from '../auth/auth-strategy.service';
 import { environment } from '../../../environments/environment';
 
-export const authInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, next: HttpHandlerFn) => {
+export const authInterceptor: HttpInterceptorFn = (
+  req: HttpRequest<unknown>,
+  next: HttpHandlerFn,
+) => {
   const authStore = inject(AuthStore);
   const strategy = inject(AuthStrategyService);
 

@@ -21,12 +21,17 @@ export class ScoringService {
   }
 
   basePointsFor(difficulty: Difficulty): number {
-    return this.BASE_POINTS_BY_DIFFICULTY[difficulty] ?? this.BASE_POINTS_BY_DIFFICULTY.easy;
+    return (
+      this.BASE_POINTS_BY_DIFFICULTY[difficulty] ??
+      this.BASE_POINTS_BY_DIFFICULTY.easy
+    );
   }
 
   /** points = base_question_points × active_streak_multiplier (spec §5.2). */
   computePoints(difficulty: Difficulty, streak: number): number {
-    return Math.round(this.basePointsFor(difficulty) * this.multiplierFor(streak));
+    return Math.round(
+      this.basePointsFor(difficulty) * this.multiplierFor(streak),
+    );
   }
 
   formatScore(n: number): string {

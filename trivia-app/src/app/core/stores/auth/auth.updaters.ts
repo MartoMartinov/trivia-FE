@@ -7,7 +7,10 @@ export const setAuthFromLogin = (res: LoginResponse): AuthSlice => ({
   player: res.player,
 });
 
-export const setAccessToken = (accessToken: string, accessExpiresAt: string): Partial<AuthSlice> => ({
+export const setAccessToken = (
+  accessToken: string,
+  accessExpiresAt: string,
+): Partial<AuthSlice> => ({
   accessToken,
   accessExpiresAt,
 });

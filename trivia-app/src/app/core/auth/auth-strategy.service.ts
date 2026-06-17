@@ -3,7 +3,7 @@ import { Capacitor } from '@capacitor/core';
 import { Observable } from 'rxjs';
 import { WebAuthStrategy } from './web-auth.strategy';
 import { NativeAuthStrategy } from './native-auth.strategy';
-import type { AuthStrategy } from './auth.strategy';
+import type { AuthStrategy } from './auth.strategy.model';
 import type { AccessTokenResponse, LoginResponse } from '../models/api.models';
 
 @Injectable({ providedIn: 'root' })
@@ -12,8 +12,12 @@ export class AuthStrategyService implements AuthStrategy {
     ? new NativeAuthStrategy()
     : new WebAuthStrategy();
 
-  get httpOptions() { return this.strategy.httpOptions; }
-  get platformHeader() { return this.strategy.platformHeader; }
+  get httpOptions() {
+    return this.strategy.httpOptions;
+  }
+  get platformHeader() {
+    return this.strategy.platformHeader;
+  }
 
   refresh(): Observable<AccessTokenResponse> {
     return this.strategy.refresh();

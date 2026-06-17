@@ -1,4 +1,9 @@
-import { HttpInterceptorFn, HttpRequest, HttpHandlerFn, HttpResponse } from '@angular/common/http';
+import {
+  HttpInterceptorFn,
+  HttpRequest,
+  HttpHandlerFn,
+  HttpResponse,
+} from '@angular/common/http';
 import { of, delay } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
@@ -13,7 +18,9 @@ const MOCK_PLAYER = {
 
 const MOCK_QUESTIONS = [
   {
-    id: 1, prompt: 'What type of cutting tool is best suited for high-speed machining of aluminum?',
+    id: 1,
+    prompt:
+      'What type of cutting tool is best suited for high-speed machining of aluminum?',
     difficulty: 'medium',
     choices: [
       { index: 0, text: 'Carbide end mill' },
@@ -23,7 +30,9 @@ const MOCK_QUESTIONS = [
     ],
   },
   {
-    id: 2, prompt: 'Which measurement tool offers the highest precision for inside diameters?',
+    id: 2,
+    prompt:
+      'Which measurement tool offers the highest precision for inside diameters?',
     difficulty: 'easy',
     choices: [
       { index: 0, text: 'Tape measure' },
@@ -33,9 +42,11 @@ const MOCK_QUESTIONS = [
     ],
   },
   {
-    id: 3, prompt: 'In CNC machining, what does the "G00" command represent?',
+    id: 3,
+    prompt: 'In CNC machining, what does the "G00" command represent?',
     difficulty: 'hard',
-    imageUrl: 'https://placehold.co/800x420/0E1524/F34D23?text=CNC+Control+Panel',
+    imageUrl:
+      'https://placehold.co/800x420/0E1524/F34D23?text=CNC+Control+Panel',
     choices: [
       { index: 0, text: 'Dwell' },
       { index: 1, text: 'Rapid positioning' },
@@ -44,7 +55,8 @@ const MOCK_QUESTIONS = [
     ],
   },
   {
-    id: 4, prompt: 'Which coolant type is preferred for grinding hardened steel?',
+    id: 4,
+    prompt: 'Which coolant type is preferred for grinding hardened steel?',
     difficulty: 'medium',
     choices: [
       { index: 0, text: 'Straight oil' },
@@ -54,7 +66,8 @@ const MOCK_QUESTIONS = [
     ],
   },
   {
-    id: 5, prompt: 'What is the primary purpose of a chamfer on a machined part?',
+    id: 5,
+    prompt: 'What is the primary purpose of a chamfer on a machined part?',
     difficulty: 'hard',
     choices: [
       { index: 0, text: 'Increase weight' },
@@ -64,7 +77,8 @@ const MOCK_QUESTIONS = [
     ],
   },
   {
-    id: 6, prompt: 'Which material is hardest on the Mohs scale?',
+    id: 6,
+    prompt: 'Which material is hardest on the Mohs scale?',
     difficulty: 'easy',
     choices: [
       { index: 0, text: 'Tungsten carbide' },
@@ -75,17 +89,28 @@ const MOCK_QUESTIONS = [
   },
 ];
 
-const CORRECT_ANSWERS: Record<number, number> = { 1: 0, 2: 1, 3: 1, 4: 1, 5: 1, 6: 1 };
+const CORRECT_ANSWERS: Record<number, number> = {
+  1: 0,
+  2: 1,
+  3: 1,
+  4: 1,
+  5: 1,
+  6: 1,
+};
 
 // Base points per difficulty (spec §5.1), mirrored from ScoringService.
 const BASE_POINTS_BY_DIFFICULTY: Record<string, number> = {
-  easy: 100, medium: 150, hard: 200, hard_plus: 250,
+  easy: 100,
+  medium: 150,
+  hard: 200,
+  hard_plus: 250,
 };
-const DIFFICULTY_BY_QUESTION_ID: Record<number, string> =
-  MOCK_QUESTIONS.reduce<Record<number, string>>((map, q) => {
-    map[q.id] = q.difficulty;
-    return map;
-  }, {});
+const DIFFICULTY_BY_QUESTION_ID: Record<number, string> = MOCK_QUESTIONS.reduce<
+  Record<number, string>
+>((map, q) => {
+  map[q.id] = q.difficulty;
+  return map;
+}, {});
 
 const SESSION_DURATION_SECONDS = 90;
 const SESSION_COUNTDOWN_SECONDS = 3;
@@ -94,7 +119,8 @@ const SPONSOR_CORRECT_INDEX = 1;
 
 const MOCK_SPONSOR_QUESTION = {
   id: 1,
-  prompt: 'Which Sandvik Coromant product is rated #1 for precision milling applications?',
+  prompt:
+    'Which Sandvik Coromant product is rated #1 for precision milling applications?',
   difficulty: 'hard_plus',
   choices: [
     { index: 0, text: 'ProMill X200' },
@@ -116,18 +142,29 @@ const MOCK_SPONSOR_QUESTION = {
 
 const MOCK_SPONSOR_CARDS = [
   {
-    id: 1, name: 'Sandvik Coromant', tagline: 'Precision milling, perfected.',
-    primaryColor: '#DE0016', logoUrl: '',
+    id: 1,
+    name: 'Sandvik Coromant',
+    tagline: 'Precision milling, perfected.',
+    primaryColor: '#DE0016',
+    logoUrl: '',
   },
   {
-    id: 2, name: 'Haas Automation', tagline: 'Built for the shop floor.',
-    primaryColor: '#C8102E', logoUrl: '',
+    id: 2,
+    name: 'Haas Automation',
+    tagline: 'Built for the shop floor.',
+    primaryColor: '#C8102E',
+    logoUrl: '',
   },
 ];
 
 const MOCK_LEADERBOARD_ROWS = [
   { rank: 1, displayName: 'Maria S.', company: 'Acme Machining', score: 1820 },
-  { rank: 2, displayName: 'Jake T.', company: 'Precision Parts Co.', score: 1450 },
+  {
+    rank: 2,
+    displayName: 'Jake T.',
+    company: 'Precision Parts Co.',
+    score: 1450,
+  },
   { rank: 3, displayName: 'Sam R.', company: 'MetalWorks LLC', score: 1320 },
   { rank: 4, displayName: 'Ling K.', company: 'FastCut Inc.', score: 1180 },
   { rank: 5, displayName: 'Dave H.', company: 'ProMill Ltd.', score: 980 },
@@ -144,7 +181,12 @@ let mockMaxStreak = 0;
 let mockSponsorBonus = 0;
 let mockSessionId = 1001;
 
-function matchesRoute(url: string, method: string, pattern: string, patternMethod: string): boolean {
+function matchesRoute(
+  url: string,
+  method: string,
+  pattern: string,
+  patternMethod: string,
+): boolean {
   if (method !== patternMethod) return false;
   const base = environment.apiUrl;
   const path = url.replace(base, '');
@@ -152,7 +194,10 @@ function matchesRoute(url: string, method: string, pattern: string, patternMetho
   return regex.test(path);
 }
 
-export const mockInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, next: HttpHandlerFn) => {
+export const mockInterceptor: HttpInterceptorFn = (
+  req: HttpRequest<unknown>,
+  next: HttpHandlerFn,
+) => {
   const url = req.url;
   const method = req.method;
 
@@ -160,11 +205,15 @@ export const mockInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, ne
     return next(req);
   }
 
-  const respond = (body: unknown) => of(new HttpResponse({ status: 200, body })).pipe(delay(300));
+  const respond = (body: unknown) =>
+    of(new HttpResponse({ status: 200, body })).pipe(delay(300));
 
   // POST /auth/register
   if (matchesRoute(url, method, '/auth/register', 'POST')) {
-    mockScore = 0; mockStreak = 0; mockMaxStreak = 0; mockSponsorBonus = 0;
+    mockScore = 0;
+    mockStreak = 0;
+    mockMaxStreak = 0;
+    mockSponsorBonus = 0;
     return respond({
       accessToken: 'mock-access-token',
       accessExpiresAt: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
@@ -187,11 +236,16 @@ export const mockInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, ne
 
   // POST /sessions/start
   if (matchesRoute(url, method, '/sessions/start', 'POST')) {
-    mockScore = 0; mockStreak = 0; mockMaxStreak = 0; mockSponsorBonus = 0;
+    mockScore = 0;
+    mockStreak = 0;
+    mockMaxStreak = 0;
+    mockSponsorBonus = 0;
     mockSessionId++;
     return respond({
       sessionId: mockSessionId,
-      endsAt: new Date(Date.now() + SESSION_DURATION_SECONDS * 1000).toISOString(),
+      endsAt: new Date(
+        Date.now() + SESSION_DURATION_SECONDS * 1000,
+      ).toISOString(),
       durationSeconds: SESSION_DURATION_SECONDS,
       countdownSeconds: SESSION_COUNTDOWN_SECONDS,
       questions: MOCK_QUESTIONS,
@@ -209,8 +263,11 @@ export const mockInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, ne
     } else {
       mockStreak = 0;
     }
-    const multiplier = mockStreak >= 6 ? 2.5 : mockStreak >= 4 ? 2 : mockStreak >= 2 ? 1.5 : 1;
-    const basePoints = BASE_POINTS_BY_DIFFICULTY[DIFFICULTY_BY_QUESTION_ID[body.questionId]] ?? 100;
+    const multiplier =
+      mockStreak >= 6 ? 2.5 : mockStreak >= 4 ? 2 : mockStreak >= 2 ? 1.5 : 1;
+    const basePoints =
+      BASE_POINTS_BY_DIFFICULTY[DIFFICULTY_BY_QUESTION_ID[body.questionId]] ??
+      100;
     const points = correct ? Math.round(basePoints * multiplier) : 0;
     mockScore += points;
     return respond({
@@ -281,14 +338,20 @@ export const mockInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, ne
   // GET /booth-display
   if (matchesRoute(url, method, '/booth-display', 'GET')) {
     const top = MOCK_LEADERBOARD_ROWS.slice(0, 10);
-    const avgScore = Math.round(top.reduce((sum, r) => sum + r.score, 0) / top.length);
+    const avgScore = Math.round(
+      top.reduce((sum, r) => sum + r.score, 0) / top.length,
+    );
     return respond({
       rows: top,
       totalPlayers: 11,
       eventName: 'IMTS 2026',
       resetsAt: new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString(),
       avgScore,
-      hotStreak: { displayName: 'Maria S.', company: 'Acme Machining', streak: 6 },
+      hotStreak: {
+        displayName: 'Maria S.',
+        company: 'Acme Machining',
+        streak: 6,
+      },
       sponsorCards: MOCK_SPONSOR_CARDS,
     });
   }

@@ -1,7 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import type { AuthStrategy } from './auth.strategy';
+import type { AuthStrategy } from './auth.strategy.model';
 import type { AccessTokenResponse, LoginResponse } from '../models/api.models';
 import { environment } from '../../../environments/environment';
 
