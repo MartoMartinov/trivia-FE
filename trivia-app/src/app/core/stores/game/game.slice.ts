@@ -1,4 +1,4 @@
-import type { QuestionDto, SponsorQuestionDto, SubmitAnswerResponse } from '../../models/api.models';
+import type { QuestionDto, SponsorQuestionDto } from '../../models/api.models';
 
 export type GameStatus = 'idle' | 'active' | 'completed';
 
@@ -22,10 +22,14 @@ export interface GameSlice {
   durationSeconds: number;
   /** Pre-game countdown in seconds (spec §3.4). */
   countdownSeconds: number;
-  questions: QuestionDto[];
+  /** The question currently being displayed. */
+  currentQuestion: QuestionDto | null;
+  /** One question per regular difficulty (easy, medium, hard) ready to serve next. */
+  questionBuffer: QuestionDto[];
   sponsorQuestion: SponsorQuestionDto | null;
   /** Whether the sponsored bonus question has already been answered this session. */
   sponsorAnswered: boolean;
+  /** Running count of questions answered this session. */
   currentIndex: number;
   score: number;
   streak: number;
@@ -43,7 +47,8 @@ export const initialGameSlice: GameSlice = {
   endsAt: null,
   durationSeconds: 0,
   countdownSeconds: 0,
-  questions: [],
+  currentQuestion: null,
+  questionBuffer: [],
   sponsorQuestion: null,
   sponsorAnswered: false,
   currentIndex: 0,

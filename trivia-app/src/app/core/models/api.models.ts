@@ -77,8 +77,16 @@ export interface StartSessionResponse {
   durationSeconds: number;
   /** Pre-game "get ready" countdown in seconds (spec §3.4). 0 disables it. */
   countdownSeconds: number;
-  questions: QuestionDto[];
+  /** The first question to display immediately. */
+  currentQuestion: QuestionDto;
+  /** One question per difficulty (easy, medium, hard) — ready to serve as the next question. */
+  buffer: QuestionDto[];
   sponsorQuestion: SponsorQuestionDto | null;
+}
+
+export interface NextBatchResponse {
+  /** One question per difficulty (easy, medium, hard) for the upcoming turn. */
+  buffer: QuestionDto[];
 }
 
 export interface SubmitAnswerRequest {
@@ -130,6 +138,12 @@ export interface SessionResultDto {
   totalPlayers: number;
   sponsorBonus: number;
   player: PlayerDto;
+}
+
+// ── Event config ─────────────────────────────────────────────────────────────
+
+export interface EventConfigResponse {
+  eventLogoUrl: string | null;
 }
 
 // ── Leaderboard ───────────────────────────────────────────────────────────────

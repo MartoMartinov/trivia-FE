@@ -2,13 +2,14 @@ import { computed, inject } from '@angular/core';
 import { signalStore, withState, withComputed, withMethods, patchState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { tapResponse } from '@ngrx/operators';
-import { exhaustMap, tap } from 'rxjs';
+import { EMPTY, exhaustMap, switchMap, tap } from 'rxjs';
 
 import { initialGameSlice } from './game.slice';
 import {
   setSessionStarted,
   applyAnswerResult,
   applySponsorResult,
+  setQuestionBuffer,
   setSponsorBonus,
   setGameCompleted,
   resetGame,
@@ -25,17 +26,12 @@ export const GameStore = signalStore(
   withLoading(),
   withRequestStatus(),
   withComputed((store) => ({
-    currentQuestion: computed(() => store.questions()[store.currentIndex()] ?? null),
     isGameOver: computed(() => {
       if (store.status() === 'completed') return true;
       const endsAt = store.endsAt();
       return endsAt ? new Date(endsAt) <= new Date() : false;
     }),
-    progress: computed(() => {
-      const total = store.questions().length;
-      return total > 0 ? store.currentIndex() / total : 0;
-    }),
-    hasMoreQuestions: computed(() => store.currentIndex() < store.questions().length),
+    hasMoreQuestions: computed(() => store.currentQuestion() !== null),
     // A sponsored bonus round is pending when the session carries a sponsor question
     // that hasn't been answered yet (spec §4).
     hasSponsorRound: computed(() => !!store.sponsorQuestion() && !store.sponsorAnswered()),
@@ -49,6 +45,21 @@ export const GameStore = signalStore(
   })),
   withMethods((store) => {
     const api = inject(ApiService);
+
+    const fetchNextBatch = rxMethod<void>((trigger$) =>
+      trigger$.pipe(
+        switchMap(() => {
+          const sessionId = store.sessionId();
+          if (!sessionId) return EMPTY;
+          return api.fetchNextBatch(sessionId).pipe(
+            tapResponse({
+              next: (res) => patchState(store, setQuestionBuffer(res.buffer)),
+              error: () => {}, // silent — game continues with whatever is in the buffer
+            }),
+          );
+        }),
+      ),
+    );
 
     const startSession = rxMethod<void>((trigger$) =>
       trigger$.pipe(
@@ -85,6 +96,7 @@ export const GameStore = signalStore(
               next: (res) => {
                 patchState(store, applyAnswerResult(res));
                 patchState(store, setFulfilled());
+                fetchNextBatch(undefined);
               },
               error: (err: unknown) => {
                 const msg = (err as { error?: { message?: string } })?.error?.message ?? null;
@@ -140,6 +152,7 @@ export const GameStore = signalStore(
       completeSession,
       setSponsorBonus: (bonus: number) => patchState(store, setSponsorBonus(bonus)),
       reset: () => patchState(store, resetGame()),
+      fetchNextBatch,
     };
   }),
 );

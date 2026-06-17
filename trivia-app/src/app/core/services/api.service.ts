@@ -6,6 +6,7 @@ import type {
   RegisterRequest,
   LoginResponse,
   StartSessionResponse,
+  NextBatchResponse,
   SubmitAnswerRequest,
   SubmitAnswerResponse,
   SubmitSponsorAnswerRequest,
@@ -15,6 +16,7 @@ import type {
   LeaderboardResponse,
   LeaderboardScope,
   BoothDisplayResponse,
+  EventConfigResponse,
 } from '../models/api.models';
 
 @Injectable({ providedIn: 'root' })
@@ -22,6 +24,9 @@ export class ApiService {
   private readonly http = inject(HttpClient);
   private readonly base = environment.apiUrl;
 
+  getEventConfig(): Observable<EventConfigResponse> {
+    return this.http.get<EventConfigResponse>(`${this.base}/event-config`);
+  }
   register(req: RegisterRequest): Observable<LoginResponse> {
     return this.http.post<LoginResponse>(`${this.base}/auth/register`, req);
   }
@@ -30,6 +35,12 @@ export class ApiService {
     return this.http.post<StartSessionResponse>(
       `${this.base}/sessions/start`,
       {},
+    );
+  }
+
+  fetchNextBatch(sessionId: number): Observable<NextBatchResponse> {
+    return this.http.get<NextBatchResponse>(
+      `${this.base}/sessions/${sessionId}/questions/next`,
     );
   }
 

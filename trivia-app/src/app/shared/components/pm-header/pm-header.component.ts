@@ -1,5 +1,5 @@
-import { ChangeDetectionStrategy, Component, computed, inject, Input } from '@angular/core';
-import { GameStore } from '../../../core/stores/game/game.store';
+import { ChangeDetectionStrategy, Component, inject, Input } from '@angular/core';
+import { AppConfigStore } from '../../../core/stores/app-config/app-config.store';
 
 @Component({
   selector: 'pm-header',
@@ -9,9 +9,7 @@ import { GameStore } from '../../../core/stores/game/game.store';
 export class PmHeaderComponent {
   @Input() tag = 'TRIVIA';
 
-  private readonly gameStore = inject(GameStore);
+  private readonly appConfigStore = inject(AppConfigStore);
 
-  readonly sponsorLogoUrl = computed(() =>
-    this.gameStore.sponsorQuestion()?.sponsor.logoUrl || null
-  );
+  readonly eventLogoUrl = this.appConfigStore.eventLogoUrl;
 }

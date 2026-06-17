@@ -336,6 +336,13 @@ export const mockInterceptor: HttpInterceptorFn = (
     });
   }
 
+  // GET /event-config
+  if (matchesRoute(url, method, '/event-config', 'GET')) {
+    return respond({
+      eventLogoUrl: '/public/event-logo.png',
+    });
+  }
+
   // GET /booth-display
   if (matchesRoute(url, method, '/booth-display', 'GET')) {
     const top = MOCK_LEADERBOARD_ROWS.slice(0, 10);
