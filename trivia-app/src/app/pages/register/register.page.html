@@ -1,6 +1,7 @@
-<ion-content [fullscreen]="true" style="--background: var(--color-navy)">
+<ion-content [fullscreen]="true" >
 
-  <div class="min-h-full bg-navy relative overflow-hidden flex flex-col">
+  <div class="min-h-full  relative overflow-hidden flex flex-col
+  md:bg-navy">
 
     <!-- ── Glows ─────────────────────────────────────────────────────────── -->
     <!-- Mobile: small top-left orange glow -->
@@ -19,14 +20,17 @@
     <!-- Mobile: column — hero on top, paper + form below                    -->
     <!-- Desktop: row — hero left, form card right, vertically centered      -->
     <div class="flex flex-col flex-1
-                lg:flex-row lg:items-center lg:justify-between lg:px-[62px]
+                lg:flex-row lg:items-center lg:justify-between lg:gap-3 lg:px-[62px]
                 2xl:px-[150px] 2xl:justify-center">
 
       <!-- Hero text -->
-      <section class="relative z-[1] px-7 pt-9 pb-[96px]
+      <section class="relative z-[1] px-7 pt-9 pb-[96px] bg-navy
+                      md:bg-transparent
                       lg:px-0 lg:pt-0 lg:pb-0 lg:flex-none lg:max-w-[480px]
                       2xl:max-w-[680px]">
-        <h1 class="font-black leading-none text-white text-[42px] lg:text-[52px] 2xl:text-[64px] animate-rise">
+        <h1 class="font-black leading-none text-white text-[42px]
+        lg:text-[52px]
+        2xl:text-[64px] animate-rise">
           <span class="block">Practical</span>
           <span class="block">Machinist</span>
           <span class="block text-orange">Trivia.</span>
@@ -40,7 +44,7 @@
       <!-- Form wrapper                                                       -->
       <!-- Mobile: paper bg pulls up 74px over hero bottom                   -->
       <!-- Desktop: transparent — white card floats on navy                  -->
-      <div class="bg-paper -mt-[74px] relative z-10 pb-10
+      <div class="mt-[-74px] relative z-10 pb-10
                   lg:bg-transparent lg:mt-0 lg:pb-0 lg:z-auto lg:flex-none lg:py-10">
 
         <form [formGroup]="form" (ngSubmit)="submit()"
