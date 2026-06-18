@@ -126,6 +126,9 @@ const MOCK_SPONSOR_QUESTION = {
     { index: 3, text: 'PrecisionEdge Z1' },
   ],
   bonusPoints: 200,
+  videoUrl: '/video_demo.mp4',
+  posterUrl: '/video_demo.png',
+  timerSeconds: 30,
   sponsor: {
     id: 1,
     name: 'Sandvik Coromant',
@@ -147,6 +150,9 @@ const MOCK_SPONSOR_QUESTION_2 = {
     { index: 3, text: 'Metrology instruments' },
   ],
   bonusPoints: 150,
+  videoUrl: '/video_demo.mp4',
+  posterUrl: '/video_demo.png',
+  timerSeconds: 30,
   sponsor: {
     id: 2,
     name: 'Haas Automation',

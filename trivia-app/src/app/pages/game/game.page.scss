@@ -1,0 +1,9 @@
+@keyframes countdown-shrink {
+  0%   { transform: scale(2.4); opacity: 0.9; }
+  100% { transform: scale(0.3); opacity: 0; }
+}
+
+.countdown-digit {
+  animation: countdown-shrink 1s ease-in forwards;
+  transform-origin: center center;
+}

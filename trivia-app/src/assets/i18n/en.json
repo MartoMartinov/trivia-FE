@@ -29,9 +29,10 @@
     "PRESENTED_BY": "Presented by",
     "PTS": "PTS",
     "PLAYING": "Playing sponsor reel…",
-    "UNLOCKED": "Bonus unlocked",
+    "UNLOCKED": "Bonus question unlocked",
     "QUESTION_PLACEHOLDER": "Which of our products is rated #1 for precision milling applications?",
-    "UNLOCK_HINT": "Watch the sponsor video to unlock the bonus question"
+    "UNLOCK_HINT": "Watch the sponsor video to unlock the bonus question",
+    "TIME_LEFT": "Time left"
   },
   "RESULTS": {
     "LOADING": "Loading results…",

@@ -30,9 +30,12 @@ export const authInterceptor: HttpInterceptorFn = (
     withCredentials: strategy.httpOptions.withCredentials,
   });
 
+  const isRefreshRequest = req.url.includes('/auth/refresh');
+
   return next(authed).pipe(
     catchError((err: unknown) => {
-      if (err instanceof HttpErrorResponse && err.status === 401 && token) {
+      // Never retry the refresh endpoint itself — that would cause an infinite loop.
+      if (err instanceof HttpErrorResponse && err.status === 401 && token && !isRefreshRequest) {
         return strategy.refresh().pipe(
           switchMap((res) => {
             const retried = req.clone({

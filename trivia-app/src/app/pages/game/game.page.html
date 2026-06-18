@@ -13,7 +13,11 @@
     @if (phase() === 'countdown') {
       <div class="flex flex-col items-center justify-center flex-1 bg-navy text-center px-6">
         <div class="text-[13px] font-bold tracking-[0.18em] text-white/60 uppercase">{{ 'GAME.GET_READY' | translate }}</div>
-        <div class="mt-3 text-[120px] font-black leading-none tabular text-orange">{{ countdownValue() }}</div>
+        <div class="mt-3 h-[200px] flex items-center justify-center">
+          @for (v of [countdownValue()]; track v) {
+            <div class="text-[120px] font-black leading-none tabular text-orange countdown-digit">{{ v }}</div>
+          }
+        </div>
       </div>
     }
 

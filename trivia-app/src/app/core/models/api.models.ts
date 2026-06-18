@@ -67,6 +67,12 @@ export interface SponsorQuestionDto {
   prompt: string;
   choices: ChoiceDto[];
   bonusPoints: number;
+  /** Promo video to watch before the question unlocks. Null when no video is attached. */
+  videoUrl: string | null;
+  /** Poster image shown before the video plays. Null falls back to the dark gradient. */
+  posterUrl: string | null;
+  /** Seconds the player has to answer after the video ends before auto-advancing. */
+  timerSeconds: number;
   sponsor: SponsorDto;
 }
 
