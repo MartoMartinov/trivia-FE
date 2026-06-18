@@ -37,7 +37,8 @@
       </div>
     </section>
     <div class="h-1.5 bg-navymid overflow-hidden">
-      <div class="h-full bg-gold w-1/2"></div>
+      <div class="h-full bg-gold transition-[width] duration-500 ease-linear"
+           [style.width.%]="questionTimerPct()"></div>
     </div>
 
     <div class="px-6 pt-4 flex justify-between items-center w-full

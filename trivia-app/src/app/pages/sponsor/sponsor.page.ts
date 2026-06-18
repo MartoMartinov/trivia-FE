@@ -57,6 +57,13 @@ export class SponsorPage implements OnInit, OnDestroy {
     return `${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
   });
 
+  readonly questionTimerPct = computed(() => {
+    if (!this.unlocked()) return 100;
+    const total = this.sponsorQuestion()?.timerSeconds ?? 30;
+    if (total === 0) return 0;
+    return (this.questionSecondsLeft() / total) * 100;
+  });
+
   private questionTimerTick: ReturnType<typeof setInterval> | null = null;
 
   ngOnInit(): void {
