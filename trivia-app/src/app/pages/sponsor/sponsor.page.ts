@@ -16,7 +16,6 @@ import { TranslatePipe } from '@ngx-translate/core';
 import { GameStore } from '../../core/stores/game/game.store';
 import { PmHeaderComponent } from '../../shared/components/pm-header/pm-header.component';
 
-// Fallback reel length when no videoUrl is provided.
 const PLACEHOLDER_REEL_SECONDS = 5;
 const REVEAL_DELAY_MS = 1100;
 
@@ -43,12 +42,15 @@ export class SponsorPage implements OnInit, OnDestroy {
 
   readonly videoStarted = signal(false);
   readonly unlocked = signal(false);
+  readonly isMuted = signal(false);
   /** Seconds remaining in the video reel (drives the badge inside the player). */
   readonly secondsLeft = signal(0);
   readonly selectedIndex = signal<number | null>(null);
 
-  /** Seconds remaining to answer after the video ends. Counts down in MM:SS. */
+  /** Integer seconds left — drives the MM:SS label only. */
   readonly questionSecondsLeft = signal(0);
+  /** Continuous 0–1 progress — drives the timer bar at ~60 fps via rAF. */
+  readonly timerProgress = signal(1);
 
   readonly questionTimerLabel = computed(() => {
     const s = this.questionSecondsLeft();
@@ -57,14 +59,15 @@ export class SponsorPage implements OnInit, OnDestroy {
     return `${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
   });
 
-  readonly questionTimerPct = computed(() => {
-    if (!this.unlocked()) return 100;
-    const total = this.sponsorQuestion()?.timerSeconds ?? 30;
-    if (total === 0) return 0;
-    return (this.questionSecondsLeft() / total) * 100;
-  });
+  /** Bar width %: full while video plays, then drains continuously once unlocked. */
+  readonly questionTimerPct = computed(() =>
+    this.unlocked() ? this.timerProgress() * 100 : 100,
+  );
 
   private questionTimerTick: ReturnType<typeof setInterval> | null = null;
+  private rafId: number | null = null;
+  private rafStartTime = 0;
+  private rafTotalMs = 0;
 
   ngOnInit(): void {
     if (!this.gameStore.hasSponsorRound()) {
@@ -98,6 +101,13 @@ export class SponsorPage implements OnInit, OnDestroy {
     const video = this.videoRef()?.nativeElement;
     if (!video) return;
     this.secondsLeft.set(Math.max(0, Math.ceil(video.duration - video.currentTime)));
+  }
+
+  toggleMute(): void {
+    const video = this.videoRef()?.nativeElement;
+    if (!video) return;
+    video.muted = !video.muted;
+    this.isMuted.set(video.muted);
   }
 
   onVideoEnded(): void {
@@ -136,12 +146,30 @@ export class SponsorPage implements OnInit, OnDestroy {
   private startQuestionTimer(): void {
     const seconds = this.sponsorQuestion()?.timerSeconds ?? 30;
     this.questionSecondsLeft.set(seconds);
+    this.timerProgress.set(1);
+
+    // rAF loop: updates the bar continuously at ~60 fps.
+    this.rafTotalMs = seconds * 1000;
+    this.rafStartTime = performance.now();
+    const rafTick = () => {
+      const elapsed = performance.now() - this.rafStartTime;
+      const progress = Math.max(0, 1 - elapsed / this.rafTotalMs);
+      this.timerProgress.set(progress);
+      if (progress > 0) {
+        this.rafId = requestAnimationFrame(rafTick);
+      } else {
+        this.rafId = null;
+      }
+    };
+    this.rafId = requestAnimationFrame(rafTick);
+
+    // setInterval: updates the integer MM:SS label once per second.
     this.questionTimerTick = setInterval(() => {
       const next = this.questionSecondsLeft() - 1;
       if (next <= 0) {
         this.clearQuestionTimer();
         this.questionSecondsLeft.set(0);
-        // Timer expired — skip this question and advance or finish.
+        this.timerProgress.set(0);
         this.gameStore.skipSponsorQuestion();
         if (this.gameStore.hasSponsorRound()) {
           this.resetForNextQuestion();
@@ -159,6 +187,10 @@ export class SponsorPage implements OnInit, OnDestroy {
       clearInterval(this.questionTimerTick);
       this.questionTimerTick = null;
     }
+    if (this.rafId !== null) {
+      cancelAnimationFrame(this.rafId);
+      this.rafId = null;
+    }
   }
 
   // ── Navigation helpers ────────────────────────────────────────────────────────
@@ -174,8 +206,10 @@ export class SponsorPage implements OnInit, OnDestroy {
     this.selectedIndex.set(null);
     this.videoStarted.set(false);
     this.unlocked.set(false);
+    this.isMuted.set(false);
     this.secondsLeft.set(0);
     this.questionSecondsLeft.set(0);
+    this.timerProgress.set(1);
   }
 
   private runPlaceholderCountdown(): void {

@@ -37,12 +37,12 @@ export class GamePage implements OnInit, OnDestroy {
   readonly timeLeft = signal(0);
   // Total session length (denominator) — sourced from the session config, not a magic number.
   readonly totalSeconds = signal(DEFAULT_DURATION_SECONDS);
-  readonly timeLeftPct = computed(() => {
-    const total = this.totalSeconds();
-    return total > 0 ? (this.timeLeft() / total) * 100 : 0;
-  });
+  /** Continuous 0–1 progress updated at ~60 fps via rAF — drives the timer bar smoothly. */
+  readonly timerProgress = signal(1);
+  readonly timeLeftPct = computed(() => this.timerProgress() * 100);
 
   private timerRef: ReturnType<typeof setInterval> | null = null;
+  private rafId: number | null = null;
   private playEndsAt = 0;
   // Guards against the answer-advance path and the timer-expiry path both ending the game (race).
   private hasEnded = false;
@@ -95,16 +95,34 @@ export class GamePage implements OnInit, OnDestroy {
   }
 
   private startTimer(): void {
+    // setInterval at 500 ms: updates the integer MM:SS display and detects expiry.
     this.timerRef = setInterval(() => {
       const remaining = Math.max(0, Math.ceil((this.playEndsAt - Date.now()) / 1000));
       this.timeLeft.set(remaining);
       if (remaining === 0) this.endGame();
     }, 500);
+
+    // rAF loop: updates timerProgress continuously at ~60 fps for a smooth bar.
+    const totalMs = this.totalSeconds() * 1000;
+    const rafTick = () => {
+      const progress = Math.max(0, (this.playEndsAt - Date.now()) / totalMs);
+      this.timerProgress.set(progress);
+      if (progress > 0) {
+        this.rafId = requestAnimationFrame(rafTick);
+      } else {
+        this.rafId = null;
+      }
+    };
+    this.rafId = requestAnimationFrame(rafTick);
   }
 
   private clearTimer(): void {
     if (this.timerRef) clearInterval(this.timerRef);
     this.timerRef = null;
+    if (this.rafId !== null) {
+      cancelAnimationFrame(this.rafId);
+      this.rafId = null;
+    }
   }
 
   private endGame(): void {

@@ -4,72 +4,75 @@
     <pm-header />
 
     @if (isLoading()) {
-      <div class="flex items-center justify-center flex-1">
-        <p class="text-muted text-sm">{{ 'RESULTS.LOADING' | translate }}</p>
-      </div>
+    <div class="flex items-center justify-center flex-1">
+      <p class="text-muted text-sm">{{ 'RESULTS.LOADING' | translate }}</p>
+    </div>
     }
 
     @if (!isLoading() && result()) {
 
-      <!-- Hero: dark navy score -->
-      <section class="relative bg-navy overflow-hidden text-center text-white px-6 pt-7 pb-12">
-        <div class="pointer-events-none absolute -top-24 left-1/2 -translate-x-1/2 w-[485px] h-[336px] rounded-full bg-orange/30 blur-3xl"></div>
-        <div class="relative z-[1]">
-          <div class="text-[16px] font-black tracking-[0.16em] text-orange animate-rise">GREAT JOB!</div>
-          <div class="mt-1.5 text-[11px] font-bold tracking-[0.18em] text-white/65 uppercase">{{ 'RESULTS.FINAL_SCORE' | translate }}</div>
-          <div class="mt-2 text-[80px] font-black leading-none tabular animate-rise">{{ scoring.formatScore(result()!.score) }}</div>
-          <div class="text-[14px] font-bold tracking-[0.18em] text-white/60">PTS</div>
-          <div class="inline-flex items-center gap-2.5 mt-[18px] rounded-full bg-white/12 px-[18px] py-2.5 text-[13px] font-semibold animate-pop">
-            <span>{{ 'RESULTS.RANK' | translate }}</span>
-            <span class="text-[20px] font-black">#{{ result()!.rank }}</span>
-            <span class="text-white/70 font-medium">{{ 'RESULTS.OF' | translate }} {{ result()!.totalPlayers }} {{ 'RESULTS.TODAY' | translate }}</span>
-          </div>
+    <!-- Hero: dark navy score -->
+    <section class="relative bg-navy overflow-hidden text-center text-white px-6 pt-7 pb-12">
+      <div class="pointer-events-none absolute -top-24 left-1/2 -translate-x-1/2 w-[485px] h-[336px] rounded-full bg-orange/30 blur-3xl"></div>
+      <div class="relative z-[1]">
+        <div class="text-[16px] font-black tracking-[0.16em] text-orange animate-rise">GREAT JOB!</div>
+        <div class="mt-1.5 text-[11px] font-bold tracking-[0.18em] text-white/65 uppercase">{{ 'RESULTS.FINAL_SCORE' | translate }}</div>
+        <div class="mt-2 text-[80px] font-black leading-none tabular animate-rise">{{ scoring.formatScore(result()!.score) }}</div>
+        <div class="text-[14px] font-bold tracking-[0.18em] text-white/60">PTS</div>
+        <div class="inline-flex items-center gap-2.5 mt-[18px] rounded-full bg-white/12 px-[18px] py-2.5 text-[13px] font-semibold animate-pop">
+          <span>{{ 'RESULTS.RANK' | translate }}</span>
+          <span class="text-[20px] font-black">#{{ result()!.rank }}</span>
+          <span class="text-white/70 font-medium">{{ 'RESULTS.OF' | translate }} {{ result()!.totalPlayers }} {{ 'RESULTS.TODAY' | translate }}</span>
         </div>
-      </section>
-
-      <div class="px-6">
-        <!-- Breakdown grid -->
-        <div class="-mt-5 relative z-[2] grid grid-cols-3 bg-white rounded-2xl py-4 shadow-[0_8px_24px_-8px_rgba(0,0,0,.12)]">
-          <div class="text-center">
-            <div class="text-[10px] font-bold tracking-wider text-muted uppercase">{{ 'RESULTS.ANSWERED' | translate }}</div>
-            <div class="mt-1 text-[26px] font-black text-ink">{{ result()!.totalAnswers }}</div>
-          </div>
-          <div class="text-center border-x border-line">
-            <div class="text-[10px] font-bold tracking-wider text-muted uppercase">{{ 'RESULTS.BEST_STREAK' | translate }}</div>
-            <div class="mt-1 text-[26px] font-black text-orange">{{ result()!.bestStreak }}×</div>
-          </div>
-          <div class="text-center">
-            <div class="text-[10px] font-bold tracking-wider text-muted uppercase">{{ 'RESULTS.SP_BONUS' | translate }}</div>
-            <div class="mt-1 text-[26px] font-black text-gold">{{ scoring.formatScore(result()!.sponsorBonus) }}</div>
-          </div>
-        </div>
-
-        <!-- Prize card -->
-        <div class="mt-4 bg-cream rounded-2xl p-4 flex items-start gap-3 border border-[#F3E2BB]">
-          <div class="w-7 h-7 rounded-full bg-gold/30 grid place-items-center shrink-0">🏆</div>
-          <div>
-            <div class="text-[14px] font-extrabold text-[#7A5F00]">{{ 'RESULTS.PRIZE_TITLE' | translate }}</div>
-            <div class="text-[12px] text-[#9A7B1F]">{{ 'RESULTS.PRIZE_BODY' | translate }}</div>
-          </div>
-        </div>
-
-        <!-- CTAs -->
-        <div class="mt-4 grid gap-3">
-          <button class="pm-cta" (click)="goToLeaderboard()">🏆 {{ 'RESULTS.VIEW_LEADERBOARD' | translate }}</button>
-          <button class="pm-cta-outline" (click)="share()">↗ {{ 'RESULTS.SHARE' | translate }}</button>
-        </div>
-
-        <!-- Come back card -->
-        <div class="mt-4 bg-white rounded-2xl border border-line p-4 flex items-start gap-3">
-          <div class="w-7 h-7 rounded-full bg-paper grid place-items-center shrink-0">📅</div>
-          <div>
-            <div class="text-[14px] font-extrabold text-ink">{{ 'RESULTS.COME_BACK' | translate }}</div>
-            <div class="text-[12px] text-muted">{{ 'RESULTS.COME_BACK_BODY' | translate }}</div>
-          </div>
-        </div>
-
-        <p class="text-center text-[11px] text-muted my-6">{{ 'RESULTS.FOOTER' | translate }}</p>
       </div>
+    </section>
+
+    <div class="px-6 w-full
+      lg:max-w-5xl lg:mx-auto">
+      <!-- Breakdown grid -->
+      <div class="-mt-5 relative z-[2] grid grid-cols-3 bg-white rounded-2xl py-4 shadow-[0_8px_24px_-8px_rgba(0,0,0,.12)]">
+        <div class="text-center">
+          <div class="text-[10px] font-bold tracking-wider text-muted uppercase">{{ 'RESULTS.ANSWERED' | translate }}</div>
+          <div class="mt-1 text-[26px] font-black text-ink">{{ result()!.totalAnswers }}</div>
+        </div>
+        <div class="text-center border-x border-line">
+          <div class="text-[10px] font-bold tracking-wider text-muted uppercase">{{ 'RESULTS.BEST_STREAK' | translate }}</div>
+          <div class="mt-1 text-[26px] font-black text-orange">{{ result()!.bestStreak }}×</div>
+        </div>
+        <div class="text-center">
+          <div class="text-[10px] font-bold tracking-wider text-muted uppercase">{{ 'RESULTS.SP_BONUS' | translate }}</div>
+          <div class="mt-1 text-[26px] font-black text-gold">{{ scoring.formatScore(result()!.sponsorBonus) }}</div>
+        </div>
+      </div>
+
+      <!-- Prize card -->
+      <div class="mt-4 bg-cream rounded-2xl p-4 flex items-start gap-3 border border-[#F3E2BB]">
+        <div class="w-7 h-7 rounded-full bg-gold/30 grid place-items-center shrink-0">🏆</div>
+        <div>
+          <div class="text-[14px] font-extrabold text-[#7A5F00]">{{ 'RESULTS.PRIZE_TITLE' | translate }}</div>
+          <div class="text-[12px] text-[#9A7B1F]">{{ 'RESULTS.PRIZE_BODY' | translate }}</div>
+        </div>
+      </div>
+
+      <!-- CTAs -->
+      <div class="mt-4 grid gap-3">
+        <button class="pm-cta"
+                (click)="goToLeaderboard()">🏆 {{ 'RESULTS.VIEW_LEADERBOARD' | translate }}</button>
+        <button class="pm-cta-outline"
+                (click)="share()">↗ {{ 'RESULTS.SHARE' | translate }}</button>
+      </div>
+
+      <!-- Come back card -->
+      <div class="mt-4 bg-white rounded-2xl border border-line p-4 flex items-start gap-3">
+        <div class="w-7 h-7 rounded-full bg-paper grid place-items-center shrink-0">📅</div>
+        <div>
+          <div class="text-[14px] font-extrabold text-ink">{{ 'RESULTS.COME_BACK' | translate }}</div>
+          <div class="text-[12px] text-muted">{{ 'RESULTS.COME_BACK_BODY' | translate }}</div>
+        </div>
+      </div>
+
+      <p class="text-center text-[11px] text-muted my-6">{{ 'RESULTS.FOOTER' | translate }}</p>
+    </div>
     }
 
   </div>
