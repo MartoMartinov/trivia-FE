@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { IonContent } from '@ionic/angular/standalone';
-import { TranslatePipe } from '@ngx-translate/core';
 import { timer, switchMap } from 'rxjs';
 
 import { ApiService } from '../../core/services/api.service';
@@ -16,7 +15,7 @@ const QR_SIZE = 220;
   templateUrl: 'booth-display.page.html',
   styleUrls: ['booth-display.page.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [IonContent, TranslatePipe],
+  imports: [IonContent],
 })
 export class BoothDisplayPage implements OnInit {
   private readonly api = inject(ApiService);
@@ -37,5 +36,13 @@ export class BoothDisplayPage implements OnInit {
     timer(0, POLL_MS).pipe(
       switchMap(() => this.api.getBoothDisplay(token)),
     ).subscribe((res) => this.data.set(res));
+  }
+
+  initials(displayName: string): string {
+    return displayName
+      .split(/\s+/)
+      .slice(0, 2)
+      .map(w => w.charAt(0).toUpperCase())
+      .join('');
   }
 }

@@ -1,90 +1,100 @@
-<ion-content>
+<ion-content [scrollY]="false">
   @if (data(); as d) {
-    <div class="h-full bg-navy flex flex-col p-10 gap-7">
+    <div class="booth">
+      <div class="glow"></div>
 
-      <!-- Header -->
-      <div class="flex items-center justify-between">
-        <div>
-          <div class="text-orange font-black text-4xl tracking-tight">Practical Machinist</div>
-          <div class="text-slate-400 text-xl font-semibold tracking-widest uppercase">{{ 'BOOTH.TITLE' | translate }}</div>
+      <header class="booth-header">
+        <div class="header-left">
+          <p class="trivia-label">TRIVIA GAME</p>
+          <h1 class="live-title">Live Leaderboard</h1>
         </div>
-        <div class="text-right">
-          <div class="text-slate-500 text-sm uppercase tracking-wider">{{ d.eventName }}</div>
-          <div class="text-slate-400 text-sm">{{ 'BOOTH.RESETS' | translate }}</div>
+        <div class="header-logos">
+          @if (d.eventLogoUrl) {
+            <img [src]="d.eventLogoUrl" alt="" class="event-logo" />
+          }
+          <img src="assets/pm-logo.png" alt="Practical Machinist" class="pm-logo" />
         </div>
-      </div>
+      </header>
 
-      <div class="flex-1 grid grid-cols-3 gap-7 min-h-0">
+      <div class="booth-body">
 
-        <!-- Leaderboard (spans 2 cols) -->
-        <div class="col-span-2 flex flex-col gap-4 min-h-0">
-          <div class="grid grid-cols-2 gap-4 content-start overflow-hidden">
+        <!-- Left: leaderboard card -->
+        <div class="lb-card">
+          <div class="lb-top">
+            <span class="lb-title">Top 10</span>
+            <span class="lb-resets">RESETS AT MIDNIGHT</span>
+          </div>
+          <div class="lb-col-headers">
+            <span class="ch ch-rank">RANK</span>
+            <span class="ch ch-player">PLAYER</span>
+            <span class="ch ch-company">COMPANY</span>
+            <span class="ch ch-score">SCORE</span>
+          </div>
+          <div class="lb-divider"></div>
+          <div class="lb-rows">
             @for (row of d.rows; track row.rank) {
-              <div class="flex items-center gap-4 bg-navyband rounded-xl px-5 py-4">
-                <div class="w-10 text-center">
-                  @if (row.rank <= 3) {
-                    <span class="text-3xl">{{ ['🥇','🥈','🥉'][row.rank - 1] }}</span>
-                  } @else {
-                    <span class="text-xl font-black text-slate-500">#{{ row.rank }}</span>
-                  }
+              <div class="lb-row" [attr.data-rank]="row.rank <= 3 ? row.rank : 4">
+                <div class="rank-badge" [attr.data-rank]="row.rank <= 3 ? row.rank : 4">{{ row.rank }}</div>
+                <div class="avatar">{{ initials(row.displayName) }}</div>
+                <span class="player-name">{{ row.displayName }}</span>
+                <span class="company-name">{{ row.company }}</span>
+                <div class="score-cell">
+                  <span class="score-num">{{ row.score }}</span>
+                  <span class="score-pts">PTS</span>
                 </div>
-                <div class="flex-1 min-w-0">
-                  <div class="text-white font-bold text-lg truncate">{{ row.displayName }}</div>
-                  <div class="text-slate-500 text-sm truncate">{{ row.company }}</div>
-                </div>
-                <div class="text-orange font-black text-xl">{{ row.score.toLocaleString() }}</div>
               </div>
             }
           </div>
         </div>
 
-        <!-- Sidebar: stats, hot streak, QR, sponsors -->
-        <div class="flex flex-col gap-5 min-h-0">
+        <!-- Right sidebar -->
+        <div class="sidebar">
 
-          <!-- Stats -->
-          <div class="grid grid-cols-2 gap-4">
-            <div class="bg-navyband rounded-xl px-5 py-4 text-center">
-              <div class="text-slate-500 text-xs uppercase tracking-wider">{{ 'BOOTH.PLAYERS_TODAY' | translate }}</div>
-              <div class="text-white font-black text-3xl mt-1">{{ d.totalPlayers }}</div>
+          <!-- QR + Stats card -->
+          <div class="qr-card">
+            <div class="qr-img-wrap">
+              <img [src]="qrSrc()" alt="" />
             </div>
-            <div class="bg-navyband rounded-xl px-5 py-4 text-center">
-              <div class="text-slate-500 text-xs uppercase tracking-wider">{{ 'BOOTH.AVG_SCORE' | translate }}</div>
-              <div class="text-white font-black text-3xl mt-1">{{ d.avgScore.toLocaleString() }}</div>
-            </div>
-          </div>
-
-          <!-- Hot streak -->
-          @if (d.hotStreak; as hot) {
-            <div class="bg-gradient-to-br from-orange to-orange-shade rounded-xl px-5 py-4">
-              <div class="text-white/80 text-xs uppercase tracking-wider font-bold">🔥 {{ 'BOOTH.HOT_STREAK' | translate }}</div>
-              <div class="text-white font-black text-2xl mt-1 truncate">{{ hot.displayName }}</div>
-              <div class="text-white/80 text-sm truncate">{{ hot.company }} · {{ hot.streak }}× {{ 'BOOTH.STREAK_SUFFIX' | translate }}</div>
-            </div>
-          }
-
-          <!-- QR code -->
-          <div class="bg-white rounded-xl p-5 flex flex-col items-center">
-            <img [src]="qrSrc()" [width]="180" [height]="180" alt="" class="w-[180px] h-[180px]" />
-            <div class="text-navy font-black text-lg mt-3">{{ 'BOOTH.SCAN_TO_PLAY' | translate }}</div>
-            <div class="text-slate-500 text-sm">{{ playUrl }}</div>
-          </div>
-
-          <!-- Sponsor cards -->
-          @if (d.sponsorCards.length) {
-            <div class="flex flex-col gap-3">
-              @for (sponsor of d.sponsorCards; track sponsor.id) {
-                <div class="bg-navyband rounded-xl px-5 py-3 flex items-center gap-3">
-                  <div class="w-10 h-10 rounded-lg grid place-items-center text-white font-black italic shrink-0"
-                       [style.background-color]="sponsor.primaryColor">
-                    {{ sponsor.name.charAt(0) }}
-                  </div>
-                  <div class="min-w-0">
-                    <div class="text-white font-bold truncate">{{ sponsor.name }}</div>
-                    <div class="text-slate-500 text-xs truncate">{{ sponsor.tagline }}</div>
-                  </div>
+            <div class="qr-info">
+              <h2 class="scan-title">Scan to play</h2>
+              <p class="scan-sub">Point your phone camera at the bar code</p>
+              <div class="stats-row">
+                <div class="stat-box">
+                  <span class="stat-label">PLAYED</span>
+                  <span class="stat-val">{{ d.totalPlayers }}</span>
+                  <span class="stat-unit">today</span>
                 </div>
-              }
+                <div class="stat-box">
+                  <span class="stat-label">AVG SCORE</span>
+                  <span class="stat-val orange">{{ d.avgScore }}</span>
+                  <span class="stat-unit">pts</span>
+                </div>
+              </div>
             </div>
+          </div>
+
+          <!-- Sponsors -->
+          @if (d.sponsorCards.length) {
+            <p class="sponsor-heading">TODAY'S GAME IS SPONSORED BY</p>
+            @for (s of d.sponsorCards; track s.id) {
+              <div class="sponsor-card">
+                <div class="sponsor-stripe" [style.background-color]="s.primaryColor"></div>
+                <div class="sponsor-badge-pill">
+                  <span class="dot"></span>SPONSOR
+                </div>
+                <div class="sponsor-logo-wrap">
+                  @if (s.logoUrl) {
+                    <img [src]="s.logoUrl" [alt]="s.name" />
+                  } @else {
+                    <span class="sponsor-initial">{{ s.name.charAt(0) }}</span>
+                  }
+                </div>
+                <div class="sponsor-info">
+                  <span class="sponsor-name">{{ s.name }}</span>
+                  <span class="sponsor-tagline">{{ s.tagline }}</span>
+                </div>
+              </div>
+            }
           }
 
         </div>

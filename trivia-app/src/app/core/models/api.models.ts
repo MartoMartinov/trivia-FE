@@ -203,4 +203,6 @@ export interface BoothDisplayResponse {
   hotStreak: HotStreakDto | null;
   /** Active sponsor cards to rotate/display on the booth screen. */
   sponsorCards: SponsorCardDto[];
+  /** Event/sponsor logo URL for the booth header, provided by the backend. */
+  eventLogoUrl?: string | null;
 }

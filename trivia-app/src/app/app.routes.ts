@@ -34,7 +34,7 @@ export const routes: Routes = [
   },
   {
     path: 'leaderboard',
-    canActivate: [translationGuard],
+    canActivate: [translationGuard, authGuard],
     loadComponent: () =>
       import('./pages/leaderboard/leaderboard.page').then((m) => m.LeaderboardPage),
   },
