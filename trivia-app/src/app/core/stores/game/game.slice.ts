@@ -26,9 +26,12 @@ export interface GameSlice {
   currentQuestion: QuestionDto | null;
   /** One question per regular difficulty (easy, medium, hard) ready to serve next. */
   questionBuffer: QuestionDto[];
-  sponsorQuestion: SponsorQuestionDto | null;
-  /** Whether the sponsored bonus question has already been answered this session. */
-  sponsorAnswered: boolean;
+  /** Sponsor bonus questions shown at the end, in order. Empty array means no sponsor round. */
+  sponsorQuestions: SponsorQuestionDto[];
+  /** Index into sponsorQuestions — advances after each sponsor answer. */
+  sponsorIndex: number;
+  /** Total number of regular questions in this session (from server config). */
+  totalQuestions: number;
   /** Running count of questions answered this session. */
   currentIndex: number;
   score: number;
@@ -49,8 +52,9 @@ export const initialGameSlice: GameSlice = {
   countdownSeconds: 0,
   currentQuestion: null,
   questionBuffer: [],
-  sponsorQuestion: null,
-  sponsorAnswered: false,
+  sponsorQuestions: [],
+  sponsorIndex: 0,
+  totalQuestions: 0,
   currentIndex: 0,
   score: 0,
   streak: 0,

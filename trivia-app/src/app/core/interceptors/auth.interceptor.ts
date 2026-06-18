@@ -5,6 +5,7 @@ import {
   HttpHandlerFn,
   HttpErrorResponse,
 } from '@angular/common/http';
+import { Router } from '@angular/router';
 import { throwError, catchError, switchMap } from 'rxjs';
 import { AuthStore } from '../stores/auth/auth.store';
 import { AuthStrategyService } from '../auth/auth-strategy.service';
@@ -16,6 +17,7 @@ export const authInterceptor: HttpInterceptorFn = (
 ) => {
   const authStore = inject(AuthStore);
   const strategy = inject(AuthStrategyService);
+  const router = inject(Router);
 
   // only attach auth headers to our own API
   if (!req.url.startsWith(environment.apiUrl)) {
@@ -41,6 +43,7 @@ export const authInterceptor: HttpInterceptorFn = (
           }),
           catchError(() => {
             authStore.logout();
+            router.navigate(['/register']);
             return throwError(() => err);
           }),
         );

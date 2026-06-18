@@ -19,9 +19,12 @@ export class LeaderboardPage implements OnInit {
   private readonly router = inject(Router);
 
   readonly topRows = computed(() => this.store.rows().slice(0, 10));
+  readonly isCurrentPlayerInTopRows = computed(() =>
+    this.topRows().some((r) => r.isCurrentPlayer),
+  );
 
   ngOnInit(): void {
-    this.store.startPolling(this.store.activeScope());
+    this.store.setScope(this.store.activeScope());
   }
 
   setScope(scope: 'today' | 'week'): void {

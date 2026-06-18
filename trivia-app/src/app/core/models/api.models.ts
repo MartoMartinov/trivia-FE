@@ -77,11 +77,14 @@ export interface StartSessionResponse {
   durationSeconds: number;
   /** Pre-game "get ready" countdown in seconds (spec §3.4). 0 disables it. */
   countdownSeconds: number;
+  /** Total number of regular questions for this session (admin-configurable). */
+  totalQuestions: number;
   /** The first question to display immediately. */
   currentQuestion: QuestionDto;
   /** One question per difficulty (easy, medium, hard) — ready to serve as the next question. */
   buffer: QuestionDto[];
-  sponsorQuestion: SponsorQuestionDto | null;
+  /** Sponsor bonus questions shown at the end, in order. Empty array means no sponsor round. */
+  sponsorQuestions: SponsorQuestionDto[];
 }
 
 export interface NextBatchResponse {

@@ -32,9 +32,10 @@ export const GameStore = signalStore(
       return endsAt ? new Date(endsAt) <= new Date() : false;
     }),
     hasMoreQuestions: computed(() => store.currentQuestion() !== null),
-    // A sponsored bonus round is pending when the session carries a sponsor question
-    // that hasn't been answered yet (spec §4).
-    hasSponsorRound: computed(() => !!store.sponsorQuestion() && !store.sponsorAnswered()),
+    // A sponsored bonus round is pending when there are still sponsor questions left to answer.
+    hasSponsorRound: computed(() => store.sponsorIndex() < store.sponsorQuestions().length),
+    // The sponsor question currently on-screen (advances after each answer).
+    currentSponsorQuestion: computed(() => store.sponsorQuestions()[store.sponsorIndex()] ?? null),
     multiplierLabel: computed(() => {
       const s = store.streak();
       if (s >= 6) return '2.5×';
@@ -151,6 +152,7 @@ export const GameStore = signalStore(
       submitSponsorAnswer,
       completeSession,
       setSponsorBonus: (bonus: number) => patchState(store, setSponsorBonus(bonus)),
+      clearSponsorResult: () => patchState(store, { lastSponsorResult: null }),
       reset: () => patchState(store, resetGame()),
       fetchNextBatch,
     };

@@ -33,10 +33,11 @@ export const setSessionStarted = (res: StartSessionResponse): Partial<GameSlice>
   endsAt: res.endsAt,
   durationSeconds: res.durationSeconds,
   countdownSeconds: res.countdownSeconds,
+  totalQuestions: res.totalQuestions,
   currentQuestion: res.currentQuestion,
   questionBuffer: res.buffer,
-  sponsorQuestion: res.sponsorQuestion,
-  sponsorAnswered: false,
+  sponsorQuestions: res.sponsorQuestions,
+  sponsorIndex: 0,
   currentIndex: 0,
   score: 0,
   streak: 0,
@@ -51,8 +52,11 @@ export const setSessionStarted = (res: StartSessionResponse): Partial<GameSlice>
 
 export const applyAnswerResult = (res: SubmitAnswerResponse): PartialStateUpdater<GameSlice> =>
   (state) => {
+    const newIndex = state.currentIndex + 1;
     const difficulty = selectNextDifficulty(res.correct, res.streak);
-    const nextQuestion = pickFromBuffer(state.questionBuffer, difficulty);
+    const nextQuestion = newIndex < state.totalQuestions
+      ? pickFromBuffer(state.questionBuffer, difficulty)
+      : null;
 
     return {
       score: res.score,
@@ -60,7 +64,7 @@ export const applyAnswerResult = (res: SubmitAnswerResponse): PartialStateUpdate
       bestStreak: Math.max(state.bestStreak, res.streak),
       correctAnswers: state.correctAnswers + (res.correct ? 1 : 0),
       totalAnswers: state.totalAnswers + 1,
-      currentIndex: state.currentIndex + 1,
+      currentIndex: newIndex,
       currentQuestion: nextQuestion,
       questionBuffer: [], // cleared; refilled by background fetchNextBatch
       lastResult: {
@@ -80,16 +84,17 @@ export const setSponsorBonus = (bonus: number): Partial<GameSlice> => ({
   sponsorBonus: bonus,
 });
 
-export const applySponsorResult = (res: SubmitSponsorAnswerResponse): Partial<GameSlice> => ({
-  score: res.score,
-  sponsorBonus: res.bonusPoints,
-  sponsorAnswered: true,
-  lastSponsorResult: {
-    correct: res.correct,
-    correctIndex: res.correctIndex,
-    bonusPoints: res.bonusPoints,
-  },
-});
+export const applySponsorResult = (res: SubmitSponsorAnswerResponse): PartialStateUpdater<GameSlice> =>
+  (state) => ({
+    score: res.score,
+    sponsorBonus: state.sponsorBonus + res.bonusPoints,
+    sponsorIndex: state.sponsorIndex + 1,
+    lastSponsorResult: {
+      correct: res.correct,
+      correctIndex: res.correctIndex,
+      bonusPoints: res.bonusPoints,
+    },
+  });
 
 export const setGameCompleted = (): Partial<GameSlice> => ({
   status: 'completed',
@@ -100,10 +105,11 @@ export const resetGame = (): GameSlice => ({
   endsAt: null,
   durationSeconds: 0,
   countdownSeconds: 0,
+  totalQuestions: 0,
   currentQuestion: null,
   questionBuffer: [],
-  sponsorQuestion: null,
-  sponsorAnswered: false,
+  sponsorQuestions: [],
+  sponsorIndex: 0,
   currentIndex: 0,
   score: 0,
   streak: 0,

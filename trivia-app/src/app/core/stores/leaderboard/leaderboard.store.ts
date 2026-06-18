@@ -1,15 +1,25 @@
 import { computed, inject } from '@angular/core';
-import { signalStore, withState, withComputed, withMethods, withHooks, patchState } from '@ngrx/signals';
+import {
+  signalStore,
+  withState,
+  withComputed,
+  withMethods,
+  patchState,
+} from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { tapResponse } from '@ngrx/operators';
 import { switchMap, timer } from 'rxjs';
 
 import { initialLeaderboardSlice } from './leaderboard.slice';
 import { setLeaderboard, setActiveScope } from './leaderboard.updaters';
-import { withRequestStatus, setPending, setFulfilled, setError } from '../features/with-request-status.feature';
+import {
+  withRequestStatus,
+  setPending,
+  setFulfilled,
+  setError,
+} from '../features/with-request-status.feature';
 import { withLoading } from '../features/with-loading.feature';
 import { ApiService } from '../../services/api.service';
-import { AuthStore } from '../auth/auth.store';
 import type { LeaderboardScope } from '../../models/api.models';
 
 const POLL_INTERVAL_MS = 10_000;
@@ -19,8 +29,8 @@ export const LeaderboardStore = signalStore(
   withLoading(),
   withRequestStatus(),
   withComputed((store) => ({
-    currentPlayerRow: computed(() =>
-      store.rows().find((r) => r.isCurrentPlayer) ?? null,
+    currentPlayerRow: computed(
+      () => store.rows().find((r) => r.isCurrentPlayer) ?? null,
     ),
   })),
   withMethods((store) => {
@@ -32,7 +42,9 @@ export const LeaderboardStore = signalStore(
           patchState(store, setPending());
           return api.getLeaderboard(scope).pipe(
             tapResponse({
-              next: (res: import('../../models/api.models').LeaderboardResponse) => {
+              next: (
+                res: import('../../models/api.models').LeaderboardResponse,
+              ) => {
                 patchState(store, setLeaderboard(res));
                 patchState(store, setFulfilled());
               },
@@ -43,17 +55,18 @@ export const LeaderboardStore = signalStore(
       ),
     );
 
-    // Polling is keyed by scope: emitting a new scope makes the outer switchMap tear down the
-    // previous timer and start a fresh one that fetches immediately — no stale window on tab switch.
+    // Polling is keyed by scope: emitting a new scope tears down the previous timer and starts a
+    // fresh one. Starts at POLL_INTERVAL_MS so `load` owns the immediate fetch on startup.
     const startPolling = rxMethod<LeaderboardScope>((scope$) =>
       scope$.pipe(
         switchMap((scope) =>
-          timer(0, POLL_INTERVAL_MS).pipe(
+          timer(POLL_INTERVAL_MS, POLL_INTERVAL_MS).pipe(
             switchMap(() =>
               api.getLeaderboard(scope).pipe(
                 tapResponse({
-                  next: (res: import('../../models/api.models').LeaderboardResponse) =>
-                    patchState(store, setLeaderboard(res)),
+                  next: (
+                    res: import('../../models/api.models').LeaderboardResponse,
+                  ) => patchState(store, setLeaderboard(res)),
                   error: () => {},
                 }),
               ),
@@ -68,7 +81,8 @@ export const LeaderboardStore = signalStore(
       startPolling,
       setScope: (scope: LeaderboardScope) => {
         patchState(store, setActiveScope(scope));
-        startPolling(scope);
+        load(scope);         // immediate fetch with pending/fulfilled state
+        startPolling(scope); // then poll every 10 s in the background
       },
     };
   }),

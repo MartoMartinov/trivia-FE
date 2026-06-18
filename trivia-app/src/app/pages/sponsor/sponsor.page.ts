@@ -21,7 +21,7 @@ export class SponsorPage implements OnInit {
   readonly gameStore = inject(GameStore);
   private readonly router = inject(Router);
 
-  readonly sponsorQuestion = this.gameStore.sponsorQuestion;
+  readonly sponsorQuestion = this.gameStore.currentSponsorQuestion;
   readonly result = this.gameStore.lastSponsorResult;
 
   readonly sponsorInitials = computed(() => {
@@ -66,11 +66,23 @@ export class SponsorPage implements OnInit {
     this.selectedIndex.set(index);
     this.gameStore.submitSponsorAnswer({ questionId: question.id, choiceIndex: index });
 
-    // Wait for the authoritative result, reveal it, then complete the session.
+    // Wait for the authoritative result, reveal it, then advance to the next sponsor
+    // question or complete the session when all sponsor questions are answered.
     const poll = setInterval(() => {
       if (this.gameStore.lastSponsorResult()) {
         clearInterval(poll);
-        setTimeout(() => this.finish(), REVEAL_DELAY_MS);
+        setTimeout(() => {
+          if (this.gameStore.hasSponsorRound()) {
+            // More sponsor questions remain — clear result and reset local UI for next round.
+            this.gameStore.clearSponsorResult();
+            this.selectedIndex.set(null);
+            this.videoStarted.set(false);
+            this.unlocked.set(false);
+            this.secondsLeft.set(0);
+          } else {
+            this.finish();
+          }
+        }, REVEAL_DELAY_MS);
       }
     }, 100);
   }

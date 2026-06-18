@@ -115,13 +115,10 @@ const DIFFICULTY_BY_QUESTION_ID: Record<number, string> = MOCK_QUESTIONS.reduce<
 const SESSION_DURATION_SECONDS = 90;
 const SESSION_COUNTDOWN_SECONDS = 3;
 
-const SPONSOR_CORRECT_INDEX = 1;
-
 const MOCK_SPONSOR_QUESTION = {
   id: 1,
   prompt:
     'Which Sandvik Coromant product is rated #1 for precision milling applications?',
-  difficulty: 'hard_plus',
   choices: [
     { index: 0, text: 'ProMill X200' },
     { index: 1, text: 'UltraCut 500 Series' },
@@ -139,6 +136,32 @@ const MOCK_SPONSOR_QUESTION = {
     websiteUrl: 'https://www.sandvik.coromant.com',
   },
 };
+
+const MOCK_SPONSOR_QUESTION_2 = {
+  id: 2,
+  prompt: 'What does Haas Automation primarily manufacture?',
+  choices: [
+    { index: 0, text: 'Aerospace composites' },
+    { index: 1, text: 'Precision grinding fluids' },
+    { index: 2, text: 'CNC machine tools for the shop floor' },
+    { index: 3, text: 'Metrology instruments' },
+  ],
+  bonusPoints: 150,
+  sponsor: {
+    id: 2,
+    name: 'Haas Automation',
+    logoUrl: '',
+    primaryColor: '#C8102E',
+    mediaUrl: null,
+    mediaType: null,
+    websiteUrl: 'https://www.haascnc.com',
+  },
+};
+
+const MOCK_SPONSOR_QUESTIONS = [MOCK_SPONSOR_QUESTION, MOCK_SPONSOR_QUESTION_2];
+
+// Correct answer index per sponsor question id
+const SPONSOR_CORRECT_ANSWERS: Record<number, number> = { 1: 1, 2: 2 };
 
 const MOCK_SPONSOR_CARDS = [
   {
@@ -175,11 +198,20 @@ const MOCK_LEADERBOARD_ROWS = [
   { rank: 10, displayName: 'Alex P.', company: 'Ironclad Mfg', score: 720 },
 ];
 
+const MOCK_CURRENT_PLAYER_ROW = {
+  rank: 12,
+  displayName: 'You T.',
+  company: 'Precision Parts Co.',
+  score: 650,
+  isCurrentPlayer: true,
+};
+
 let mockScore = 0;
 let mockStreak = 0;
 let mockMaxStreak = 0;
 let mockSponsorBonus = 0;
 let mockSessionId = 1001;
+let mockTotalQuestions = 5;
 
 function matchesRoute(
   url: string,
@@ -242,6 +274,13 @@ export const mockInterceptor: HttpInterceptorFn = (
     mockMaxStreak = 0;
     mockSponsorBonus = 0;
     mockSessionId++;
+    mockTotalQuestions = Math.floor(Math.random() * 4) + 3; // 3-6
+    const currentQuestion = MOCK_QUESTIONS[0];
+    const buffer = [
+      MOCK_QUESTIONS.find((q) => q.difficulty === 'easy')!,
+      MOCK_QUESTIONS.find((q) => q.difficulty === 'medium' && q.id !== currentQuestion.id)!,
+      MOCK_QUESTIONS.find((q) => q.difficulty === 'hard')!,
+    ].filter(Boolean);
     return respond({
       sessionId: mockSessionId,
       endsAt: new Date(
@@ -249,9 +288,21 @@ export const mockInterceptor: HttpInterceptorFn = (
       ).toISOString(),
       durationSeconds: SESSION_DURATION_SECONDS,
       countdownSeconds: SESSION_COUNTDOWN_SECONDS,
-      questions: MOCK_QUESTIONS,
-      sponsorQuestion: MOCK_SPONSOR_QUESTION,
+      totalQuestions: mockTotalQuestions,
+      currentQuestion,
+      buffer,
+      sponsorQuestions: MOCK_SPONSOR_QUESTIONS,
     });
+  }
+
+  // GET /sessions/:id/questions/next
+  if (matchesRoute(url, method, '/sessions/:id/questions/next', 'GET')) {
+    const buffer = [
+      MOCK_QUESTIONS.find((q) => q.difficulty === 'easy')!,
+      MOCK_QUESTIONS.find((q) => q.difficulty === 'medium')!,
+      MOCK_QUESTIONS.find((q) => q.difficulty === 'hard')!,
+    ].filter(Boolean);
+    return respond({ buffer });
   }
 
   // POST /sessions/:id/answers
@@ -284,14 +335,16 @@ export const mockInterceptor: HttpInterceptorFn = (
   // POST /sessions/:id/sponsor-answer
   if (matchesRoute(url, method, '/sessions/:id/sponsor-answer', 'POST')) {
     const body = req.body as { questionId: number; choiceIndex: number };
-    const correct = SPONSOR_CORRECT_INDEX === body.choiceIndex;
+    const correctIndex = SPONSOR_CORRECT_ANSWERS[body.questionId] ?? 0;
+    const sponsorQ = MOCK_SPONSOR_QUESTIONS.find((q) => q.id === body.questionId);
+    const correct = correctIndex === body.choiceIndex;
     // Sponsor scoring uses a fixed bonus (spec §5.3 Option B) — independent of streak.
-    const bonusPoints = correct ? MOCK_SPONSOR_QUESTION.bonusPoints : 0;
+    const bonusPoints = correct ? (sponsorQ?.bonusPoints ?? 0) : 0;
     mockSponsorBonus += bonusPoints;
     mockScore += bonusPoints;
     return respond({
       correct,
-      correctIndex: SPONSOR_CORRECT_INDEX,
+      correctIndex,
       bonusPoints,
       score: mockScore,
     });
@@ -330,8 +383,8 @@ export const mockInterceptor: HttpInterceptorFn = (
   if (matchesRoute(url, method, '/leaderboard', 'GET')) {
     return respond({
       scope: 'today',
-      rows: MOCK_LEADERBOARD_ROWS,
-      totalPlayers: 11,
+      rows: [...MOCK_LEADERBOARD_ROWS, MOCK_CURRENT_PLAYER_ROW],
+      totalPlayers: 47,
       resetsAt: new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString(),
     });
   }

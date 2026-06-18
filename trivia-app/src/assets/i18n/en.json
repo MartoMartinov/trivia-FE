@@ -1,6 +1,6 @@
 {
   "REGISTER": {
-    "HERO_SUBTITLE": "You have 90 seconds. Answer as many as you can — build streaks, multiply your score, win prizes.",
+    "HERO_SUBTITLE": "You have limited time. Answer as many as you can — build streaks, multiply your score, win prizes.",
     "FORM_TITLE": "Let's play.",
     "FIRST_NAME": "First Name",
     "LAST_NAME": "Last Name",
@@ -57,7 +57,8 @@
     "TODAY": "Today",
     "THIS_WEEK": "This Week",
     "LOADING": "Loading leaderboard…",
-    "BACK_TO_PLAY": "Back to your score",
+    "YOU": "You",
+    "BACK_TO_PLAY": "Back to start",
     "FOOTER": "Resets at midnight · Top 3 win sponsor prizes"
   },
   "BOOTH": {

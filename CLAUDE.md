@@ -5,6 +5,7 @@
 - follow the instructions in `./AGENTS.md`
 
 # Additional notes
+
 - when you load the app want to load the first question and also a buffer of questions from every difficulty level. When the player answers the 1st question he is served the next one from the buffer, depending on the requirements and in the same time load the next batch of questions from BA for the buffer for when the user has answered 2nd question.
 - You can have multiple sponsor questions and all must be in the end.
 - the logo in the header on right is the logo for the sponsor and will be provided from BE on app load .
@@ -17,3 +18,6 @@
 - the sponsor video will come from BE as url
 - the booth display must be without token and free to access to everybody
 - there is fields for brand color and text color in admin panel, sponsor name and url, logo, and video url
+
+## Backend
+- for developing purposes use mock-backend you can find in `C:/Users/twrkh/Projects/backend-mock`
