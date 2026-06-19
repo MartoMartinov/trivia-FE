@@ -1,7 +1,7 @@
 export const environment = {
   production: false,
   staging: true,
-  apiUrl: 'https://staging.practicalmachinist.com/api/en',
+  apiUrl: 'https://backend-mock-fawn.vercel.app/api/trivia/en',
   appName: 'Practical Machinist Trivia',
   useMockApi: false,
   // Public game URL the booth QR code points to (spec §8.3).
