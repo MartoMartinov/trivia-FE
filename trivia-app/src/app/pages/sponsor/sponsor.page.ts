@@ -15,9 +15,11 @@ import { TranslatePipe } from '@ngx-translate/core';
 
 import { GameStore } from '../../core/stores/game/game.store';
 import { PmHeaderComponent } from '../../shared/components/pm-header/pm-header.component';
+import type { SponsorQuestionDto } from '../../core/models/api.models';
 
 const PLACEHOLDER_REEL_SECONDS = 5;
 const REVEAL_DELAY_MS = 1100;
+const FINISH_DELAY_MS = 2100;
 
 @Component({
   selector: 'app-sponsor',
@@ -32,7 +34,12 @@ export class SponsorPage implements OnInit, OnDestroy {
 
   readonly videoRef = viewChild<ElementRef<HTMLVideoElement>>('videoEl');
 
-  readonly sponsorQuestion = this.gameStore.currentSponsorQuestion;
+  /**
+   * The question currently rendered. Only advances/clears AFTER the reveal delay so
+   * the correct-answer highlight stays visible even after the store has already moved
+   * sponsorIndex past this question.
+   */
+  readonly sponsorQuestion = signal<SponsorQuestionDto | null>(null);
   readonly result = this.gameStore.lastSponsorResult;
 
   readonly sponsorInitials = computed(() => {
@@ -40,10 +47,12 @@ export class SponsorPage implements OnInit, OnDestroy {
     return name.split(/\s+/).map((word) => word[0] ?? '').slice(0, 2).join('').toUpperCase();
   });
 
-  readonly bonusBadgeParams = computed(() => ({
-    current: this.gameStore.sponsorIndex() + 1,
-    total: this.gameStore.sponsorQuestions().length,
-  }));
+  readonly bonusBadgeParams = computed(() => {
+    const q = this.sponsorQuestion();
+    const all = this.gameStore.sponsorQuestions();
+    const current = q ? all.findIndex((sq) => sq.id === q.id) + 1 : 0;
+    return { current, total: all.length };
+  });
 
   readonly videoStarted = signal(false);
   readonly unlocked = signal(false);
@@ -77,7 +86,9 @@ export class SponsorPage implements OnInit, OnDestroy {
   ngOnInit(): void {
     if (!this.gameStore.hasSponsorRound()) {
       this.finish();
+      return;
     }
+    this.sponsorQuestion.set(this.gameStore.currentSponsorQuestion());
   }
 
   ngOnDestroy(): void {
@@ -135,13 +146,16 @@ export class SponsorPage implements OnInit, OnDestroy {
     const poll = setInterval(() => {
       if (this.gameStore.lastSponsorResult()) {
         clearInterval(poll);
+        // Capture isLast now — after applySponsorResult the store index has already advanced.
+        const isLast = !this.gameStore.hasSponsorRound();
         setTimeout(() => {
-          if (this.gameStore.hasSponsorRound()) {
-            this.resetForNextQuestion();
-          } else {
+          if (isLast) {
+            this.sponsorQuestion.set(null);
             this.finish();
+          } else {
+            this.resetForNextQuestion();
           }
-        }, REVEAL_DELAY_MS);
+        }, isLast ? FINISH_DELAY_MS : REVEAL_DELAY_MS);
       }
     }, 100);
   }
@@ -179,6 +193,7 @@ export class SponsorPage implements OnInit, OnDestroy {
         if (this.gameStore.hasSponsorRound()) {
           this.resetForNextQuestion();
         } else {
+          this.sponsorQuestion.set(null);
           this.finish();
         }
       } else {
@@ -208,6 +223,7 @@ export class SponsorPage implements OnInit, OnDestroy {
       video.load();
     }
     this.gameStore.clearSponsorResult();
+    this.sponsorQuestion.set(this.gameStore.currentSponsorQuestion());
     this.selectedIndex.set(null);
     this.videoStarted.set(false);
     this.unlocked.set(false);
