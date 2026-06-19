@@ -3,6 +3,17 @@
 
     <pm-header />
 
+    @if (!sponsorQuestion()) {
+      <div class="flex flex-col items-center justify-center flex-1 bg-navy gap-6">
+        <div class="flex items-center gap-3">
+          <span class="loading-dot"></span>
+          <span class="loading-dot" style="animation-delay:.18s"></span>
+          <span class="loading-dot" style="animation-delay:.36s"></span>
+        </div>
+        <p class="text-[12px] font-bold tracking-[0.18em] text-white/50 uppercase">{{ 'GAME.LOADING' | translate }}</p>
+      </div>
+    }
+
     @if (sponsorQuestion(); as sq) {
 
     <!-- HUD (gold glow) -->

@@ -152,6 +152,7 @@ export const GameStore = signalStore(
       submitSponsorAnswer,
       completeSession,
       setSponsorBonus: (bonus: number) => patchState(store, setSponsorBonus(bonus)),
+      clearLastResult: () => patchState(store, { lastResult: null }),
       clearSponsorResult: () => patchState(store, { lastSponsorResult: null }),
       skipSponsorQuestion: () => patchState(store, (state) => ({ sponsorIndex: state.sponsorIndex + 1 })),
       reset: () => patchState(store, resetGame()),

@@ -25,15 +25,24 @@
         </div>
       </div>
     </section>
-
+    @if (store.isPending()) {
+    <div class="flex flex-col items-center justify-center flex-1 py-16 gap-6 bg-navy">
+      <div class="flex items-center gap-3">
+        <span class="loading-dot"></span>
+        <span class="loading-dot"
+              style="animation-delay:.18s"></span>
+        <span class="loading-dot"
+              style="animation-delay:.36s"></span>
+      </div>
+      <p class="text-[12px] font-bold tracking-[0.18em] text-muted uppercase">{{ 'LEADERBOARD.LOADING' | translate }}</p>
+    </div>
+    }
+      @if (!store.isPending()) {
     <!-- List -->
     <div class="px-6 pt-4 pb-8">
 
-      @if (store.isPending()) {
-      <div class="text-center text-muted text-sm py-8">{{ 'LEADERBOARD.LOADING' | translate }}</div>
-      }
 
-      @if (!store.isPending()) {
+
       <div class=" w-full bg-white rounded-2xl border border-line overflow-hidden
       lg:max-w-5xl lg:mx-auto ">
         @for (row of topRows(); track row.rank; let last = $last) {
@@ -86,8 +95,8 @@
                 (click)="goToRegister()">← {{ 'LEADERBOARD.BACK_TO_PLAY' | translate }}</button>
         <p class="text-center text-[11px] text-muted mt-4">{{ 'LEADERBOARD.FOOTER' | translate }}</p>
       </div>
-      }
 
     </div>
+  }
   </div>
 </ion-content>

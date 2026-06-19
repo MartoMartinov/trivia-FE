@@ -150,6 +150,7 @@ export class GamePage implements OnInit, OnDestroy {
 
     this.selectedIndex.set(index);
     this.lastResult.set(null);
+    this.gameStore.clearLastResult();
 
     this.gameStore.submitAnswer({ questionId: question.id, choiceIndex: index });
 
