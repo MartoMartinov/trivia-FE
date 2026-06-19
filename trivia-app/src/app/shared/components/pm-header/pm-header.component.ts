@@ -1,10 +1,11 @@
 import { ChangeDetectionStrategy, Component, inject, Input } from '@angular/core';
 import { AppConfigStore } from '../../../core/stores/app-config/app-config.store';
-
+import { RouterLink, RouterOutlet } from '@angular/router';
 @Component({
   selector: 'pm-header',
   templateUrl: 'pm-header.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [RouterLink],
 })
 export class PmHeaderComponent {
   @Input() tag = 'TRIVIA';

@@ -57,6 +57,7 @@ export interface SponsorDto {
   name: string;
   logoUrl: string;
   primaryColor: string;
+  textColor: string;
   mediaUrl: string | null;
   mediaType: 'image' | 'video' | null;
   websiteUrl: string | null;
