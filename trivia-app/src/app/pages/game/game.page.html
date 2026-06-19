@@ -26,7 +26,7 @@
       </div>
     }
 
-    @if (phase() === 'playing' && !gameStore.currentQuestion()) {
+    @if (phase() === 'playing' && !displayQuestion()) {
       <div class="flex flex-col items-center justify-center flex-1 bg-navy gap-6">
         <div class="flex items-center gap-3">
           <span class="loading-dot"></span>
@@ -36,7 +36,7 @@
       </div>
     }
 
-    @if (phase() === 'playing' && gameStore.currentQuestion()) {
+    @if (phase() === 'playing' && displayQuestion(); as q) {
 
       <!-- HUD (dark navy) -->
       <section class="relative bg-navy overflow-hidden">
@@ -78,25 +78,25 @@
         <div class="flex justify-between items-center">
           <span class="pm-chip">
             <span class="w-1.5 h-1.5 rounded-full bg-orange"></span>
-            {{ gameStore.currentQuestion()!.difficulty | uppercase }}
+            {{ q.difficulty | uppercase }}
           </span>
-          <span class="text-[11px] font-bold trackifng-[0.16em] text-muted uppercase">
+          <span class="text-[11px] font-bold tracking-[0.16em] text-muted uppercase">
             {{ 'GAME.ANSWERED' | translate }} {{ gameStore.totalAnswers() }}
           </span>
         </div>
 
-        @if (gameStore.currentQuestion()!.imageUrl) {
-          <img [src]="gameStore.currentQuestion()!.imageUrl"
+        @if (q.imageUrl) {
+          <img [src]="q.imageUrl"
                class="mt-5 w-full h-[180px] object-cover rounded-2xl border border-line animate-rise"
                alt="" />
         }
 
         <h1 class="mt-5 font-black text-ink leading-[1.25] text-[20px] animate-rise">
-          {{ gameStore.currentQuestion()!.prompt }}
+          {{ q.prompt }}
         </h1>
 
         <div class="mt-5 grid gap-3">
-          @for (choice of gameStore.currentQuestion()!.choices; track choice.index) {
+          @for (choice of q.choices; track choice.index) {
             <div class="pm-answer"
                  [class.is-selected]="selectedIndex() === choice.index && lastResult() === null"
                  [class.is-correct]="lastResult() !== null && choice.index === lastResult()!.correctIndex"

@@ -24,7 +24,7 @@
   },
   "SPONSOR": {
     "BONUS_ROUND": "BONUS ROUND",
-    "BONUS_BADGE": "BONUS QUESTION 1/2",
+    "BONUS_BADGE": "BONUS QUESTION {{ current }}/{{ total }}",
     "SPONSORED": "SPONSORED",
     "PRESENTED_BY": "Presented by",
     "PTS": "PTS",

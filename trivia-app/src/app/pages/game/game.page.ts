@@ -31,8 +31,9 @@ export class GamePage implements OnInit, OnDestroy {
   readonly countdownValue = signal(0);
 
   readonly selectedIndex = signal<number | null>(null);
-  // Local result display — cleared before moving to next question
   readonly lastResult = signal<LastResult | null>(null);
+  /** The question currently rendered — updated only after the reveal delay, not when the store advances. */
+  readonly displayQuestion = signal<ReturnType<typeof this.gameStore.currentQuestion>>(null);
 
   readonly timeLeft = signal(0);
   // Total session length (denominator) — sourced from the session config, not a magic number.
@@ -85,11 +86,11 @@ export class GamePage implements OnInit, OnDestroy {
   }
 
   private beginPlaying(): void {
-    // The timed session begins after the countdown, so it gets the full configured duration.
     const duration = this.gameStore.durationSeconds() || DEFAULT_DURATION_SECONDS;
     this.totalSeconds.set(duration);
     this.timeLeft.set(duration);
     this.playEndsAt = Date.now() + duration * 1000;
+    this.displayQuestion.set(this.gameStore.currentQuestion());
     this.phase.set('playing');
     this.startTimer();
   }
@@ -145,16 +146,14 @@ export class GamePage implements OnInit, OnDestroy {
     if (this.phase() !== 'playing') return;
     if (this.selectedIndex() !== null || this.gameStore.isPending()) return;
 
-    const question = this.gameStore.currentQuestion();
+    const question = this.displayQuestion();
     if (!question) return;
 
     this.selectedIndex.set(index);
     this.lastResult.set(null);
     this.gameStore.clearLastResult();
-
     this.gameStore.submitAnswer({ questionId: question.id, choiceIndex: index });
 
-    // poll for result then advance
     const poll = setInterval(() => {
       const result = this.gameStore.lastResult();
       if (result) {
@@ -163,13 +162,17 @@ export class GamePage implements OnInit, OnDestroy {
         setTimeout(() => {
           this.selectedIndex.set(null);
           this.lastResult.set(null);
-          if (this.gameStore.hasMoreQuestions()) return;
-          // Standard questions are done: run the sponsored bonus round if one is pending,
-          // otherwise end the session (spec §4).
-          if (this.gameStore.hasSponsorRound()) {
-            this.goToSponsor();
+          // Advance the display only after the reveal — the store already has the next question.
+          const nextQuestion = this.gameStore.currentQuestion();
+          if (nextQuestion) {
+            this.displayQuestion.set(nextQuestion);
           } else {
-            this.endGame();
+            this.displayQuestion.set(null);
+            if (this.gameStore.hasSponsorRound()) {
+              this.goToSponsor();
+            } else {
+              this.endGame();
+            }
           }
         }, REVEAL_DELAY_MS);
       }

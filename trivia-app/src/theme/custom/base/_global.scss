@@ -222,6 +222,13 @@ body {
 
   &:hover:not(.is-disabled) {
     border-color: var(--color-orange);
+    &.is-correct {
+      border-color: var(--color-correct);
+      background: #f0fdf4;
+      .pm-answer-letter {
+        background: var(--color-correct);
+      }
+    }
   }
 
   &.is-selected {
@@ -237,9 +244,6 @@ body {
     background: #f0fdf4;
     .pm-answer-letter {
       background: var(--color-correct);
-    }
-    &:hover:not(.is-disabled) {
-      border-color: var(--color-correct);
     }
   }
 

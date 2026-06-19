@@ -40,6 +40,11 @@ export class SponsorPage implements OnInit, OnDestroy {
     return name.split(/\s+/).map((word) => word[0] ?? '').slice(0, 2).join('').toUpperCase();
   });
 
+  readonly bonusBadgeParams = computed(() => ({
+    current: this.gameStore.sponsorIndex() + 1,
+    total: this.gameStore.sponsorQuestions().length,
+  }));
+
   readonly videoStarted = signal(false);
   readonly unlocked = signal(false);
   readonly isMuted = signal(false);
