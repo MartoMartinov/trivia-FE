@@ -48,3 +48,134 @@
   .container-app { @apply max-w-7xl mx-auto px-6; }
   .tabular { font-variant-numeric: tabular-nums; }
 }
+
+.editor {
+  a {
+    @apply text-blue-500 underline;
+  }
+  ul,ol {
+    @apply list-disc list-inside;
+  }
+  ol {
+    @apply list-decimal;
+  }
+  li {
+    @apply ml-4;
+  }
+  h1 {
+    @apply text-2xl font-bold;
+  }
+  h2 {
+    @apply text-xl font-bold;
+  }
+  h3 {
+    @apply text-lg font-bold;
+  }
+  h4 {
+    @apply text-base font-bold;
+  }
+  h5 {
+    @apply text-sm font-bold;
+  }
+  h6 {
+    @apply text-xs font-bold;
+  }
+  hr {
+    @apply border-line my-4;
+  }
+  p {
+    @apply mb-4;
+  }
+  code {
+    @apply p-1 rounded bg-gray-100;
+  }
+  pre {
+    @apply p-4 rounded bg-gray-100;
+  }
+  blockquote {
+    @apply p-4 rounded bg-gray-100;
+  }
+  img {
+    @apply w-full;
+  }
+  iframe {
+    @apply w-full;
+  }
+  table {
+    @apply w-full;
+  }
+  th, td {
+    @apply p-2;
+  }
+  th {
+    @apply text-left;
+  }
+  td {
+    @apply text-right;
+  }
+  th, td {
+    @apply border border-line;
+  }
+  th:first-child, td:first-child {
+    @apply pl-0;
+  }
+  th:last-child, td:last-child {
+    @apply pr-0;
+  }
+  th {
+    @apply bg-gray-100;
+  }
+  table {
+    @apply border-collapse;
+  }
+  table + table {
+    @apply mt-4;
+  }
+  table + p {
+    @apply mt-4;
+  }
+  p + table {
+    @apply mt-4;
+  }
+  table + hr {
+    @apply mt-4;
+  }
+  hr + table {
+    @apply mt-4;
+  }
+  hr + p {
+    @apply mt-4;
+  }
+  p + hr {
+    @apply mt-4;
+  }
+  pre + p {
+    @apply mt-4;
+  }
+  p + pre {
+    @apply mt-4;
+  }
+  pre + hr {
+    @apply mt-4;
+  }
+  hr + pre {
+    @apply mt-4;
+  }
+  pre + table {
+    @apply mt-4;
+  }
+  table + pre {
+    @apply mt-4;
+  }
+  pre + p {
+    @apply mt-4;
+  }
+  p + pre {
+    @apply mt-4;
+  }
+  pre + hr {
+    @apply mt-4;
+  }
+
+
+}

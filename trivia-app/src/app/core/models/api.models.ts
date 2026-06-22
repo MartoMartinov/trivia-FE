@@ -175,6 +175,15 @@ export interface LeaderboardResponse {
   resetsAt: string; // ISO
 }
 
+// ── Static pages ─────────────────────────────────────────────────────────────
+
+export interface StaticPageResponse {
+  id: number;
+  title: string;
+  /** Trusted HTML content from the admin panel. */
+  content: string;
+}
+
 // ── Booth display ─────────────────────────────────────────────────────────────
 
 /** The player currently on the hottest correct-answer streak (spec §8.2 hot-streak panel). */

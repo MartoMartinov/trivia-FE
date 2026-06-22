@@ -17,6 +17,7 @@ import type {
   LeaderboardScope,
   BoothDisplayResponse,
   EventConfigResponse,
+  StaticPageResponse,
 } from '../models/api.models';
 
 @Injectable({ providedIn: 'root' })
@@ -89,5 +90,9 @@ export class ApiService {
     return this.http.get<BoothDisplayResponse>(`${this.base}/booth-display`, {
       params: { token },
     });
+  }
+
+  getPage(id: number): Observable<StaticPageResponse> {
+    return this.http.get<StaticPageResponse>(`${this.base}/pages/${id}`);
   }
 }

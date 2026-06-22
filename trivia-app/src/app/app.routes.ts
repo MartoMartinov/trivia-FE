@@ -44,5 +44,11 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./pages/booth-display/booth-display.page').then((m) => m.BoothDisplayPage),
   },
+  {
+    path: 'page/:id',
+    canActivate: [translationGuard],
+    loadComponent: () =>
+      import('./pages/static-page/static-page.page').then((m) => m.StaticPagePage),
+  },
   { path: '**', redirectTo: 'register' },
 ];

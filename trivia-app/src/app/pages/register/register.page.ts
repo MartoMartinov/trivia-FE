@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, OnDestroy, OnInit } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { IonContent } from '@ionic/angular/standalone';
 import { TranslatePipe } from '@ngx-translate/core';
 
@@ -16,7 +16,7 @@ import { PmHeaderComponent } from '../../shared/components/pm-header/pm-header.c
   templateUrl: 'register.page.html',
   styleUrls: ['register.page.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [IonContent, ReactiveFormsModule, TranslatePipe, PmHeaderComponent],
+  imports: [IonContent, ReactiveFormsModule, TranslatePipe, PmHeaderComponent, RouterLink],
 })
 export class RegisterPage implements OnInit, OnDestroy {
   private authCheckInterval: ReturnType<typeof setInterval> | null = null;

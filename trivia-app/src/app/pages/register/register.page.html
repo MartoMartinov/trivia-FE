@@ -87,7 +87,7 @@
           <div class="mb-4">
             <label class="pm-checkbox-row">
               <input type="checkbox" class="pm-checkbox" formControlName="consent" />
-              <span class="pm-checkbox-label">{{ 'REGISTER.CONSENT' | translate }}<a href="#" target="_blank" rel="noopener noreferrer">{{ 'REGISTER.CONSENT_LINK' | translate }}</a><span class="text-orange"> *</span></span>
+              <span class="pm-checkbox-label">{{ 'REGISTER.CONSENT' | translate }}<a [routerLink]="['/page', 1]" target="_blank" rel="noopener noreferrer">{{ 'REGISTER.CONSENT_LINK' | translate }}</a><span class="text-orange"> *</span></span>
             </label>
           </div>
 

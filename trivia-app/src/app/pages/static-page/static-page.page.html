@@ -1,0 +1,33 @@
+<ion-content [fullscreen]="true">
+  <div class="min-h-full flex flex-col bg-white md:bg-navy">
+
+    <pm-header class="flex-none relative z-20" />
+    <div class="hidden lg:block flex-none relative z-20 h-px bg-white/10"></div>
+
+    <div class="editor mx-auto flex-1 flex flex-col items-center px-2 py-5 lg:py-16">
+      <div class=" w-full max-w-[760px] bg-white rounded-[24px] shadow-[0_12px_40px_-8px_rgba(15,23,41,0.12)]
+                  px-2 py-4 xs:px-4 xs:py-8 lg:px-8 lg:py-12">
+
+        @if (loading()) {
+          <div class="flex justify-center items-center min-h-[200px]">
+            <div class="w-10 h-10 rounded-full border-4 border-orange/30 border-t-orange animate-spin"></div>
+          </div>
+        } @else if (error()) {
+          <div class="text-center py-12">
+            <p class="text-ink font-semibold text-lg mb-3">Page not found</p>
+            <a routerLink="/register" class="text-orange hover:underline text-sm">← Back to register</a>
+          </div>
+        } @else {
+          @if (title()) {
+            <h1 class="text-[24px] lg:text-[30px] font-black text-ink mb-8 border-b border-line pb-6">
+              {{ title() }}
+            </h1>
+          }
+          <div class="prose prose-ink max-w-none" [innerHTML]="content()"></div>
+        }
+
+      </div>
+    </div>
+
+  </div>
+</ion-content>
