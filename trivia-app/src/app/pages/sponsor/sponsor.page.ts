@@ -14,6 +14,7 @@ import { IonContent } from '@ionic/angular/standalone';
 import { TranslatePipe } from '@ngx-translate/core';
 
 import { GameStore } from '../../core/stores/game/game.store';
+import { ApiService } from '../../core/services/api.service';
 import { PmHeaderComponent } from '../../shared/components/pm-header/pm-header.component';
 import type { SponsorQuestionDto } from '../../core/models/api.models';
 
@@ -31,6 +32,7 @@ const FINISH_DELAY_MS = 2100;
 export class SponsorPage implements OnInit, OnDestroy {
   readonly gameStore = inject(GameStore);
   private readonly router = inject(Router);
+  private readonly api = inject(ApiService);
 
   readonly videoRef = viewChild<ElementRef<HTMLVideoElement>>('videoEl');
 
@@ -89,10 +91,23 @@ export class SponsorPage implements OnInit, OnDestroy {
       return;
     }
     this.sponsorQuestion.set(this.gameStore.currentSponsorQuestion());
+    this.maybeAutoUnlock();
   }
 
   ngOnDestroy(): void {
     this.clearQuestionTimer();
+  }
+
+  // ── Sponsor link ──────────────────────────────────────────────────────────────
+
+  clickSponsorLink(): void {
+    const sq = this.sponsorQuestion();
+    if (!sq?.sponsor.websiteUrl) return;
+    const sessionId = this.gameStore.sessionId();
+    if (sessionId) {
+      this.api.trackSponsorClick(sessionId, { questionId: sq.id, event: 'website_click' }).subscribe();
+    }
+    window.open(sq.sponsor.websiteUrl, '_blank', 'noopener,noreferrer');
   }
 
   // ── Video handlers ────────────────────────────────────────────────────────────
@@ -231,6 +246,7 @@ export class SponsorPage implements OnInit, OnDestroy {
     this.secondsLeft.set(0);
     this.questionSecondsLeft.set(0);
     this.timerProgress.set(1);
+    this.maybeAutoUnlock();
   }
 
   private runPlaceholderCountdown(): void {
@@ -246,6 +262,14 @@ export class SponsorPage implements OnInit, OnDestroy {
         this.secondsLeft.set(next);
       }
     }, 1000);
+  }
+
+  private maybeAutoUnlock(): void {
+    const sq = this.sponsorQuestion();
+    if (sq?.sponsor.imageUrl && !sq?.sponsor.videoUrl) {
+      this.unlocked.set(true);
+      this.startQuestionTimer();
+    }
   }
 
   private finish(): void {

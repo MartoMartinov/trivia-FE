@@ -11,6 +11,7 @@ import type {
   SubmitAnswerResponse,
   SubmitSponsorAnswerRequest,
   SubmitSponsorAnswerResponse,
+  SponsorTrackRequest,
   CompleteSessionResponse,
   SessionResultDto,
   LeaderboardResponse,
@@ -61,6 +62,13 @@ export class ApiService {
   ): Observable<SubmitSponsorAnswerResponse> {
     return this.http.post<SubmitSponsorAnswerResponse>(
       `${this.base}/sessions/${sessionId}/sponsor-answer`,
+      req,
+    );
+  }
+
+  trackSponsorClick(sessionId: number, req: SponsorTrackRequest): Observable<{ ok: boolean }> {
+    return this.http.post<{ ok: boolean }>(
+      `${this.base}/sessions/${sessionId}/sponsor-track`,
       req,
     );
   }

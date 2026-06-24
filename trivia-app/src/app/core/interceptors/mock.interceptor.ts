@@ -126,16 +126,16 @@ const MOCK_SPONSOR_QUESTION = {
     { index: 3, text: 'PrecisionEdge Z1' },
   ],
   bonusPoints: 200,
-  videoUrl: '/video_demo.mp4',
-  posterUrl: '/video_demo.png',
   timerSeconds: 30,
   sponsor: {
     id: 1,
     name: 'Sandvik Coromant',
     logoUrl: '',
     primaryColor: '#DE0016',
-    mediaUrl: null,
-    mediaType: null,
+    textColor: '#ffffff',
+    imageUrl: 'https://placehold.co/800x450/0E1524/decf00?text=Sandvik+Coromant',
+    videoUrl: null,
+    posterUrl: null,
     websiteUrl: 'https://www.sandvik.coromant.com',
   },
 };
@@ -150,16 +150,16 @@ const MOCK_SPONSOR_QUESTION_2 = {
     { index: 3, text: 'Metrology instruments' },
   ],
   bonusPoints: 150,
-  videoUrl: '/video_demo.mp4',
-  posterUrl: '/video_demo.png',
   timerSeconds: 30,
   sponsor: {
     id: 2,
     name: 'Haas Automation',
     logoUrl: '',
     primaryColor: '#C8102E',
-    mediaUrl: null,
-    mediaType: null,
+    textColor: '#ffffff',
+    imageUrl: null,
+    videoUrl: '/video_demo.mp4',
+    posterUrl: '/video_demo.png',
     websiteUrl: 'https://www.haascnc.com',
   },
 };
@@ -354,6 +354,11 @@ export const mockInterceptor: HttpInterceptorFn = (
       bonusPoints,
       score: mockScore,
     });
+  }
+
+  // POST /sessions/:id/sponsor-track
+  if (matchesRoute(url, method, '/sessions/:id/sponsor-track', 'POST')) {
+    return respond({ ok: true });
   }
 
   // POST /sessions/:id/complete

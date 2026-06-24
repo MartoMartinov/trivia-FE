@@ -58,9 +58,14 @@ export interface SponsorDto {
   logoUrl: string;
   primaryColor: string;
   textColor: string;
-  mediaUrl: string | null;
-  mediaType: 'image' | 'video' | null;
   websiteUrl: string | null;
+  /** Optional question image (spec §9.5). Null/absent for text-only questions. */
+  imageUrl: string | null;
+  /** Promo video to watch before the question unlocks. Null when no video is attached. */
+  videoUrl: string | null;
+  /** Poster image shown before the video plays. Null falls back to the dark gradient. */
+  posterUrl: string | null;
+  /** Seconds the player has to answer after the video ends before auto-advancing. */
 }
 
 export interface SponsorQuestionDto {
@@ -68,11 +73,6 @@ export interface SponsorQuestionDto {
   prompt: string;
   choices: ChoiceDto[];
   bonusPoints: number;
-  /** Promo video to watch before the question unlocks. Null when no video is attached. */
-  videoUrl: string | null;
-  /** Poster image shown before the video plays. Null falls back to the dark gradient. */
-  posterUrl: string | null;
-  /** Seconds the player has to answer after the video ends before auto-advancing. */
   timerSeconds: number;
   sponsor: SponsorDto;
 }
@@ -116,6 +116,11 @@ export interface SubmitAnswerResponse {
 export interface SubmitSponsorAnswerRequest {
   questionId: number;
   choiceIndex: number;
+}
+
+export interface SponsorTrackRequest {
+  questionId: number;
+  event: 'website_click';
 }
 
 export interface SubmitSponsorAnswerResponse {
