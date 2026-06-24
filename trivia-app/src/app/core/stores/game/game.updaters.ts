@@ -9,10 +9,11 @@ import type { PartialStateUpdater } from '@ngrx/signals';
 
 // ── Difficulty selection ───────────────────────────────────────────────────────
 
-type RegularDifficulty = 'easy' | 'medium' | 'hard';
+type RegularDifficulty = 'easy' | 'medium' | 'hard' | 'hard_plus';
 
 function selectNextDifficulty(correct: boolean, streak: number): RegularDifficulty {
   if (!correct) return 'easy';
+  if (streak >= 6) return 'hard_plus';
   if (streak >= 4) return 'hard';
   if (streak >= 2) return 'medium';
   return 'easy';

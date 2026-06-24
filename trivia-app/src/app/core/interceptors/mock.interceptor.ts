@@ -87,6 +87,17 @@ const MOCK_QUESTIONS = [
       { index: 3, text: 'Titanium' },
     ],
   },
+  {
+    id: 7,
+    prompt: 'Built-up edge (BUE) in turning is most likely to form when machining at:',
+    difficulty: 'hard_plus',
+    choices: [
+      { index: 0, text: 'Very high speeds with carbide tools' },
+      { index: 1, text: 'Low cutting speeds and moderate temperatures' },
+      { index: 2, text: 'High feed rates with ceramic inserts' },
+      { index: 3, text: 'Any speed with coated tools' },
+    ],
+  },
 ];
 
 const CORRECT_ANSWERS: Record<number, number> = {
@@ -96,6 +107,7 @@ const CORRECT_ANSWERS: Record<number, number> = {
   4: 1,
   5: 1,
   6: 1,
+  7: 1,
 };
 
 // Base points per difficulty (spec §5.1), mirrored from ScoringService.
@@ -286,6 +298,7 @@ export const mockInterceptor: HttpInterceptorFn = (
       MOCK_QUESTIONS.find((q) => q.difficulty === 'easy')!,
       MOCK_QUESTIONS.find((q) => q.difficulty === 'medium' && q.id !== currentQuestion.id)!,
       MOCK_QUESTIONS.find((q) => q.difficulty === 'hard')!,
+      MOCK_QUESTIONS.find((q) => q.difficulty === 'hard_plus')!,
     ].filter(Boolean);
     return respond({
       sessionId: mockSessionId,
@@ -307,6 +320,7 @@ export const mockInterceptor: HttpInterceptorFn = (
       MOCK_QUESTIONS.find((q) => q.difficulty === 'easy')!,
       MOCK_QUESTIONS.find((q) => q.difficulty === 'medium')!,
       MOCK_QUESTIONS.find((q) => q.difficulty === 'hard')!,
+      MOCK_QUESTIONS.find((q) => q.difficulty === 'hard_plus')!,
     ].filter(Boolean);
     return respond({ buffer });
   }
