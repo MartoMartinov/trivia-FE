@@ -130,6 +130,10 @@ export class GamePage implements OnInit, OnDestroy {
     if (this.hasEnded) return;
     this.hasEnded = true;
     this.clearTimer();
+    if (this.gameStore.hasSponsorRound()) {
+      this.router.navigate(['/sponsor']);
+      return;
+    }
     const sessionId = this.gameStore.sessionId();
     this.gameStore.completeSession(undefined);
     this.router.navigate(['/results', sessionId]);
