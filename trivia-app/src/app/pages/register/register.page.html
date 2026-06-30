@@ -91,10 +91,6 @@
             </label>
           </div>
 
-          @if (hasError()) {
-            <p class="mt-1.5 text-xs text-wrong">{{ errorMessage() ?? ('REGISTER.ERROR_GENERIC' | translate) }}</p>
-          }
-
           <button type="submit" class="pm-cta mt-[22px]" [disabled]="form.invalid || isPending()">
             @if (isPending()) { {{ 'REGISTER.SUBMITTING' | translate }} }
             @else { {{ 'REGISTER.SUBMIT' | translate }} }

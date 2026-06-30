@@ -1,15 +1,19 @@
-import { ChangeDetectionStrategy, Component, inject, OnDestroy, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, inject, OnDestroy, OnInit, untracked } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { IonContent } from '@ionic/angular/standalone';
-import { TranslatePipe } from '@ngx-translate/core';
+import { IonContent, ToastController } from '@ionic/angular/standalone';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import { SecureStorage } from '@aparajita/capacitor-secure-storage';
 
 import { STORAGE_KEYS } from '../../core/constants/storage-keys';
 import { AuthStore } from '../../core/stores/auth/auth.store';
 import { PlayerStore } from '../../core/stores/player/player.store';
+import { addIcons } from 'ionicons';
+import { alertCircle, close } from 'ionicons/icons';
 import { PmHeaderComponent } from '../../shared/components/pm-header/pm-header.component';
+
+addIcons({ alertCircle, close });
 
 @Component({
   selector: 'app-register',
@@ -23,10 +27,29 @@ export class RegisterPage implements OnInit, OnDestroy {
   private readonly authStore = inject(AuthStore);
   private readonly playerStore = inject(PlayerStore);
   private readonly router = inject(Router);
+  private readonly toastCtrl = inject(ToastController);
+  private readonly translate = inject(TranslateService);
 
   readonly isPending = this.authStore.isPending;
   readonly hasError = this.authStore.hasError;
   readonly errorMessage = this.authStore.errorMessage;
+
+  constructor() {
+    effect(async () => {
+      if (!this.hasError()) return;
+      const fallback = `${this.translate.instant('REGISTER.ERROR_GENERIC_1')}\n${this.translate.instant('REGISTER.ERROR_GENERIC_2')}`;
+      const msg = untracked(() => this.errorMessage()) ?? fallback;
+      const toast = await this.toastCtrl.create({
+        message: msg,
+        duration: 40000,
+        position: 'top',
+        cssClass: 'pm-toast-warning',
+        icon: 'alert-circle',
+        buttons: [{ icon: 'close', role: 'cancel' }],
+      });
+      await toast.present();
+    });
+  }
 
   readonly form = new FormGroup({
     firstName: new FormControl('', [Validators.required, Validators.minLength(2)]),

@@ -1,0 +1,556 @@
+<title>Client Feedback Analysis — Practical Machinist Trivia</title>
+<meta name="description" content="Technical analysis of four client questions: difficulty multiplier, question load time, sponsor hit metric, and geo-targeting feasibility.">
+
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:        #ECEAE7;
+    --surface:   #FFFFFF;
+    --ink:       #181716;
+    --muted:     #68655F;
+    --accent:    #C74A1E;
+    --accent-lt: #FAF0EC;
+    --border:    #D6D3CD;
+    --ok:        #1A6B3A;
+    --ok-lt:     #EBF5EF;
+    --warn:      #8B5E00;
+    --warn-lt:   #FDF5E6;
+    --bug:       #C74A1E;
+    --bug-lt:    #FAF0EC;
+  }
+
+  html { font-size: 16px; background: var(--bg); }
+
+  body {
+    font-family: system-ui, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif;
+    color: var(--ink);
+    line-height: 1.6;
+    padding: 3rem 1.5rem 6rem;
+  }
+
+  /* ── Page shell ── */
+  .doc {
+    max-width: 760px;
+    margin: 0 auto;
+  }
+
+  /* ── Header ── */
+  .doc-header {
+    border-top: 3px solid var(--ink);
+    padding-top: 1.5rem;
+    margin-bottom: 2.5rem;
+  }
+
+  .doc-eyebrow {
+    font-size: 0.6875rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.5rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .doc-title {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 2rem;
+    line-height: 1.2;
+    font-weight: normal;
+    text-wrap: balance;
+    margin-bottom: 1.25rem;
+  }
+
+  .doc-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 2rem;
+    border-top: 1px solid var(--border);
+    padding-top: 0.875rem;
+    font-size: 0.8125rem;
+    color: var(--muted);
+  }
+
+  .doc-meta span { display: flex; gap: 0.4em; }
+  .doc-meta strong { color: var(--ink); font-weight: 600; }
+
+  /* ── Issue cards ── */
+  .issue {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+  }
+
+  .issue-header {
+    padding: 1.125rem 1.375rem 0.875rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .issue-number {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.6875rem;
+    color: var(--muted);
+    margin-top: 0.15rem;
+    min-width: 2ch;
+    flex-shrink: 0;
+  }
+
+  .issue-title-group { flex: 1; }
+
+  .issue-title {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 1.125rem;
+    font-weight: normal;
+    line-height: 1.3;
+    margin-bottom: 0.35rem;
+  }
+
+  .issue-client-q {
+    font-size: 0.8125rem;
+    color: var(--muted);
+    font-style: italic;
+    line-height: 1.5;
+  }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35em;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 0.25em 0.6em;
+    border-radius: 2px;
+    flex-shrink: 0;
+    margin-top: 0.1rem;
+  }
+
+  .chip::before {
+    content: '';
+    display: block;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: 0.7;
+  }
+
+  .chip-ok    { background: var(--ok-lt);   color: var(--ok); }
+  .chip-bug   { background: var(--bug-lt);  color: var(--bug); }
+  .chip-warn  { background: var(--warn-lt); color: var(--warn); }
+  .chip-info  { background: #EEF2F8;        color: #2B52A0; }
+
+  .issue-body { padding: 1.25rem 1.375rem; display: flex; flex-direction: column; gap: 1.125rem; }
+
+  /* ── Sections within a card ── */
+  .section-label {
+    font-size: 0.625rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: var(--muted);
+    margin-bottom: 0.4rem;
+  }
+
+  .finding {
+    background: var(--bg);
+    border-left: 3px solid var(--border);
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+    border-radius: 0 3px 3px 0;
+  }
+
+  .finding.accent { border-color: var(--accent); }
+  .finding.ok     { border-color: var(--ok); }
+  .finding.warn   { border-color: var(--warn); }
+
+  .finding p + p { margin-top: 0.5rem; }
+
+  code {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.8125em;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    padding: 0.05em 0.35em;
+    border-radius: 2px;
+    color: var(--ink);
+  }
+
+  .client-response {
+    border: 1px dashed var(--border);
+    border-radius: 3px;
+    padding: 0.875rem 1rem;
+    font-size: 0.875rem;
+    color: var(--ink);
+    background: #FAFAF9;
+    line-height: 1.65;
+  }
+
+  .client-response em { color: var(--muted); font-style: italic; }
+
+  /* ── Logic table ── */
+  .logic-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8125rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .logic-table th {
+    text-align: left;
+    font-size: 0.625rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 700;
+    padding: 0.4rem 0.75rem;
+    border-bottom: 2px solid var(--border);
+  }
+
+  .logic-table td {
+    padding: 0.45rem 0.75rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .logic-table tr:last-child td { border-bottom: none; }
+
+  .logic-table tr:hover td { background: var(--bg); }
+
+  .diff-easy   { color: #1A6B3A; font-weight: 600; }
+  .diff-medium { color: #8B5E00; font-weight: 600; }
+  .diff-hard   { color: #8B2000; font-weight: 600; }
+  .diff-hp     { color: #581845; font-weight: 600; }
+
+  .mult {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.8125rem;
+    font-weight: 700;
+  }
+
+  /* ── Geo options table ── */
+  .opt-table { width: 100%; border-collapse: collapse; font-size: 0.8125rem; }
+  .opt-table th {
+    text-align: left; font-size: 0.625rem; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--muted); font-weight: 700;
+    padding: 0.4rem 0.75rem; border-bottom: 2px solid var(--border);
+  }
+  .opt-table td { padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+  .opt-table tr:last-child td { border-bottom: none; }
+  .opt-table tr:hover td { background: var(--bg); }
+
+  .eff-high   { color: var(--ok); font-weight: 600; }
+  .eff-med    { color: var(--warn); font-weight: 600; }
+  .eff-low    { color: var(--muted); }
+  .cplx-low   { color: var(--ok); }
+  .cplx-med   { color: var(--warn); }
+  .cplx-high  { color: var(--bug); }
+
+  .rec-row td { background: var(--accent-lt) !important; font-weight: 500; }
+  .rec-badge {
+    font-size: 0.6rem; font-weight: 700; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--accent);
+    background: white; border: 1px solid var(--accent);
+    padding: 0.15em 0.4em; border-radius: 2px; margin-left: 0.4em;
+    vertical-align: middle;
+  }
+
+  /* ── Divider ── */
+  .divider {
+    border: none;
+    border-top: 1px solid var(--border);
+  }
+
+  /* ── Footer ── */
+  .doc-footer {
+    margin-top: 3rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+    font-size: 0.75rem;
+    color: var(--muted);
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  /* ── Overflow containers for tables ── */
+  .table-wrap { overflow-x: auto; }
+
+  @media (max-width: 600px) {
+    body { padding: 1.5rem 1rem 4rem; }
+    .doc-title { font-size: 1.5rem; }
+    .issue-header { flex-direction: column; gap: 0.5rem; }
+    .chip { align-self: flex-start; }
+  }
+</style>
+
+<div class="doc">
+
+  <!-- ── Header ── -->
+  <header class="doc-header">
+    <p class="doc-eyebrow">Technical Analysis · Client Feedback</p>
+    <h1 class="doc-title">Practical Machinist Trivia — Client Questions Review</h1>
+    <div class="doc-meta">
+      <span><strong>Date</strong> 30 June 2026</span>
+      <span><strong>Author</strong> Martin Martinov</span>
+      <span><strong>Status</strong> 4 items · 1 bug confirmed · 1 revised</span>
+    </div>
+  </header>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       ISSUE 1 — Multiplier / Difficulty
+  ═══════════════════════════════════════════════════════════════ -->
+  <article class="issue">
+    <div class="issue-header">
+      <span class="issue-number">01</span>
+      <div class="issue-title-group">
+        <h2 class="issue-title">Difficulty Multiplier Progression</h2>
+        <p class="issue-client-q">"I feel like even when getting the right question, I was shown easy questions in a row, and after a few then immediately hard."</p>
+      </div>
+      <span class="chip chip-ok">Working as Designed</span>
+    </div>
+
+    <div class="issue-body">
+
+      <div>
+        <p class="section-label">How it works</p>
+        <div class="finding">
+          <p>Difficulty is streak-driven, not count-driven. The next question's difficulty is calculated in <code>game.updaters.ts → selectNextDifficulty()</code> after each answer:</p>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table class="logic-table">
+          <thead>
+            <tr>
+              <th>Outcome</th>
+              <th>Streak</th>
+              <th>Next Difficulty</th>
+              <th>Multiplier</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Wrong</td>
+              <td>resets to 0</td>
+              <td><span class="diff-easy">easy</span></td>
+              <td><span class="mult">1×</span></td>
+            </tr>
+            <tr>
+              <td>Correct</td>
+              <td>1</td>
+              <td><span class="diff-easy">easy</span></td>
+              <td><span class="mult">1×</span></td>
+            </tr>
+            <tr>
+              <td>Correct</td>
+              <td>2–3</td>
+              <td><span class="diff-medium">medium</span></td>
+              <td><span class="mult">1.5×</span></td>
+            </tr>
+            <tr>
+              <td>Correct</td>
+              <td>4–5</td>
+              <td><span class="diff-hard">hard</span></td>
+              <td><span class="mult">2×</span></td>
+            </tr>
+            <tr>
+              <td>Correct</td>
+              <td>6+</td>
+              <td><span class="diff-hp">hard_plus</span></td>
+              <td><span class="mult">2.5×</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div>
+        <p class="section-label">Why it looked wrong</p>
+        <div class="finding accent">
+          <p>The player gets <strong>two easy questions</strong> before the first jump (streak 1 is still easy). After streak 2, it jumps to medium, after streak 4 to hard. Any wrong answer resets to easy — so a player who got easy, easy, medium, then missed, would restart at easy and could hit hard quickly once they recovered their streak.</p>
+        </div>
+      </div>
+
+      <div>
+        <p class="section-label">Client response</p>
+        <div class="client-response">
+          The behavior is working as designed. The progression is streak-based: you need to answer 2 in a row correctly to reach medium, 4 in a row for hard. A wrong answer resets the streak to easy immediately. If the client would prefer a different shape — e.g. a fixed sequence (Q1 easy → Q2 medium → Q3 hard) regardless of performance — we can adjust the thresholds, but that would change the scoring mechanics too. Let us know if they want a change and we'll scope it.
+        </div>
+      </div>
+
+    </div>
+  </article>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       ISSUE 2 — Question Load Time
+  ═══════════════════════════════════════════════════════════════ -->
+  <article class="issue">
+    <div class="issue-header">
+      <span class="issue-number">02</span>
+      <div class="issue-title-group">
+        <h2 class="issue-title">Question Load Time / Abrupt Session Stop</h2>
+        <p class="issue-client-q">"Sometimes the session stops abruptly before the timer reaches 0, and the next question takes too long to load."</p>
+      </div>
+      <span class="chip chip-bug">Bug Confirmed</span>
+    </div>
+
+    <div class="issue-body">
+
+      <div>
+        <p class="section-label">Buffer architecture</p>
+        <div class="finding">
+          <p><strong>Session start:</strong> BE returns <code>currentQuestion</code> (shown immediately) + <code>buffer[]</code> (one question per difficulty — ready for Q2).</p>
+          <p><strong>After each answer:</strong> Q(n+1) is picked from the buffer instantly, then the buffer is cleared and <code>fetchNextBatch()</code> fires in the background to pre-load Q(n+2).</p>
+        </div>
+      </div>
+
+      <div>
+        <p class="section-label">Race condition (root cause)</p>
+        <div class="finding warn">
+          <p>When the player answers Q2 before <code>fetchNextBatch</code> has returned, the buffer is empty. <code>pickFromBuffer([])</code> returns <code>null</code>. The store sets <code>currentQuestion = null</code>, <code>hasMoreQuestions</code> becomes <code>false</code>, and the game navigates to sponsor/results — <strong>even though questions remain</strong>.</p>
+          <p>This is the abrupt ending. It happens reliably on slow connections or fast players.</p>
+        </div>
+      </div>
+
+      <div>
+        <p class="section-label">Fix required</p>
+        <div class="finding accent">
+          <p>The store should not treat an empty buffer as "no more questions." Options: (a) hold a loading state when the buffer is empty and <code>currentIndex &lt; totalQuestions</code>, showing a brief spinner instead of ending the game; (b) keep the picked question in the buffer until the next batch arrives before clearing. Will add this to Asana.</p>
+        </div>
+      </div>
+
+      <div>
+        <p class="section-label">Client response</p>
+        <div class="client-response">
+          Confirmed — we found the cause. Under slow network conditions the game can incorrectly treat a temporary empty question buffer as "session over" and skip to the results screen. This is a bug, not expected behavior. We have identified the fix and will deploy it in the next release.
+        </div>
+      </div>
+
+    </div>
+  </article>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       ISSUE 3 — Sponsor Hit
+  ═══════════════════════════════════════════════════════════════ -->
+  <article class="issue">
+    <div class="issue-header">
+      <span class="issue-number">03</span>
+      <div class="issue-title-group">
+        <h2 class="issue-title">Sponsor Hit — Dashboard Metric</h2>
+        <p class="issue-client-q">"What does this mean? How many times was the sponsor question answered correctly?"</p>
+      </div>
+      <span class="chip chip-info">Clarification</span>
+    </div>
+
+    <div class="issue-body">
+
+      <div>
+        <p class="section-label">What it tracks — clarified by BE dev</p>
+        <div class="finding ok">
+          <p><strong>Sponsor hit %</strong> = the percentage of players who clicked the sponsor's website link during the sponsor round. It maps to the <code>website_click</code> event tracked in the backend, not to correct answers on the sponsor question (those are tracked separately).</p>
+        </div>
+      </div>
+
+      <div>
+        <p class="section-label">Why it shows 0%</p>
+        <div class="finding">
+          <p>No player has tapped the sponsor website link yet — either because no full sessions with a sponsor round have been completed, or players reached the sponsor screen but did not click through to the site. Not a bug.</p>
+        </div>
+      </div>
+
+      <div>
+        <p class="section-label">Client response</p>
+        <div class="client-response">
+          "Sponsor hit %" tracks how many players clicked the sponsor's website link during the bonus round — it is a click-through rate, not a measure of correct answers. 0% means no player has tapped that link yet, most likely because no full sessions including the sponsor round have been completed during testing. Once real game sessions run at the event, this metric will update automatically.
+        </div>
+      </div>
+
+    </div>
+  </article>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       ISSUE 4 — Geo-targeting
+  ═══════════════════════════════════════════════════════════════ -->
+  <article class="issue">
+    <div class="issue-header">
+      <span class="issue-number">04</span>
+      <div class="issue-title-group">
+        <h2 class="issue-title">Geo-targeting — IMTS / McCormick Place Radius</h2>
+        <p class="issue-client-q">"How hard would it be to geo-target the trivia for IMTS only to McCormick Place/Chicago radius?"</p>
+      </div>
+      <span class="chip chip-warn">Low Priority — Assess</span>
+    </div>
+
+    <div class="issue-body">
+
+      <div>
+        <p class="section-label">Current access control</p>
+        <div class="finding">
+          <p>The <code>/register</code> route has no guard — anyone with the URL can register and play. The game routes (<code>/game</code>, <code>/sponsor</code>, <code>/results</code>) require authentication, but registration itself is open. There is no hash or token in the URL for the player flow.</p>
+        </div>
+      </div>
+
+      <div>
+        <p class="section-label">Options</p>
+        <div class="table-wrap">
+          <table class="opt-table">
+            <thead>
+              <tr>
+                <th>Approach</th>
+                <th>Effectiveness</th>
+                <th>Complexity</th>
+                <th>Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="rec-row">
+                <td><strong>On-site PIN / access code</strong> at registration<span class="rec-badge">Recommended</span></td>
+                <td><span class="eff-high">Good</span></td>
+                <td><span class="cplx-low">Low</span></td>
+                <td>4-digit code printed on badges / stands. Simple BE validation field at registration.</td>
+              </tr>
+              <tr>
+                <td>QR code rotation (change URL/hash periodically)</td>
+                <td><span class="eff-med">Partial</span></td>
+                <td><span class="cplx-low">Low</span></td>
+                <td>Shared links expire, but doesn't truly confirm physical presence.</td>
+              </tr>
+              <tr>
+                <td>GPS geofencing (Geolocation API, ~500 m radius)</td>
+                <td><span class="eff-high">High</span></td>
+                <td><span class="cplx-med">Medium</span></td>
+                <td>Works on mobile. Users who deny location permission would be blocked. Indoor GPS can drift.</td>
+              </tr>
+              <tr>
+                <td>IP-based geofencing (venue WiFi ranges)</td>
+                <td><span class="eff-low">Low</span></td>
+                <td><span class="cplx-high">High</span></td>
+                <td>Requires obtaining McCormick's IP ranges. VPN / cellular easily bypasses.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div>
+        <p class="section-label">Client response</p>
+        <div class="client-response">
+          The easiest approach without heavy infrastructure is an on-site PIN code required at registration — a short code printed on badges, stands, or handed out at the booth that proves physical attendance. GPS geofencing (~500 m radius around McCormick Place) is also feasible on the frontend and would work for most mobile users, though anyone who denies location permission would be blocked. Since the client flagged this as low priority, we recommend the PIN approach if they want to proceed — it is a 1–2 day implementation. We can scope GPS geofencing separately if they want a stronger guarantee.
+        </div>
+      </div>
+
+    </div>
+  </article>
+
+  <!-- Footer -->
+  <footer class="doc-footer">
+    <span>Practical Machinist Trivia · Internal Technical Report</span>
+    <span>30 June 2026 · m.martinov@kipo.bg</span>
+  </footer>
+
+</div>

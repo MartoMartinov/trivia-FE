@@ -12,7 +12,8 @@
     "CONSENT_SHORT": "By playing, you agree to be added to the Practical Machinist list.",
     "SUBMIT": "Start Trivia →",
     "SUBMITTING": "Starting…",
-    "ERROR_GENERIC": "Please fill out every field with a valid value."
+    "ERROR_GENERIC_1": "Something went wrong.",
+    "ERROR_GENERIC_2": "Please try again."
   },
   "GAME": {
     "LOADING": "Loading questions…",
