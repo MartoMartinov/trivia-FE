@@ -4,6 +4,7 @@ import { IonContent } from '@ionic/angular/standalone';
 import { timer, switchMap } from 'rxjs';
 
 import { ApiService } from '../../core/services/api.service';
+import { AppConfigStore } from '../../core/stores/app-config/app-config.store';
 import { environment } from '../../../environments/environment';
 import type { BoothDisplayResponse } from '../../core/models/api.models';
 
@@ -20,6 +21,7 @@ const QR_SIZE = 220;
 export class BoothDisplayPage implements OnInit {
   private readonly api = inject(ApiService);
   private readonly route = inject(ActivatedRoute);
+  readonly appConfig = inject(AppConfigStore);
 
   readonly data = signal<BoothDisplayResponse | null>(null);
 

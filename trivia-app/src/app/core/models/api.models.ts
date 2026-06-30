@@ -159,6 +159,8 @@ export interface SessionResultDto {
 
 export interface EventConfigResponse {
   eventLogoUrl: string | null;
+  /** Combined app + event logo for the booth/TV display. */
+  tvLogoUrl: string | null;
 }
 
 // ── Leaderboard ───────────────────────────────────────────────────────────────

@@ -9,8 +9,8 @@
           <h1 class="live-title">Live Leaderboard</h1>
         </div>
         <div class="header-logos">
-          @if (d.eventLogoUrl) {
-            <img [src]="d.eventLogoUrl" alt="" class="tv-logo" />
+          @if (appConfig.tvLogoUrl()) {
+            <img [src]="appConfig.tvLogoUrl()!" alt="" class="tv-logo" />
           }
         </div>
       </header>

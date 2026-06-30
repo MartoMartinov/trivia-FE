@@ -18,7 +18,7 @@ export const AppConfigStore = signalStore(
         switchMap(() =>
           api.getEventConfig().pipe(
             tapResponse({
-              next: (res) => patchState(store, { eventLogoUrl: res.eventLogoUrl }),
+              next: (res) => patchState(store, { eventLogoUrl: res.eventLogoUrl, tvLogoUrl: res.tvLogoUrl ?? null }),
               error: () => {}, // non-critical — header just won't show the logo
             }),
           ),
