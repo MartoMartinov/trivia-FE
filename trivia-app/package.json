@@ -9,8 +9,8 @@
     "tw:watch": "tailwindcss -i src/tailwind.css -o src/tailwind-out.css --watch",
     "start": "npm run tw && concurrently \"npm run tw:watch\" \"ng serve\"",
     "build": "npm run tw && ng build",
-    "build:staging": "npm run tw && ng build --configuration staging",
-    "start:staging": "npm run tw && concurrently \"npm run tw:watch\" \"ng serve --configuration staging\"",
+    "build:web:staging": "npm run tw && ng build --configuration staging",
+    "start:web:staging": "npm run tw && concurrently \"npm run tw:watch\" \"ng serve --configuration staging\"",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "lint": "ng lint"

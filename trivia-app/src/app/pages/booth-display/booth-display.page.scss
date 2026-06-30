@@ -69,15 +69,9 @@ ion-content {
 .header-logos {
   display: flex;
   align-items: center;
-  gap: 1.56vw;
 
-  .event-logo {
-    height: 3.54vw;
-    object-fit: contain;
-  }
-
-  .pm-logo {
-    height: 3.8vw;
+  .tv-logo {
+    height: 7vw;
     object-fit: contain;
   }
 }
