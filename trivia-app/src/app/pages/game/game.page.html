@@ -77,7 +77,7 @@
       lg:max-w-5xl lg:mx-auto">
         <div class="flex justify-between items-center">
           <span class="pm-chip">
-            <span class="w-1.5 h-1.5 rounded-full bg-orange"></span>
+            <span class="w-1.5 h-1.5 rounded-full" [style.backgroundColor]="difficultyDotColor(q.difficulty)"></span>
             {{ q.difficulty | uppercase }}
           </span>
           <span class="text-[11px] font-bold tracking-[0.16em] text-muted uppercase">

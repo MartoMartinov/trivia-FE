@@ -187,4 +187,14 @@ export class GamePage implements OnInit, OnDestroy {
     const m = Math.floor(seconds / 60);
     return `${m}:${String(seconds % 60).padStart(2, '0')}`;
   }
+
+  difficultyDotColor(difficulty: string | undefined): string {
+    switch (difficulty) {
+      case 'easy':      return '#16a34a';
+      case 'medium':    return '#f5b400';
+      case 'hard':      return '#f34d23';
+      case 'hard_plus': return '#dc2323';
+      default:          return '#f34d23';
+    }
+  }
 }
