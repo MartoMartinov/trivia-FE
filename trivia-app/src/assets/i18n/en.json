@@ -44,13 +44,13 @@
     "ANSWERED": "ANSWERED",
     "BEST_STREAK": "BEST STREAK",
     "SP_BONUS": "SP. BONUS",
-    "PRIZE_TITLE": "Top 3 today win a prize",
-    "PRIZE_BODY": "We'll text the winners at the end of the day.",
+    "PRIZE_TITLE": "You're in the running.",
+    "PRIZE_BODY": "Finish today's Top 3 and you'll win a prize. We'll text and email winners at the end of the day so you can claim your prize.",
     "VIEW_LEADERBOARD": "Today's Leaderboard",
     "SHARE": "Send a friend to the booth",
     "COME_BACK": "Come back tomorrow.",
     "COME_BACK_BODY": "New trivia every day at the booth. One play per day.",
-    "FOOTER": "Daily leaderboard resets at midnight · Winners notified by SMS"
+    "FOOTER": "Daily leaderboard resets at midnight · Winners notified by SMS and email"
   },
   "LEADERBOARD": {
     "TITLE": "Leaderboard",
