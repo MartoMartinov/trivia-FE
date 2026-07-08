@@ -94,10 +94,8 @@ export class ApiService {
     });
   }
 
-  getBoothDisplay(token: string): Observable<BoothDisplayResponse> {
-    return this.http.get<BoothDisplayResponse>(`${this.base}/booth-display`, {
-      params: { token },
-    });
+  getBoothDisplay(): Observable<BoothDisplayResponse> {
+    return this.http.get<BoothDisplayResponse>(`${this.base}/booth-display`);
   }
 
   getPage(id: number): Observable<StaticPageResponse> {
