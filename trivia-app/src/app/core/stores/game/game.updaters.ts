@@ -11,6 +11,16 @@ import type { PartialStateUpdater } from '@ngrx/signals';
 
 type RegularDifficulty = 'easy' | 'medium' | 'hard' | 'hard_plus';
 
+// The score multiplier always corresponds to the difficulty actually being played,
+// never to streak directly — so a ladder fallback (see pickFromBuffer) that serves a
+// lower tier automatically carries a matching lower multiplier.
+export const MULTIPLIER_BY_DIFFICULTY: Record<RegularDifficulty, number> = {
+  easy: 1,
+  medium: 1.5,
+  hard: 2,
+  hard_plus: 2.5,
+};
+
 function selectNextDifficulty(correct: boolean, streak: number): RegularDifficulty {
   if (!correct) return 'easy';
   if (streak >= 6) return 'hard_plus';
@@ -19,12 +29,18 @@ function selectNextDifficulty(correct: boolean, streak: number): RegularDifficul
   return 'easy';
 }
 
+// Highest to lowest — used to step down to the next best difficulty when the
+// requested tier isn't in the buffer (e.g. hard_plus is admin-configurable and
+// may not always be provided), instead of falling back to an arbitrary buffer[0].
+const DIFFICULTY_LADDER: RegularDifficulty[] = ['hard_plus', 'hard', 'medium', 'easy'];
+
 function pickFromBuffer(buffer: QuestionDto[], difficulty: RegularDifficulty): QuestionDto | null {
-  return (
-    buffer.find((q) => q.difficulty === difficulty) ??
-    buffer[0] ??
-    null
-  );
+  const startIndex = DIFFICULTY_LADDER.indexOf(difficulty);
+  for (let i = startIndex; i < DIFFICULTY_LADDER.length; i++) {
+    const match = buffer.find((q) => q.difficulty === DIFFICULTY_LADDER[i]);
+    if (match) return match;
+  }
+  return buffer[0] ?? null;
 }
 
 // ── Updaters ──────────────────────────────────────────────────────────────────

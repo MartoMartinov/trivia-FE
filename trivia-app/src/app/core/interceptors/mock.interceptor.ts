@@ -117,6 +117,14 @@ const BASE_POINTS_BY_DIFFICULTY: Record<string, number> = {
   hard: 200,
   hard_plus: 250,
 };
+// Multiplier corresponds to the difficulty actually answered, not raw streak,
+// mirrored from ScoringService.MULTIPLIER_BY_DIFFICULTY.
+const MULTIPLIER_BY_DIFFICULTY: Record<string, number> = {
+  easy: 1,
+  medium: 1.5,
+  hard: 2,
+  hard_plus: 2.5,
+};
 const DIFFICULTY_BY_QUESTION_ID: Record<number, string> = MOCK_QUESTIONS.reduce<
   Record<number, string>
 >((map, q) => {
@@ -335,11 +343,9 @@ export const mockInterceptor: HttpInterceptorFn = (
     } else {
       mockStreak = 0;
     }
-    const multiplier =
-      mockStreak >= 6 ? 2.5 : mockStreak >= 4 ? 2 : mockStreak >= 2 ? 1.5 : 1;
-    const basePoints =
-      BASE_POINTS_BY_DIFFICULTY[DIFFICULTY_BY_QUESTION_ID[body.questionId]] ??
-      100;
+    const answeredDifficulty = DIFFICULTY_BY_QUESTION_ID[body.questionId] ?? 'easy';
+    const multiplier = MULTIPLIER_BY_DIFFICULTY[answeredDifficulty] ?? 1;
+    const basePoints = BASE_POINTS_BY_DIFFICULTY[answeredDifficulty] ?? 100;
     const points = correct ? Math.round(basePoints * multiplier) : 0;
     mockScore += points;
     return respond({

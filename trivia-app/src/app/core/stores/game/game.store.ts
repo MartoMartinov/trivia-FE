@@ -13,6 +13,7 @@ import {
   setSponsorBonus,
   setGameCompleted,
   resetGame,
+  MULTIPLIER_BY_DIFFICULTY,
 } from './game.updaters';
 import { withRequestStatus, setPending, setFulfilled, setError } from '../features/with-request-status.feature';
 import { withLoading } from '../features/with-loading.feature';
@@ -36,12 +37,11 @@ export const GameStore = signalStore(
     hasSponsorRound: computed(() => store.sponsorIndex() < store.sponsorQuestions().length),
     // The sponsor question currently on-screen (advances after each answer).
     currentSponsorQuestion: computed(() => store.sponsorQuestions()[store.sponsorIndex()] ?? null),
+    // Tied to the difficulty of the question on screen, not raw streak — stays
+    // correct even when the buffer fallback serves a lower tier (see pickFromBuffer).
     multiplierLabel: computed(() => {
-      const s = store.streak();
-      if (s >= 6) return '2.5×';
-      if (s >= 4) return '2×';
-      if (s >= 2) return '1.5×';
-      return '1×';
+      const difficulty = store.currentQuestion()?.difficulty ?? 'easy';
+      return `${MULTIPLIER_BY_DIFFICULTY[difficulty]}×`;
     }),
   })),
   withMethods((store) => {

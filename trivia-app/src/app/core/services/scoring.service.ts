@@ -13,11 +13,16 @@ export class ScoringService {
     hard_plus: 250,
   };
 
-  multiplierFor(streak: number): number {
-    if (streak >= 6) return 2.5;
-    if (streak >= 4) return 2;
-    if (streak >= 2) return 1.5;
-    return 1;
+  /** The multiplier always corresponds to the difficulty actually played, not raw streak. */
+  readonly MULTIPLIER_BY_DIFFICULTY: Record<Difficulty, number> = {
+    easy: 1,
+    medium: 1.5,
+    hard: 2,
+    hard_plus: 2.5,
+  };
+
+  multiplierFor(difficulty: Difficulty): number {
+    return this.MULTIPLIER_BY_DIFFICULTY[difficulty] ?? 1;
   }
 
   basePointsFor(difficulty: Difficulty): number {
@@ -27,10 +32,10 @@ export class ScoringService {
     );
   }
 
-  /** points = base_question_points × active_streak_multiplier (spec §5.2). */
-  computePoints(difficulty: Difficulty, streak: number): number {
+  /** points = base_question_points × difficulty_multiplier (spec §5.2). */
+  computePoints(difficulty: Difficulty): number {
     return Math.round(
-      this.basePointsFor(difficulty) * this.multiplierFor(streak),
+      this.basePointsFor(difficulty) * this.multiplierFor(difficulty),
     );
   }
 
