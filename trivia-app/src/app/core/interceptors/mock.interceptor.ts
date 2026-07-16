@@ -433,8 +433,8 @@ export const mockInterceptor: HttpInterceptorFn = (
     });
   }
 
-  // GET /booth-display
-  if (matchesRoute(url, method, '/booth-display', 'GET')) {
+  // GET /booth-display/:id
+  if (matchesRoute(url, method, '/booth-display/:id', 'GET')) {
     const top = MOCK_LEADERBOARD_ROWS.slice(0, 10);
     const avgScore = Math.round(
       top.reduce((sum, r) => sum + r.score, 0) / top.length,

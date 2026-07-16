@@ -39,7 +39,7 @@ export const routes: Routes = [
       import('./pages/leaderboard/leaderboard.page').then((m) => m.LeaderboardPage),
   },
   {
-    path: 'booth-display',
+    path: 'booth-display/:id',
     canActivate: [translationGuard],
     loadComponent: () =>
       import('./pages/booth-display/booth-display.page').then((m) => m.BoothDisplayPage),
