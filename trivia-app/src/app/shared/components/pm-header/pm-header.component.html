@@ -3,7 +3,8 @@
     <img class="pm-bar-logo cursor-pointer"
          src="assets/pm-logo.png"
          alt="Practical Machinist"
-         routerLink="/register" />
+         routerLink="/register"
+         [queryParams]="registerQueryParams()" />
     <span class="w-px h-6 lg:h-7 bg-white/25"></span>
     <span class="pm-bar-tag">{{ tag }}</span>
   </div>

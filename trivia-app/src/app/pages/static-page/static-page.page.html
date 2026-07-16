@@ -15,7 +15,7 @@
         } @else if (error()) {
           <div class="text-center py-12">
             <p class="text-ink font-semibold text-lg mb-3">Page not found</p>
-            <a routerLink="/register" class="text-orange hover:underline text-sm">← Back to register</a>
+            <a routerLink="/register" [queryParams]="registerQueryParams()" class="text-orange hover:underline text-sm">← Back to register</a>
           </div>
         } @else {
           @if (title()) {

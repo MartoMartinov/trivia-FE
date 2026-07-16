@@ -8,6 +8,7 @@ import {
 import { Router } from '@angular/router';
 import { throwError, catchError, switchMap } from 'rxjs';
 import { AuthStore } from '../stores/auth/auth.store';
+import { BoothTokenStore } from '../stores/booth-token/booth-token.store';
 import { AuthStrategyService } from '../auth/auth-strategy.service';
 import { environment } from '../../../environments/environment';
 
@@ -16,6 +17,7 @@ export const authInterceptor: HttpInterceptorFn = (
   next: HttpHandlerFn,
 ) => {
   const authStore = inject(AuthStore);
+  const boothTokenStore = inject(BoothTokenStore);
   const strategy = inject(AuthStrategyService);
   const router = inject(Router);
 
@@ -46,7 +48,8 @@ export const authInterceptor: HttpInterceptorFn = (
           }),
           catchError(() => {
             authStore.logout();
-            router.navigate(['/register']);
+            const boothToken = boothTokenStore.boothToken();
+            router.navigate(['/register'], { queryParams: boothToken ? { boothToken } : {} });
             return throwError(() => err);
           }),
         );

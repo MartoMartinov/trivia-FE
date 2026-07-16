@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 import { IonContent } from '@ionic/angular/standalone';
 import { TranslatePipe } from '@ngx-translate/core';
 
+import { BoothTokenStore } from '../../core/stores/booth-token/booth-token.store';
 import { LeaderboardStore } from '../../core/stores/leaderboard/leaderboard.store';
 import { PmHeaderComponent } from '../../shared/components/pm-header/pm-header.component';
 
@@ -16,6 +17,7 @@ import { PmHeaderComponent } from '../../shared/components/pm-header/pm-header.c
 })
 export class LeaderboardPage implements OnInit {
   readonly store = inject(LeaderboardStore);
+  private readonly boothTokenStore = inject(BoothTokenStore);
   private readonly router = inject(Router);
 
   readonly topRows = computed(() => this.store.rows().slice(0, 10));
@@ -32,7 +34,8 @@ export class LeaderboardPage implements OnInit {
   }
 
   goToRegister(): void {
-    this.router.navigate(['/register']);
+    const boothToken = this.boothTokenStore.boothToken();
+    this.router.navigate(['/register'], { queryParams: boothToken ? { boothToken } : {} });
   }
 
   initials(displayName: string): string {

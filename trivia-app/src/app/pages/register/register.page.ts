@@ -10,6 +10,7 @@ import { SecureStorage } from '@aparajita/capacitor-secure-storage';
 import { STORAGE_KEYS } from '../../core/constants/storage-keys';
 import { ApiService } from '../../core/services/api.service';
 import { AuthStore } from '../../core/stores/auth/auth.store';
+import { BoothTokenStore } from '../../core/stores/booth-token/booth-token.store';
 import { PlayerStore } from '../../core/stores/player/player.store';
 import { addIcons } from 'ionicons';
 import { alertCircle, close } from 'ionicons/icons';
@@ -28,6 +29,7 @@ export class RegisterPage implements OnInit, OnDestroy {
   private authCheckInterval: ReturnType<typeof setInterval> | null = null;
   private readonly api = inject(ApiService);
   private readonly authStore = inject(AuthStore);
+  private readonly boothTokenStore = inject(BoothTokenStore);
   private readonly playerStore = inject(PlayerStore);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -94,10 +96,8 @@ export class RegisterPage implements OnInit, OnDestroy {
     let boothToken = this.route.snapshot.queryParamMap.get('boothToken');
 
     if (!boothToken) {
-      try {
-        const stored = await SecureStorage.get(STORAGE_KEYS.BOOTH_TOKEN);
-        if (typeof stored === 'string') boothToken = stored;
-      } catch {}
+      await this.boothTokenStore.restore();
+      boothToken = this.boothTokenStore.boothToken();
     }
 
     if (!boothToken) return false;
@@ -105,12 +105,12 @@ export class RegisterPage implements OnInit, OnDestroy {
     try {
       const res = await firstValueFrom(this.api.verifyRegistrationToken(boothToken));
       if (res.valid) {
-        SecureStorage.set(STORAGE_KEYS.BOOTH_TOKEN, boothToken).catch(() => {});
+        this.boothTokenStore.set(boothToken);
         return true;
       }
     } catch {}
 
-    SecureStorage.remove(STORAGE_KEYS.BOOTH_TOKEN).catch(() => {});
+    this.boothTokenStore.clear();
     return false;
   }
 
