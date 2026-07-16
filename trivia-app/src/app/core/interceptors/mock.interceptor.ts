@@ -267,6 +267,12 @@ export const mockInterceptor: HttpInterceptorFn = (
   const respond = (body: unknown) =>
     of(new HttpResponse({ status: 200, body })).pipe(delay(300));
 
+  // GET /register/verify-token — mock: token value 'expired' simulates an expired/invalid QR token
+  if (matchesRoute(url, method, '/register/verify-token', 'GET')) {
+    const token = req.params.get('token');
+    return respond({ valid: token !== 'expired' });
+  }
+
   // POST /auth/register
   if (matchesRoute(url, method, '/auth/register', 'POST')) {
     mockScore = 0;

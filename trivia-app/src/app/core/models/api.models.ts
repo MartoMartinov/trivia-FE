@@ -26,6 +26,11 @@ export interface AccessTokenResponse {
   accessExpiresAt: string;
 }
 
+/** Result of verifying the rotating QR registration token (spec F9 — signed, expiring booth QR). */
+export interface VerifyRegistrationTokenResponse {
+  valid: boolean;
+}
+
 export interface RegisterRequest {
   firstName: string;
   lastName: string;

@@ -1,12 +1,13 @@
 import { ChangeDetectionStrategy, Component, effect, inject, OnDestroy, OnInit, untracked } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { IonContent, ToastController } from '@ionic/angular/standalone';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import { SecureStorage } from '@aparajita/capacitor-secure-storage';
 
 import { STORAGE_KEYS } from '../../core/constants/storage-keys';
+import { ApiService } from '../../core/services/api.service';
 import { AuthStore } from '../../core/stores/auth/auth.store';
 import { PlayerStore } from '../../core/stores/player/player.store';
 import { addIcons } from 'ionicons';
@@ -24,8 +25,10 @@ addIcons({ alertCircle, close });
 })
 export class RegisterPage implements OnInit, OnDestroy {
   private authCheckInterval: ReturnType<typeof setInterval> | null = null;
+  private readonly api = inject(ApiService);
   private readonly authStore = inject(AuthStore);
   private readonly playerStore = inject(PlayerStore);
+  private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly toastCtrl = inject(ToastController);
   private readonly translate = inject(TranslateService);
@@ -66,6 +69,29 @@ export class RegisterPage implements OnInit, OnDestroy {
       const saved = await SecureStorage.get(STORAGE_KEYS.REGISTRATION);
       if (typeof saved === 'string') this.form.patchValue(JSON.parse(saved));
     } catch {}
+
+    // Booth QR rotates every 5-10 min (spec F9); verify the token once on load rather than polling.
+    const token = this.route.snapshot.queryParamMap.get('token');
+    if (token) {
+      this.api.verifyRegistrationToken(token).subscribe({
+        next: (res) => {
+          if (!res.valid) this.showTokenExpiredToast();
+        },
+        error: () => this.showTokenExpiredToast(),
+      });
+    }
+  }
+
+  private async showTokenExpiredToast(): Promise<void> {
+    const toast = await this.toastCtrl.create({
+      message: `${this.translate.instant('REGISTER.TOKEN_EXPIRED_1')}\n${this.translate.instant('REGISTER.TOKEN_EXPIRED_2')}`,
+      duration: 40000,
+      position: 'top',
+      cssClass: 'pm-toast-warning',
+      icon: 'alert-circle',
+      buttons: [{ icon: 'close', role: 'cancel' }],
+    });
+    await toast.present();
   }
 
   ngOnDestroy(): void {

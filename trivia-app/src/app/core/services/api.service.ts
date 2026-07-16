@@ -19,6 +19,7 @@ import type {
   BoothDisplayResponse,
   EventConfigResponse,
   StaticPageResponse,
+  VerifyRegistrationTokenResponse,
 } from '../models/api.models';
 
 @Injectable({ providedIn: 'root' })
@@ -31,6 +32,13 @@ export class ApiService {
   }
   register(req: RegisterRequest): Observable<LoginResponse> {
     return this.http.post<LoginResponse>(`${this.base}/auth/register`, req);
+  }
+
+  verifyRegistrationToken(token: string): Observable<VerifyRegistrationTokenResponse> {
+    return this.http.get<VerifyRegistrationTokenResponse>(
+      `${this.base}/register/verify-token`,
+      { params: { token } },
+    );
   }
 
   startSession(): Observable<StartSessionResponse> {
