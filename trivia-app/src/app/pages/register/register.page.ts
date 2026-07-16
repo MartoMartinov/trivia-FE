@@ -3,6 +3,7 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { IonContent, ToastController } from '@ionic/angular/standalone';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+import { firstValueFrom } from 'rxjs';
 
 import { SecureStorage } from '@aparajita/capacitor-secure-storage';
 
@@ -73,8 +74,49 @@ export class RegisterPage implements OnInit, OnDestroy {
       if (typeof saved === 'string') this.form.patchValue(JSON.parse(saved));
     } catch {}
 
-    // Booth QR rotates every 5-10 min (spec F9); verify the token once on load rather than polling.
+    await this.checkRegistrationToken();
+  }
+
+  /**
+   * Two independent query params gate registration:
+   * - `boothToken` — durable, admin-issued token for kiosk tablets (spec: stays valid all day).
+   *   Checked first and silently: a missing/failed boothToken is expected on a personal-phone
+   *   scan, so it never shows a toast — it just falls through to `token`.
+   * - `token` — the per-player QR that rotates every 5-10 min (spec F9). Checked second; if this
+   *   also fails, the player really has no valid way in, so we warn and block.
+   */
+  private async checkRegistrationToken(): Promise<void> {
+    if (await this.tryBoothToken()) return;
+    await this.tryPlayerToken();
+  }
+
+  private async tryBoothToken(): Promise<boolean> {
+    let boothToken = this.route.snapshot.queryParamMap.get('boothToken');
+
+    if (!boothToken) {
+      try {
+        const stored = await SecureStorage.get(STORAGE_KEYS.BOOTH_TOKEN);
+        if (typeof stored === 'string') boothToken = stored;
+      } catch {}
+    }
+
+    if (!boothToken) return false;
+
+    try {
+      const res = await firstValueFrom(this.api.verifyRegistrationToken(boothToken));
+      if (res.valid) {
+        SecureStorage.set(STORAGE_KEYS.BOOTH_TOKEN, boothToken).catch(() => {});
+        return true;
+      }
+    } catch {}
+
+    SecureStorage.remove(STORAGE_KEYS.BOOTH_TOKEN).catch(() => {});
+    return false;
+  }
+
+  private async tryPlayerToken(): Promise<void> {
     const token = this.route.snapshot.queryParamMap.get('token');
+
     if (!token) {
       this.tokenBlocked.set(true);
       this.showTokenExpiredToast();
@@ -83,9 +125,15 @@ export class RegisterPage implements OnInit, OnDestroy {
 
     this.api.verifyRegistrationToken(token).subscribe({
       next: (res) => {
-        if (!res.valid) this.showTokenExpiredToast();
+        if (!res.valid) {
+          this.tokenBlocked.set(true);
+          this.showTokenExpiredToast();
+        }
       },
-      error: () => this.showTokenExpiredToast(),
+      error: () => {
+        this.tokenBlocked.set(true);
+        this.showTokenExpiredToast();
+      },
     });
   }
 
