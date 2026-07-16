@@ -124,7 +124,8 @@ ion-content {
 
 .lb-col-headers {
   display: grid;
-  grid-template-columns: 5.73vw 1fr 1fr 5.73vw;
+  grid-template-columns: 5.73vw 1fr 2fr 5.73vw;
+  gap: 0.63vw;
   padding: 0 0.42vw;
   margin-bottom: 0.42vw;
 
@@ -135,7 +136,11 @@ ion-content {
     letter-spacing: 0.135vw;
     text-transform: uppercase;
 
-    &.ch-company,
+    &.ch-company {
+      padding-left: 0.12vw;
+      text-align: left;
+    }
+
     &.ch-score {
       text-align: right;
     }
@@ -158,7 +163,7 @@ ion-content {
 
 .lb-row {
   display: grid;
-  grid-template-columns: 2.92vw 1.88vw 1fr 1fr 4.6vw;
+  grid-template-columns: 2.92vw 1.88vw 1fr 2fr 4.6vw;
   align-items: center;
   gap: 0.63vw;
   height: 2.92vw;
@@ -169,6 +174,7 @@ ion-content {
   &[data-rank="2"] { background: #f1f5f9; }
   &[data-rank="3"] { background: #fff1e6; }
   &[data-rank="4"] { background: #fff; }
+
 }
 
 .rank-badge {
@@ -215,7 +221,7 @@ ion-content {
   font-size: 0.78vw;
   font-weight: 500;
   color: #6b7280;
-  text-align: right;
+  text-align: left;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

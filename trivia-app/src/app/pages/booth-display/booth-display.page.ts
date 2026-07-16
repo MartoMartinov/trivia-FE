@@ -34,9 +34,9 @@ export class BoothDisplayPage implements OnInit {
   readonly playUrl = environment.playUrl;
 
   ngOnInit(): void {
-    // const token  this.route.snapshot.queryParamMap.get('token') ?? '';
+    const token = this.route.snapshot.queryParamMap.get('token') ?? '';
     timer(0, POLL_MS).pipe(
-      switchMap(() => this.api.getBoothDisplay()),
+      switchMap(() => this.api.getBoothDisplay(token)),
     ).subscribe((res) => this.data.set(res));
   }
 
