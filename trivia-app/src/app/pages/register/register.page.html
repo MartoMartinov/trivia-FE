@@ -91,7 +91,7 @@
             </label>
           </div>
 
-          <button type="submit" class="pm-cta mt-[22px]" [disabled]="form.invalid || isPending()">
+          <button type="submit" class="pm-cta mt-[22px]" [disabled]="form.invalid || isPending() || tokenBlocked()">
             @if (isPending()) { {{ 'REGISTER.SUBMITTING' | translate }} }
             @else { {{ 'REGISTER.SUBMIT' | translate }} }
           </button>

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, effect, inject, OnDestroy, OnInit, untracked } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, inject, OnDestroy, OnInit, signal, untracked } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { IonContent, ToastController } from '@ionic/angular/standalone';
@@ -37,6 +37,9 @@ export class RegisterPage implements OnInit, OnDestroy {
   readonly hasError = this.authStore.hasError;
   readonly errorMessage = this.authStore.errorMessage;
 
+  /** No booth QR token in the URL at all — block registration outright (spec F9: registration is only reachable via the on-screen QR). */
+  readonly tokenBlocked = signal(false);
+
   constructor() {
     effect(async () => {
       if (!this.hasError()) return;
@@ -72,14 +75,18 @@ export class RegisterPage implements OnInit, OnDestroy {
 
     // Booth QR rotates every 5-10 min (spec F9); verify the token once on load rather than polling.
     const token = this.route.snapshot.queryParamMap.get('token');
-    if (token) {
-      this.api.verifyRegistrationToken(token).subscribe({
-        next: (res) => {
-          if (!res.valid) this.showTokenExpiredToast();
-        },
-        error: () => this.showTokenExpiredToast(),
-      });
+    if (!token) {
+      this.tokenBlocked.set(true);
+      this.showTokenExpiredToast();
+      return;
     }
+
+    this.api.verifyRegistrationToken(token).subscribe({
+      next: (res) => {
+        if (!res.valid) this.showTokenExpiredToast();
+      },
+      error: () => this.showTokenExpiredToast(),
+    });
   }
 
   private async showTokenExpiredToast(): Promise<void> {
