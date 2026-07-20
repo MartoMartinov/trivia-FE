@@ -74,6 +74,46 @@ body {
   }
 }
 
+// ── Input with trailing affix (e.g. password reveal toggle) ──────────────────
+.pm-input-wrap {
+  position: relative;
+}
+
+// Reserve room so typed text never slides under the toggle button.
+.pm-input--with-affix {
+  padding-right: 46px;
+}
+
+.pm-input-affix {
+  position: absolute;
+  top: 0;
+  right: 0;
+  height: 100%;
+  width: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: var(--color-muted);
+  transition: color 0.15s;
+
+  ion-icon {
+    font-size: 20px;
+  }
+
+  &:hover {
+    color: var(--color-ink);
+  }
+  &:focus-visible {
+    outline: 2px solid var(--color-orange);
+    outline-offset: 2px;
+    border-radius: 8px;
+  }
+}
+
 // ── Checkbox ───────────────────────────────────────────────────────────────
 .pm-checkbox-row {
   display: flex;

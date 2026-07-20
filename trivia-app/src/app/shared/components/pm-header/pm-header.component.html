@@ -1,14 +1,18 @@
 <header class="pm-bar">
-  <div class="flex items-center gap-3">
+  <div class="flex flex-col items-center  xs:flex-row xs:gap-3">
     <img class="pm-bar-logo cursor-pointer"
          src="assets/pm-logo.png"
          alt="Practical Machinist"
          routerLink="/register"
          [queryParams]="registerQueryParams()" />
-    <span class="w-px h-6 lg:h-7 bg-white/25"></span>
+    <span class="w-px h-6 lg:h-7 bg-white/25 hidden xs:inline "></span>
     <span class="pm-bar-tag">{{ tag }}</span>
   </div>
-  @if (eventLogoUrl()) {
+  @if (tvLogoUrl()) {
+  <img [src]="tvLogoUrl()"
+       alt="Event"
+       class="h-[60%]  w-auto object-contain" />
+  } @else {
   <img [src]="eventLogoUrl()"
        alt="Event"
        class="h-[60%]  w-auto object-contain" />

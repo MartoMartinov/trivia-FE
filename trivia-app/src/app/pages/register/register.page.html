@@ -28,16 +28,14 @@
                       md:bg-transparent
                       lg:px-0 lg:pt-0 lg:pb-0 lg:flex-none lg:max-w-[480px]
                       2xl:max-w-[680px]">
-        <h1 class="font-black leading-none text-white text-[42px]
-        lg:text-[52px]
-        2xl:text-[64px] animate-rise">
-          <span class="block">Practical</span>
-          <span class="block">Machinist</span>
-          <span class="block text-orange">Trivia.</span>
+        <h1 class="font-black leading-[1.08] text-white text-[34px]
+        lg:text-[46px]
+        2xl:text-[56px] animate-rise">
+          {{ landingHeadline() || ('REGISTER.HERO_TITLE' | translate) }}
         </h1>
         <p class="mt-5 text-[14px] lg:text-[18px] 2xl:text-[21px] leading-[1.55] lg:leading-[1.45]
-                  text-white/70 max-w-xs lg:max-w-[416px] 2xl:max-w-[616px] animate-rise">
-          {{ 'REGISTER.HERO_SUBTITLE' | translate }}
+                  text-white/70 max-w-xs lg:max-w-[416px] 2xl:max-w-[616px] animate-rise whitespace-pre-line">
+          {{ landingBody() || ('REGISTER.HERO_SUBTITLE' | translate) }}
         </p>
       </section>
 
@@ -88,8 +86,15 @@
           </div>
           <div class="mb-3">
             <label class="pm-label">{{ 'REGISTER.PASSWORD' | translate }} <span class="text-orange">*</span></label>
-            <input class="pm-input" type="password" formControlName="password"
-                   placeholder="••••••••" autocomplete="new-password" />
+            <div class="pm-input-wrap">
+              <input class="pm-input pm-input--with-affix" [type]="showRegisterPassword() ? 'text' : 'password'"
+                     formControlName="password" placeholder="••••••••" autocomplete="new-password" />
+              <button type="button" class="pm-input-affix" (click)="showRegisterPassword.set(!showRegisterPassword())"
+                      [attr.aria-label]="(showRegisterPassword() ? 'AUTH.HIDE_PASSWORD' : 'AUTH.SHOW_PASSWORD') | translate"
+                      [attr.aria-pressed]="showRegisterPassword()">
+                <ion-icon [name]="showRegisterPassword() ? 'eye-off-outline' : 'eye-outline'"></ion-icon>
+              </button>
+            </div>
           </div>
           <div class="mb-4">
             <label class="pm-checkbox-row">
@@ -139,8 +144,15 @@
           </div>
           <div class="mb-3">
             <label class="pm-label">{{ 'REGISTER.PASSWORD' | translate }} <span class="text-orange">*</span></label>
-            <input class="pm-input" type="password" formControlName="password"
-                   placeholder="••••••••" autocomplete="current-password" />
+            <div class="pm-input-wrap">
+              <input class="pm-input pm-input--with-affix" [type]="showLoginPassword() ? 'text' : 'password'"
+                     formControlName="password" placeholder="••••••••" autocomplete="current-password" />
+              <button type="button" class="pm-input-affix" (click)="showLoginPassword.set(!showLoginPassword())"
+                      [attr.aria-label]="(showLoginPassword() ? 'AUTH.HIDE_PASSWORD' : 'AUTH.SHOW_PASSWORD') | translate"
+                      [attr.aria-pressed]="showLoginPassword()">
+                <ion-icon [name]="showLoginPassword() ? 'eye-off-outline' : 'eye-outline'"></ion-icon>
+              </button>
+            </div>
           </div>
 
           <button type="submit" class="pm-cta mt-[22px]" [disabled]="loginForm.invalid || isPending() || tokenBlocked()">

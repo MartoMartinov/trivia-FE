@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, effect, inject, OnDestroy, OnInit, signal, untracked } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { IonContent, ToastController } from '@ionic/angular/standalone';
+import { IonContent, IonIcon, ToastController } from '@ionic/angular/standalone';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { firstValueFrom } from 'rxjs';
 
@@ -9,25 +9,27 @@ import { SecureStorage } from '@aparajita/capacitor-secure-storage';
 
 import { STORAGE_KEYS } from '../../core/constants/storage-keys';
 import { ApiService } from '../../core/services/api.service';
+import { AppConfigStore } from '../../core/stores/app-config/app-config.store';
 import { AuthStore } from '../../core/stores/auth/auth.store';
 import { BoothTokenStore } from '../../core/stores/booth-token/booth-token.store';
 import { PlayerStore } from '../../core/stores/player/player.store';
 import { addIcons } from 'ionicons';
-import { alertCircle, close } from 'ionicons/icons';
+import { alertCircle, close, eyeOutline, eyeOffOutline } from 'ionicons/icons';
 import { PmHeaderComponent } from '../../shared/components/pm-header/pm-header.component';
 
-addIcons({ alertCircle, close });
+addIcons({ alertCircle, close, eyeOutline, eyeOffOutline });
 
 @Component({
   selector: 'app-register',
   templateUrl: 'register.page.html',
   styleUrls: ['register.page.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [IonContent, ReactiveFormsModule, TranslatePipe, PmHeaderComponent, RouterLink],
+  imports: [IonContent, IonIcon, ReactiveFormsModule, TranslatePipe, PmHeaderComponent, RouterLink],
 })
 export class RegisterPage implements OnInit, OnDestroy {
   private authCheckInterval: ReturnType<typeof setInterval> | null = null;
   private readonly api = inject(ApiService);
+  private readonly appConfigStore = inject(AppConfigStore);
   private readonly authStore = inject(AuthStore);
   private readonly boothTokenStore = inject(BoothTokenStore);
   private readonly playerStore = inject(PlayerStore);
@@ -39,6 +41,14 @@ export class RegisterPage implements OnInit, OnDestroy {
   readonly isPending = this.authStore.isPending;
   readonly hasError = this.authStore.hasError;
   readonly errorMessage = this.authStore.errorMessage;
+
+  /**
+   * Landing hero copy served by the admin panel (event-config). The body's event specifics
+   * (session length, prize count) are rendered server-side so they track the admin config.
+   * Both fall back to bundled i18n copy when the backend doesn't provide them.
+   */
+  readonly landingHeadline = this.appConfigStore.landingHeadline;
+  readonly landingBody = this.appConfigStore.landingBody;
 
   /** No booth QR token in the URL at all — block registration outright (spec F9: registration is only reachable via the on-screen QR). */
   readonly tokenBlocked = signal(false);
@@ -62,6 +72,10 @@ export class RegisterPage implements OnInit, OnDestroy {
 
   /** Which form the single auth page currently shows. Registration is the default entry point. */
   readonly mode = signal<'register' | 'login'>('register');
+
+  /** Reveal-password toggles, one per form so they don't leak state across the switch. */
+  readonly showRegisterPassword = signal(false);
+  readonly showLoginPassword = signal(false);
 
   readonly form = new FormGroup({
     firstName: new FormControl('', [Validators.required, Validators.minLength(2)]),

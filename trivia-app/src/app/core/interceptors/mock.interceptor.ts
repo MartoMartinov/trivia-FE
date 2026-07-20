@@ -431,6 +431,10 @@ export const mockInterceptor: HttpInterceptorFn = (
   if (matchesRoute(url, method, '/event-config', 'GET')) {
     return respond({
       eventLogoUrl: '/public/event-logo.png',
+      landingHeadline: "Think you're the smartest machinist at IMTS? Prove it.",
+      // Body rendered server-side with the admin session length (90s) and prize count (Top 3).
+      landingBody:
+        "You've got 90 seconds to answer as many questions as you can. Climb the leaderboard, earn bragging rights, and finish in today's Top 3 to win prizes.\nOne shot per day. Make it count.",
     });
   }
 

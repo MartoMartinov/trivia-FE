@@ -15,6 +15,7 @@ export class PmHeaderComponent {
   private readonly boothTokenStore = inject(BoothTokenStore);
 
   readonly eventLogoUrl = this.appConfigStore.eventLogoUrl;
+  readonly tvLogoUrl = this.appConfigStore.tvLogoUrl;
 
   /** Carries the kiosk boothToken forward on the logo→register link, if this device has one. */
   readonly registerQueryParams = computed(() => {

@@ -1,6 +1,7 @@
 {
   "REGISTER": {
-    "HERO_SUBTITLE": "You have limited time. Answer as many as you can to build streaks, multiply your score, win prizes.",
+    "HERO_TITLE": "Think you're the smartest machinist at IMTS? Prove it.",
+    "HERO_SUBTITLE": "You've got 90 seconds to answer as many questions as you can. Climb the leaderboard, earn bragging rights, and finish in today's Top 3 to win prizes.\nOne shot per day. Make it count.",
     "FORM_TITLE": "Let's play.",
     "FIRST_NAME": "First Name",
     "LAST_NAME": "Last Name",
@@ -25,7 +26,9 @@
     "HAVE_ACCOUNT": "Already have an account?",
     "LOGIN_LINK": "Log in",
     "NO_ACCOUNT": "New here?",
-    "REGISTER_LINK": "Create an account"
+    "REGISTER_LINK": "Create an account",
+    "SHOW_PASSWORD": "Show password",
+    "HIDE_PASSWORD": "Hide password"
   },
   "GAME": {
     "LOADING": "Loading questions…",
