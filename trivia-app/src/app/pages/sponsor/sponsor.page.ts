@@ -69,7 +69,8 @@ export class SponsorPage implements OnInit, OnDestroy {
   readonly result = this.gameStore.lastSponsorResult;
 
   readonly sponsorInitials = computed(() => {
-    const name = this.sponsorQuestion()?.sponsor.name ?? '';
+    // Falls back to the outro sponsor: on the outro screen sponsorQuestion is cleared to null.
+    const name = this.sponsorQuestion()?.sponsor.name ?? this.outroSponsor()?.name ?? '';
     return name.split(/\s+/).map((word) => word[0] ?? '').slice(0, 2).join('').toUpperCase();
   });
 
