@@ -1,4 +1,4 @@
-<ion-content [fullscreen]="true" >
+<ion-content [fullscreen]="true">
 
   <div class="min-h-full  relative overflow-hidden flex flex-col
   md:bg-navy">
@@ -20,7 +20,7 @@
     <!-- Mobile: column — hero on top, paper + form below                    -->
     <!-- Desktop: row — hero left, form card right, vertically centered      -->
     <div class="flex flex-col flex-1
-                lg:flex-row lg:items-center lg:justify-between lg:gap-3 lg:px-[62px]
+                lg:flex-row lg:items-center lg:justify-between lg:gap-20 lg:px-[62px]
                 2xl:px-[150px] 2xl:justify-center">
 
       <!-- Hero text -->
@@ -31,12 +31,14 @@
         <h1 class="text-balance font-black leading-[1.08] text-white text-[34px] animate-rise
         lg:text-[46px]
         2xl:text-[56px] ">
-        @if(landingHeadline()){
+          @if(landingHeadline()){
           {{ landingHeadline() }}
-        } @else {
-          {{ 'REGISTER.HERO_TITLE' | translate }}
-          <p class="text-orange">{{ ('REGISTER.HERO_SUBTITLE' | translate)}}</p>
-        }
+          } @else {
+          <div class="lg:max-w-[400px]">
+            {{ 'REGISTER.HERO_TITLE' | translate }}
+            <p class="text-orange">{{ ('REGISTER.HERO_SUBTITLE' | translate)}}</p>
+          </div>
+          }
         </h1>
         <p class="mt-5 text-balance text-[14px] lg:text-[18px] 2xl:text-[21px] leading-[1.55] lg:leading-[1.45]
                   text-white/70 max-w-xs lg:max-w-[416px] 2xl:max-w-[616px] animate-rise whitespace-pre-line">
@@ -52,7 +54,8 @@
 
         <!-- ── Register form ─────────────────────────────────────────────── -->
         @if (mode() === 'register') {
-        <form [formGroup]="form" (ngSubmit)="submit()"
+        <form [formGroup]="form"
+              (ngSubmit)="submit()"
               class="mx-3 bg-white rounded-[28px] p-4 border border-line
                      shadow-[0_12px_40px_-8px_rgba(15,23,41,0.1)] animate-rise
                      xs:mx-6 xs:p-8
@@ -66,35 +69,55 @@
 
           <div class="mb-3">
             <label class="pm-label">{{ 'REGISTER.FIRST_NAME' | translate }} <span class="text-orange">*</span></label>
-            <input class="pm-input" type="text" formControlName="firstName"
-                   placeholder="Jake" autocomplete="given-name" />
+            <input class="pm-input"
+                   type="text"
+                   formControlName="firstName"
+                   placeholder="Jake"
+                   autocomplete="given-name" />
           </div>
           <div class="mb-3">
             <label class="pm-label">{{ 'REGISTER.LAST_NAME' | translate }} <span class="text-orange">*</span></label>
-            <input class="pm-input" type="text" formControlName="lastName"
-                   placeholder="Thompson" autocomplete="family-name" />
+            <input class="pm-input"
+                   type="text"
+                   formControlName="lastName"
+                   placeholder="Thompson"
+                   autocomplete="family-name" />
           </div>
           <div class="mb-3">
             <label class="pm-label">{{ 'REGISTER.EMAIL' | translate }} <span class="text-orange">*</span></label>
-            <input class="pm-input" type="email" formControlName="email"
-                   placeholder="you@company.com" autocomplete="email" />
+            <input class="pm-input"
+                   type="email"
+                   formControlName="email"
+                   placeholder="you@company.com"
+                   autocomplete="email" />
           </div>
           <div class="mb-3">
             <label class="pm-label">{{ 'REGISTER.COMPANY' | translate }} <span class="text-orange">*</span></label>
-            <input class="pm-input" type="text" formControlName="company"
-                   placeholder="Company Name" autocomplete="organization" />
+            <input class="pm-input"
+                   type="text"
+                   formControlName="company"
+                   placeholder="Company Name"
+                   autocomplete="organization" />
           </div>
           <div class="mb-3">
             <label class="pm-label">{{ 'REGISTER.PHONE' | translate }} <span class="text-orange">*</span></label>
-            <input class="pm-input" type="tel" formControlName="phone"
-                   placeholder="(555) 123-4567" autocomplete="tel" />
+            <input class="pm-input"
+                   type="tel"
+                   formControlName="phone"
+                   placeholder="(555) 123-4567"
+                   autocomplete="tel" />
           </div>
           <div class="mb-3">
             <label class="pm-label">{{ 'REGISTER.PASSWORD' | translate }} <span class="text-orange">*</span></label>
             <div class="pm-input-wrap">
-              <input class="pm-input pm-input--with-affix" [type]="showRegisterPassword() ? 'text' : 'password'"
-                     formControlName="password" placeholder="••••••••" autocomplete="new-password" />
-              <button type="button" class="pm-input-affix" (click)="showRegisterPassword.set(!showRegisterPassword())"
+              <input class="pm-input pm-input--with-affix"
+                     [type]="showRegisterPassword() ? 'text' : 'password'"
+                     formControlName="password"
+                     placeholder="••••••••"
+                     autocomplete="new-password" />
+              <button type="button"
+                      class="pm-input-affix"
+                      (click)="showRegisterPassword.set(!showRegisterPassword())"
                       [attr.aria-label]="(showRegisterPassword() ? 'AUTH.HIDE_PASSWORD' : 'AUTH.SHOW_PASSWORD') | translate"
                       [attr.aria-pressed]="showRegisterPassword()">
                 <ion-icon [name]="showRegisterPassword() ? 'eye-off-outline' : 'eye-outline'"></ion-icon>
@@ -103,12 +126,18 @@
           </div>
           <div class="mb-4">
             <label class="pm-checkbox-row">
-              <input type="checkbox" class="pm-checkbox" formControlName="consent" />
-              <span class="pm-checkbox-label">{{ 'REGISTER.CONSENT' | translate }}<a [routerLink]="['/page', 1]" target="_blank" rel="noopener noreferrer">{{ 'REGISTER.CONSENT_LINK' | translate }}</a><span class="text-orange"> *</span></span>
+              <input type="checkbox"
+                     class="pm-checkbox"
+                     formControlName="consent" />
+              <span class="pm-checkbox-label">{{ 'REGISTER.CONSENT' | translate }}<a [routerLink]="['/page', 1]"
+                   target="_blank"
+                   rel="noopener noreferrer">{{ 'REGISTER.CONSENT_LINK' | translate }}</a><span class="text-orange"> *</span></span>
             </label>
           </div>
 
-          <button type="submit" class="pm-cta mt-[22px]" [disabled]="form.invalid || isPending() || tokenBlocked()">
+          <button type="submit"
+                  class="pm-cta mt-[22px]"
+                  [disabled]="form.invalid || isPending() || tokenBlocked()">
             @if (isPending()) { {{ 'REGISTER.SUBMITTING' | translate }} }
             @else { {{ 'REGISTER.SUBMIT' | translate }} }
           </button>
@@ -116,7 +145,9 @@
           <!-- Switch to login -->
           <p class="mt-4 text-center text-[13px] text-muted">
             {{ 'AUTH.HAVE_ACCOUNT' | translate }}
-            <button type="button" class="text-orange font-bold underline underline-offset-2 hover:opacity-80" (click)="switchMode('login')">
+            <button type="button"
+                    class="text-orange font-bold underline underline-offset-2 hover:opacity-80"
+                    (click)="switchMode('login')">
               {{ 'AUTH.LOGIN_LINK' | translate }}
             </button>
           </p>
@@ -130,7 +161,8 @@
 
         <!-- ── Login form ────────────────────────────────────────────────── -->
         @if (mode() === 'login') {
-        <form [formGroup]="loginForm" (ngSubmit)="loginSubmit()"
+        <form [formGroup]="loginForm"
+              (ngSubmit)="loginSubmit()"
               class="mx-3 bg-white rounded-[28px] p-4 border border-line
                      shadow-[0_12px_40px_-8px_rgba(15,23,41,0.1)] animate-rise
                      xs:mx-6 xs:p-8
@@ -144,15 +176,23 @@
 
           <div class="mb-3">
             <label class="pm-label">{{ 'REGISTER.EMAIL' | translate }} <span class="text-orange">*</span></label>
-            <input class="pm-input" type="email" formControlName="email"
-                   placeholder="you@company.com" autocomplete="email" />
+            <input class="pm-input"
+                   type="email"
+                   formControlName="email"
+                   placeholder="you@company.com"
+                   autocomplete="email" />
           </div>
           <div class="mb-3">
             <label class="pm-label">{{ 'REGISTER.PASSWORD' | translate }} <span class="text-orange">*</span></label>
             <div class="pm-input-wrap">
-              <input class="pm-input pm-input--with-affix" [type]="showLoginPassword() ? 'text' : 'password'"
-                     formControlName="password" placeholder="••••••••" autocomplete="current-password" />
-              <button type="button" class="pm-input-affix" (click)="showLoginPassword.set(!showLoginPassword())"
+              <input class="pm-input pm-input--with-affix"
+                     [type]="showLoginPassword() ? 'text' : 'password'"
+                     formControlName="password"
+                     placeholder="••••••••"
+                     autocomplete="current-password" />
+              <button type="button"
+                      class="pm-input-affix"
+                      (click)="showLoginPassword.set(!showLoginPassword())"
                       [attr.aria-label]="(showLoginPassword() ? 'AUTH.HIDE_PASSWORD' : 'AUTH.SHOW_PASSWORD') | translate"
                       [attr.aria-pressed]="showLoginPassword()">
                 <ion-icon [name]="showLoginPassword() ? 'eye-off-outline' : 'eye-outline'"></ion-icon>
@@ -160,7 +200,9 @@
             </div>
           </div>
 
-          <button type="submit" class="pm-cta mt-[22px]" [disabled]="loginForm.invalid || isPending() || tokenBlocked()">
+          <button type="submit"
+                  class="pm-cta mt-[22px]"
+                  [disabled]="loginForm.invalid || isPending() || tokenBlocked()">
             @if (isPending()) { {{ 'AUTH.LOGGING_IN' | translate }} }
             @else { {{ 'AUTH.LOGIN_SUBMIT' | translate }} }
           </button>
@@ -168,7 +210,9 @@
           <!-- Switch to register -->
           <p class="mt-4 text-center text-[13px] text-muted">
             {{ 'AUTH.NO_ACCOUNT' | translate }}
-            <button type="button" class="text-orange font-bold underline underline-offset-2 hover:opacity-80" (click)="switchMode('register')">
+            <button type="button"
+                    class="text-orange font-bold underline underline-offset-2 hover:opacity-80"
+                    (click)="switchMode('register')">
               {{ 'AUTH.REGISTER_LINK' | translate }}
             </button>
           </p>
