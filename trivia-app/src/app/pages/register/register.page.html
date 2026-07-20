@@ -47,6 +47,8 @@
       <div class="mt-[-74px] relative z-10 pb-10
                   lg:bg-transparent lg:mt-0 lg:pb-0 lg:z-auto lg:flex-none lg:py-10">
 
+        <!-- ── Register form ─────────────────────────────────────────────── -->
+        @if (mode() === 'register') {
         <form [formGroup]="form" (ngSubmit)="submit()"
               class="mx-3 bg-white rounded-[28px] p-4 border border-line
                      shadow-[0_12px_40px_-8px_rgba(15,23,41,0.1)] animate-rise
@@ -84,6 +86,11 @@
             <input class="pm-input" type="tel" formControlName="phone"
                    placeholder="(555) 123-4567" autocomplete="tel" />
           </div>
+          <div class="mb-3">
+            <label class="pm-label">{{ 'REGISTER.PASSWORD' | translate }} <span class="text-orange">*</span></label>
+            <input class="pm-input" type="password" formControlName="password"
+                   placeholder="••••••••" autocomplete="new-password" />
+          </div>
           <div class="mb-4">
             <label class="pm-checkbox-row">
               <input type="checkbox" class="pm-checkbox" formControlName="consent" />
@@ -96,11 +103,60 @@
             @else { {{ 'REGISTER.SUBMIT' | translate }} }
           </button>
 
+          <!-- Switch to login -->
+          <p class="mt-4 text-center text-[13px] text-muted">
+            {{ 'AUTH.HAVE_ACCOUNT' | translate }}
+            <button type="button" class="text-orange font-bold underline underline-offset-2 hover:opacity-80" (click)="switchMode('login')">
+              {{ 'AUTH.LOGIN_LINK' | translate }}
+            </button>
+          </p>
+
           <!-- Consent inside card on desktop -->
           <p class="hidden lg:block mt-4 text-center text-[12px] leading-[1.4] text-muted">
             {{ 'REGISTER.CONSENT_SHORT' | translate }}
           </p>
         </form>
+        }
+
+        <!-- ── Login form ────────────────────────────────────────────────── -->
+        @if (mode() === 'login') {
+        <form [formGroup]="loginForm" (ngSubmit)="loginSubmit()"
+              class="mx-3 bg-white rounded-[28px] p-4 border border-line
+                     shadow-[0_12px_40px_-8px_rgba(15,23,41,0.1)] animate-rise
+                     xs:mx-6 xs:p-8
+                     lg:mx-0 lg:rounded-[24px] lg:border-0 lg:w-[420px]
+                     lg:shadow-[0_24px_60px_0px_rgba(0,0,0,0.25)]
+                     2xl:w-[460px]">
+
+          <h2 class="text-[22px] lg:text-[26px] font-black text-ink mb-[18px]">
+            {{ 'AUTH.LOGIN_TITLE' | translate }}
+          </h2>
+
+          <div class="mb-3">
+            <label class="pm-label">{{ 'REGISTER.EMAIL' | translate }} <span class="text-orange">*</span></label>
+            <input class="pm-input" type="email" formControlName="email"
+                   placeholder="you@company.com" autocomplete="email" />
+          </div>
+          <div class="mb-3">
+            <label class="pm-label">{{ 'REGISTER.PASSWORD' | translate }} <span class="text-orange">*</span></label>
+            <input class="pm-input" type="password" formControlName="password"
+                   placeholder="••••••••" autocomplete="current-password" />
+          </div>
+
+          <button type="submit" class="pm-cta mt-[22px]" [disabled]="loginForm.invalid || isPending() || tokenBlocked()">
+            @if (isPending()) { {{ 'AUTH.LOGGING_IN' | translate }} }
+            @else { {{ 'AUTH.LOGIN_SUBMIT' | translate }} }
+          </button>
+
+          <!-- Switch to register -->
+          <p class="mt-4 text-center text-[13px] text-muted">
+            {{ 'AUTH.NO_ACCOUNT' | translate }}
+            <button type="button" class="text-orange font-bold underline underline-offset-2 hover:opacity-80" (click)="switchMode('register')">
+              {{ 'AUTH.REGISTER_LINK' | translate }}
+            </button>
+          </p>
+        </form>
+        }
 
         <!-- Consent below card on mobile -->
         <p class="lg:hidden mt-5 mb-2 text-center text-[11px] leading-[1.5] text-muted/70">

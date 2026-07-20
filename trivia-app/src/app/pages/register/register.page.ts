@@ -60,6 +60,9 @@ export class RegisterPage implements OnInit, OnDestroy {
     });
   }
 
+  /** Which form the single auth page currently shows. Registration is the default entry point. */
+  readonly mode = signal<'register' | 'login'>('register');
+
   readonly form = new FormGroup({
     firstName: new FormControl('', [Validators.required, Validators.minLength(2)]),
     lastName: new FormControl('', [Validators.required, Validators.minLength(2)]),
@@ -67,16 +70,32 @@ export class RegisterPage implements OnInit, OnDestroy {
     company: new FormControl('', [Validators.required]),
     // Phone is required (spec §3.2). Pattern allows digits, spaces, and common separators.
     phone: new FormControl('', [Validators.required, Validators.pattern(/^[+]?[\d\s()-]{7,}$/)]),
+    password: new FormControl('', [Validators.required, Validators.minLength(6)]),
     consent: new FormControl(false, [Validators.requiredTrue]),
+  });
+
+  readonly loginForm = new FormGroup({
+    email: new FormControl('', [Validators.required, Validators.email]),
+    password: new FormControl('', [Validators.required, Validators.minLength(6)]),
   });
 
   async ngOnInit(): Promise<void> {
     try {
       const saved = await SecureStorage.get(STORAGE_KEYS.REGISTRATION);
-      if (typeof saved === 'string') this.form.patchValue(JSON.parse(saved));
+      if (typeof saved === 'string') {
+        const data = JSON.parse(saved);
+        this.form.patchValue(data);
+        // Pre-fill the returning player's email on the login form too.
+        if (data?.email) this.loginForm.patchValue({ email: data.email });
+      }
     } catch {}
 
     await this.checkRegistrationToken();
+  }
+
+  /** Flip between register and login without losing either form's state; clear any stale error toast trigger. */
+  switchMode(target: 'register' | 'login'): void {
+    this.mode.set(target);
   }
 
   /**
@@ -88,8 +107,26 @@ export class RegisterPage implements OnInit, OnDestroy {
    *   also fails, the player really has no valid way in, so we warn and block.
    */
   private async checkRegistrationToken(): Promise<void> {
-    if (await this.tryBoothToken()) return;
-    await this.tryPlayerToken();
+    const hadBoothToken = await this.tryBoothToken();
+    if (!hadBoothToken) await this.tryPlayerToken();
+    // Both token sources read their values from the snapshot synchronously above, so the
+    // credential is safe to wipe from the URL now — leaving a clean /register in history.
+    this.stripTokensFromUrl();
+  }
+
+  /**
+   * Remove the one-time `token`/`boothToken` credentials from the address bar once consumed,
+   * so the secret doesn't linger in browser history, bookmarks, or a shared/copied URL.
+   * Uses replaceUrl so it swaps the current history entry rather than adding one.
+   */
+  private stripTokensFromUrl(): void {
+    const params = this.route.snapshot.queryParamMap;
+    if (!params.has('token') && !params.has('boothToken')) return;
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: {},
+      replaceUrl: true,
+    });
   }
 
   private async tryBoothToken(): Promise<boolean> {
@@ -154,10 +191,11 @@ export class RegisterPage implements OnInit, OnDestroy {
   }
 
   submit(): void {
-    if (this.form.invalid || this.isPending()) return;
+    if (this.form.invalid || this.isPending() || this.tokenBlocked()) return;
 
-    const { firstName, lastName, email, company, phone, consent } = this.form.getRawValue();
+    const { firstName, lastName, email, company, phone, password, consent } = this.form.getRawValue();
 
+    // Persist the profile (minus password) so a returning player's registration is pre-filled next time.
     SecureStorage.set(STORAGE_KEYS.REGISTRATION, JSON.stringify({ firstName, lastName, email, company, phone })).catch(() => {});
 
     this.authStore.register({
@@ -166,9 +204,26 @@ export class RegisterPage implements OnInit, OnDestroy {
       email: email!,
       company: company!,
       phone: phone ?? '',
+      password: password!,
       consent: consent!,
     });
 
+    this.watchAuthAndNavigate();
+  }
+
+  loginSubmit(): void {
+    if (this.loginForm.invalid || this.isPending() || this.tokenBlocked()) return;
+
+    const { email, password } = this.loginForm.getRawValue();
+
+    this.authStore.login({ email: email!, password: password! });
+
+    this.watchAuthAndNavigate();
+  }
+
+  /** Poll the auth store until authentication lands, then hand the player to PlayerStore and enter the game. */
+  private watchAuthAndNavigate(): void {
+    if (this.authCheckInterval) return;
     this.authCheckInterval = setInterval(() => {
       if (this.authStore.isAuthenticated()) {
         clearInterval(this.authCheckInterval!);

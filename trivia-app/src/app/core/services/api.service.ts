@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import type {
   RegisterRequest,
+  LoginRequest,
   LoginResponse,
   StartSessionResponse,
   NextBatchResponse,
@@ -32,6 +33,10 @@ export class ApiService {
   }
   register(req: RegisterRequest): Observable<LoginResponse> {
     return this.http.post<LoginResponse>(`${this.base}/auth/register`, req);
+  }
+
+  login(req: LoginRequest): Observable<LoginResponse> {
+    return this.http.post<LoginResponse>(`${this.base}/auth/login`, req);
   }
 
   verifyRegistrationToken(token: string): Observable<VerifyRegistrationTokenResponse> {

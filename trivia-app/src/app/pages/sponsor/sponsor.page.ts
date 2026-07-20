@@ -12,22 +12,31 @@ import {
 import { Router } from '@angular/router';
 import { IonContent } from '@ionic/angular/standalone';
 import { TranslatePipe } from '@ngx-translate/core';
+import { QRCodeComponent } from 'angularx-qrcode';
 
 import { GameStore } from '../../core/stores/game/game.store';
 import { ApiService } from '../../core/services/api.service';
 import { PmHeaderComponent } from '../../shared/components/pm-header/pm-header.component';
-import type { SponsorQuestionDto } from '../../core/models/api.models';
+import type { SponsorDto, SponsorQuestionDto } from '../../core/models/api.models';
 
 const PLACEHOLDER_REEL_SECONDS = 5;
 const REVEAL_DELAY_MS = 1100;
 const FINISH_DELAY_MS = 2100;
+
+/**
+ * The sponsor round is a three-phase flow inside a single page:
+ *  intro    — handoff screen explaining the sponsor round + its flat scoring, with a Continue button
+ *  question — the per-question video/timer/answer experience
+ *  outro    — a "find out more" CTA with a clickable QR code to the sponsor's site
+ */
+type SponsorPhase = 'intro' | 'question' | 'outro';
 
 @Component({
   selector: 'app-sponsor',
   templateUrl: 'sponsor.page.html',
   styleUrls: ['sponsor.page.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [IonContent, TranslatePipe, PmHeaderComponent],
+  imports: [IonContent, TranslatePipe, PmHeaderComponent, QRCodeComponent],
 })
 export class SponsorPage implements OnInit, OnDestroy {
   readonly gameStore = inject(GameStore);
@@ -35,6 +44,21 @@ export class SponsorPage implements OnInit, OnDestroy {
   private readonly api = inject(ApiService);
 
   readonly videoRef = viewChild<ElementRef<HTMLVideoElement>>('videoEl');
+
+  /** Which of the three sponsor-round screens is currently showing. */
+  readonly phase = signal<SponsorPhase>('intro');
+
+  /** Total sponsor questions — drives the intro copy ("The next N questions…"). */
+  readonly sponsorCount = computed(() => this.gameStore.sponsorQuestions().length);
+
+  /**
+   * Sponsor featured on the outro CTA. Uses the last sponsor question's sponsor (the most
+   * recent brand the player saw). Its websiteUrl is what the QR code encodes.
+   */
+  readonly outroSponsor = computed<SponsorDto | null>(() => {
+    const qs = this.gameStore.sponsorQuestions();
+    return qs.length ? qs[qs.length - 1].sponsor : null;
+  });
 
   /**
    * The question currently rendered. Only advances/clears AFTER the reveal delay so
@@ -86,16 +110,34 @@ export class SponsorPage implements OnInit, OnDestroy {
   private rafTotalMs = 0;
 
   ngOnInit(): void {
+    // No sponsor round configured → skip straight to results, no intro/outro.
     if (!this.gameStore.hasSponsorRound()) {
       this.finish();
       return;
     }
-    this.sponsorQuestion.set(this.gameStore.currentSponsorQuestion());
-    this.maybeAutoUnlock();
+    // Otherwise the page opens on the 'intro' handoff screen (the signal's default);
+    // the first question loads only once the player taps Continue.
   }
 
   ngOnDestroy(): void {
     this.clearQuestionTimer();
+  }
+
+  // ── Phase navigation ────────────────────────────────────────────────────────
+
+  /** Intro → first sponsor question. */
+  continueToQuestions(): void {
+    this.phase.set('question');
+    this.sponsorQuestion.set(this.gameStore.currentSponsorQuestion());
+    this.maybeAutoUnlock();
+  }
+
+  /** Last question answered/expired → the outro CTA screen. */
+  private goToOutro(): void {
+    this.clearQuestionTimer();
+    this.videoRef()?.nativeElement.pause();
+    this.sponsorQuestion.set(null);
+    this.phase.set('outro');
   }
 
   // ── Sponsor link ──────────────────────────────────────────────────────────────
@@ -108,6 +150,23 @@ export class SponsorPage implements OnInit, OnDestroy {
       this.api.trackSponsorClick(sessionId, { questionId: sq.id, event: 'website_click' }).subscribe();
     }
     window.open(sq.sponsor.websiteUrl, '_blank', 'noopener,noreferrer');
+  }
+
+  /** Fires the same click tracking as the in-question link when the outro QR/link is used. */
+  trackOutroClick(): void {
+    const sponsor = this.outroSponsor();
+    const sessionId = this.gameStore.sessionId();
+    const questions = this.gameStore.sponsorQuestions();
+    const lastQuestion = questions[questions.length - 1];
+    if (!sponsor?.websiteUrl || !sessionId || !lastQuestion) return;
+    this.api
+      .trackSponsorClick(sessionId, { questionId: lastQuestion.id, event: 'website_click' })
+      .subscribe();
+  }
+
+  /** Outro "See results" button. */
+  seeResults(): void {
+    this.finish();
   }
 
   // ── Video handlers ────────────────────────────────────────────────────────────
@@ -165,8 +224,7 @@ export class SponsorPage implements OnInit, OnDestroy {
         const isLast = !this.gameStore.hasSponsorRound();
         setTimeout(() => {
           if (isLast) {
-            this.sponsorQuestion.set(null);
-            this.finish();
+            this.goToOutro();
           } else {
             this.resetForNextQuestion();
           }
@@ -208,8 +266,7 @@ export class SponsorPage implements OnInit, OnDestroy {
         if (this.gameStore.hasSponsorRound()) {
           this.resetForNextQuestion();
         } else {
-          this.sponsorQuestion.set(null);
-          this.finish();
+          this.goToOutro();
         }
       } else {
         this.questionSecondsLeft.set(next);

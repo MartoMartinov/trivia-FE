@@ -3,6 +3,40 @@
 
     <pm-header />
 
+    <!-- ══ INTRO — sponsor-round handoff ═══════════════════════════════════════ -->
+    @if (phase() === 'intro') {
+    <section class="relative flex-1 flex flex-col items-center justify-center bg-navy overflow-hidden px-6 py-12 text-center">
+      <div class="pointer-events-none absolute -top-10 left-1/2 -translate-x-1/2 w-[420px] h-[220px] rounded-full bg-gold/30 blur-3xl"></div>
+
+      <div class="relative z-[1] w-full max-w-md flex flex-col items-center gap-6">
+        <span class="inline-flex items-center gap-2 bg-gold text-navy px-3.5 py-1.5 rounded-full text-[11px] font-extrabold tracking-[0.16em] uppercase animate-pop">
+          ★ {{ 'SPONSOR.BONUS_ROUND' | translate }}
+        </span>
+
+        <h1 class="text-white font-black leading-[1.15] text-[30px]">
+          {{ 'SPONSOR.INTRO_TITLE' | translate }}
+        </h1>
+
+        <p class="text-white/75 text-[15px] leading-relaxed">
+          {{ 'SPONSOR.INTRO_BODY' | translate: { count: sponsorCount(), points: gameStore.sponsorPointsPerCorrect() } }}
+        </p>
+
+        <div class="inline-flex items-center gap-2 bg-gold/15 border border-gold/40 text-gold px-4 py-2.5 rounded-2xl text-[13px] font-extrabold tracking-wide">
+          ★ +{{ gameStore.sponsorPointsPerCorrect() }} {{ 'SPONSOR.PTS' | translate }} {{ 'SPONSOR.PER_CORRECT' | translate }}
+        </div>
+
+        <button type="button"
+                class="mt-2 w-full bg-gold text-navy font-black text-[16px] py-4 rounded-2xl shadow-xl active:scale-[0.98] transition-transform"
+                (click)="continueToQuestions()">
+          {{ 'SPONSOR.CONTINUE' | translate }}
+        </button>
+      </div>
+    </section>
+    }
+
+    <!-- ══ QUESTION — per-question video/timer/answer ══════════════════════════ -->
+    @if (phase() === 'question') {
+
     @if (!sponsorQuestion()) {
     <div class="flex flex-col items-center justify-center flex-1 bg-navy gap-6">
       <div class="flex items-center gap-3">
@@ -44,7 +78,7 @@
         </div>
         <div class="flex justify-center mt-3.5">
           <span class="inline-flex items-center gap-2 bg-gold text-navy px-3.5 py-1.5 rounded-full text-[11px] font-extrabold tracking-wider animate-pop">
-            ★ +{{ sq.bonusPoints }} {{ 'SPONSOR.PTS' | translate }}
+            ★ +{{ gameStore.sponsorPointsPerCorrect() }} {{ 'SPONSOR.PTS' | translate }}
           </span>
         </div>
       </div>
@@ -230,6 +264,72 @@
       <p class="mt-4 text-center text-sm text-muted">🔒 {{ 'SPONSOR.UNLOCK_HINT' | translate }}</p>
       }
     </div>
+    }
+    }
+
+    <!-- ══ OUTRO — "find out more" CTA with clickable QR ═══════════════════════ -->
+    @if (phase() === 'outro') {
+    <section class="relative flex-1 flex flex-col items-center justify-center bg-navy overflow-hidden px-6 py-12 text-center">
+      <div class="pointer-events-none absolute -top-10 left-1/2 -translate-x-1/2 w-[420px] h-[220px] rounded-full bg-gold/30 blur-3xl"></div>
+
+      <div class="relative z-[1] w-full max-w-md flex flex-col items-center gap-6">
+        @if (outroSponsor(); as sponsor) {
+
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-lg bg-white overflow-hidden shrink-0 grid place-items-center">
+            @if (sponsor.logoUrl) {
+            <img [src]="sponsor.logoUrl" [alt]="sponsor.name" class="w-8 h-8 object-contain" />
+            } @else {
+            <span class="font-black text-navy">{{ sponsorInitials() }}</span>
+            }
+          </div>
+          <span class="text-white font-black text-[18px]">{{ sponsor.name }}</span>
+        </div>
+
+        <h1 class="text-white font-black leading-[1.15] text-[26px]">
+          {{ 'SPONSOR.OUTRO_TITLE' | translate }}
+        </h1>
+        <p class="text-white/75 text-[15px] leading-relaxed">
+          {{ 'SPONSOR.OUTRO_BODY' | translate: { sponsor: sponsor.name } }}
+        </p>
+
+        @if (sponsor.websiteUrl) {
+        <a [href]="sponsor.websiteUrl"
+           target="_blank"
+           rel="noopener noreferrer"
+           (click)="trackOutroClick()"
+           class="group flex flex-col items-center gap-3 focus:outline-none">
+          <div class="bg-white p-4 rounded-3xl shadow-xl transition-transform group-active:scale-[0.98]">
+            <qrcode [qrdata]="sponsor.websiteUrl"
+                    [width]="220"
+                    [margin]="2"
+                    [errorCorrectionLevel]="'M'"
+                    [colorDark]="'#0E1524'"
+                    [colorLight]="'#ffffff'"
+                    cssClass="block"
+                    [alt]="sponsor.name"></qrcode>
+          </div>
+          <span class="inline-flex items-center gap-2 text-gold text-[13px] font-extrabold tracking-wide">
+            {{ 'SPONSOR.SCAN_HINT' | translate }}
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+              <polyline points="15 3 21 3 21 9"/>
+              <line x1="10" y1="14" x2="21" y2="3"/>
+            </svg>
+          </span>
+        </a>
+        }
+
+        }
+
+        <button type="button"
+                class="mt-2 w-full bg-gold text-navy font-black text-[16px] py-4 rounded-2xl shadow-xl active:scale-[0.98] transition-transform"
+                (click)="seeResults()">
+          {{ 'SPONSOR.SEE_RESULTS' | translate }}
+        </button>
+      </div>
+    </section>
     }
 
   </div>

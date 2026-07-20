@@ -37,7 +37,13 @@ export interface RegisterRequest {
   email: string;
   company: string;
   phone: string;
+  password: string;
   consent: boolean;
+}
+
+export interface LoginRequest {
+  email: string;
+  password: string;
 }
 
 // ── Game ──────────────────────────────────────────────────────────────────────
@@ -77,7 +83,6 @@ export interface SponsorQuestionDto {
   id: number;
   prompt: string;
   choices: ChoiceDto[];
-  bonusPoints: number;
   timerSeconds: number;
   sponsor: SponsorDto;
 }
@@ -91,6 +96,12 @@ export interface StartSessionResponse {
   countdownSeconds: number;
   /** Total number of regular questions for this session (admin-configurable). */
   totalQuestions: number;
+  /**
+   * Flat points awarded for each correct sponsor question (admin-configurable, spec §5.3).
+   * Sponsor questions use this fixed value instead of the difficulty multiplier — every
+   * correct sponsor answer is worth the same, regardless of streak.
+   */
+  sponsorPointsPerCorrect: number;
   /** The first question to display immediately. */
   currentQuestion: QuestionDto;
   /** One question per difficulty (easy, medium, hard) — ready to serve as the next question. */
@@ -227,4 +238,9 @@ export interface BoothDisplayResponse {
   sponsorCards: SponsorCardDto[];
   /** Event/sponsor logo URL for the booth header, provided by the backend. */
   eventLogoUrl?: string | null;
+  /**
+   * Admin-issued registration token embedded in the booth QR code (spec F9/§8.3).
+   * The frontend builds the QR target as `<register page URL>?token=<registrationToken>`.
+   */
+  registrationToken: string;
 }

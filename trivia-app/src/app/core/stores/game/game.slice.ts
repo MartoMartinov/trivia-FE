@@ -32,6 +32,8 @@ export interface GameSlice {
   sponsorIndex: number;
   /** Total number of regular questions in this session (from server config). */
   totalQuestions: number;
+  /** Flat points per correct sponsor question (admin-configurable). Drives the "+N PTS" badge. */
+  sponsorPointsPerCorrect: number;
   /** Running count of questions answered this session. */
   currentIndex: number;
   score: number;
@@ -55,6 +57,7 @@ export const initialGameSlice: GameSlice = {
   sponsorQuestions: [],
   sponsorIndex: 0,
   totalQuestions: 0,
+  sponsorPointsPerCorrect: 0,
   currentIndex: 0,
   score: 0,
   streak: 0,

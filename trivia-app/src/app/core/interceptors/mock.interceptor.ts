@@ -134,6 +134,9 @@ const DIFFICULTY_BY_QUESTION_ID: Record<number, string> = MOCK_QUESTIONS.reduce<
 
 const SESSION_DURATION_SECONDS = 90;
 const SESSION_COUNTDOWN_SECONDS = 3;
+// Flat points per correct sponsor question (admin-configurable, spec §5.3) — replaces
+// the difficulty multiplier for the sponsor round. Every correct sponsor answer is worth this.
+const SPONSOR_POINTS_PER_CORRECT = 300;
 
 const MOCK_SPONSOR_QUESTION = {
   id: 1,
@@ -145,7 +148,6 @@ const MOCK_SPONSOR_QUESTION = {
     { index: 2, text: 'MaxTurn Pro Elite' },
     { index: 3, text: 'PrecisionEdge Z1' },
   ],
-  bonusPoints: 200,
   timerSeconds: 30,
   sponsor: {
     id: 1,
@@ -169,7 +171,6 @@ const MOCK_SPONSOR_QUESTION_2 = {
     { index: 2, text: 'CNC machine tools for the shop floor' },
     { index: 3, text: 'Metrology instruments' },
   ],
-  bonusPoints: 150,
   timerSeconds: 30,
   sponsor: {
     id: 2,
@@ -322,6 +323,7 @@ export const mockInterceptor: HttpInterceptorFn = (
       durationSeconds: SESSION_DURATION_SECONDS,
       countdownSeconds: SESSION_COUNTDOWN_SECONDS,
       totalQuestions: mockTotalQuestions,
+      sponsorPointsPerCorrect: SPONSOR_POINTS_PER_CORRECT,
       currentQuestion,
       buffer,
       sponsorQuestions: MOCK_SPONSOR_QUESTIONS,
@@ -368,10 +370,9 @@ export const mockInterceptor: HttpInterceptorFn = (
   if (matchesRoute(url, method, '/sessions/:id/sponsor-answer', 'POST')) {
     const body = req.body as { questionId: number; choiceIndex: number };
     const correctIndex = SPONSOR_CORRECT_ANSWERS[body.questionId] ?? 0;
-    const sponsorQ = MOCK_SPONSOR_QUESTIONS.find((q) => q.id === body.questionId);
     const correct = correctIndex === body.choiceIndex;
-    // Sponsor scoring uses a fixed bonus (spec §5.3 Option B) — independent of streak.
-    const bonusPoints = correct ? (sponsorQ?.bonusPoints ?? 0) : 0;
+    // Sponsor scoring uses a flat, admin-configurable value (spec §5.3) — independent of streak.
+    const bonusPoints = correct ? SPONSOR_POINTS_PER_CORRECT : 0;
     mockSponsorBonus += bonusPoints;
     mockScore += bonusPoints;
     return respond({

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { IonContent } from '@ionic/angular/standalone';
 import { QRCodeComponent } from 'angularx-qrcode';
@@ -6,7 +6,6 @@ import { timer, switchMap } from 'rxjs';
 
 import { ApiService } from '../../core/services/api.service';
 import { AppConfigStore } from '../../core/stores/app-config/app-config.store';
-import { environment } from '../../../environments/environment';
 import type { BoothDisplayResponse } from '../../core/models/api.models';
 
 const POLL_MS = 10_000;
@@ -27,7 +26,18 @@ export class BoothDisplayPage implements OnInit {
   readonly data = signal<BoothDisplayResponse | null>(null);
 
   readonly qrSize = QR_SIZE;
-  readonly playUrl = environment.playUrl;
+
+  /**
+   * QR target players scan to register (spec §8.3). Composed from the register page URL
+   * (same origin the booth is served from) plus the admin-issued token from the backend.
+   * Empty until the first booth-display response arrives so no stale/blank QR is rendered.
+   */
+  readonly qrData = computed(() => {
+    const token = this.data()?.registrationToken;
+    if (!token) return '';
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    return `${origin}/register?token=${encodeURIComponent(token)}`;
+  });
 
   ngOnInit(): void {
     const eventId = this.route.snapshot.paramMap.get('id') ?? '';

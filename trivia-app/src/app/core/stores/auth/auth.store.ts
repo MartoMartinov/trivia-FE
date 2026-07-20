@@ -22,7 +22,7 @@ import {
 import { withLoading } from '../features/with-loading.feature';
 import { ApiService } from '../../services/api.service';
 import { AuthStrategyService } from '../../auth/auth-strategy.service';
-import type { RegisterRequest, LoginResponse } from '../../models/api.models';
+import type { RegisterRequest, LoginRequest, LoginResponse } from '../../models/api.models';
 
 export const AuthStore = signalStore(
   { providedIn: 'root' },
@@ -67,6 +67,33 @@ export const AuthStore = signalStore(
       ),
     );
 
+    const login = rxMethod<LoginRequest>((req$) =>
+      req$.pipe(
+        tap(() => {
+          patchState(store, setPending());
+          patchState(store, { isLoading: true });
+        }),
+        exhaustMap((req) =>
+          api.login(req).pipe(
+            tapResponse({
+              next: async (res: LoginResponse) => {
+                await strategy.persistAfterLogin(res);
+                patchState(store, setAuthFromLogin(res));
+                patchState(store, setFulfilled());
+              },
+              error: (err: unknown) => {
+                const msg =
+                  (err as { error?: { message?: string } })?.error?.message ??
+                  null;
+                patchState(store, setError(msg ?? undefined));
+              },
+              finalize: () => patchState(store, { isLoading: false }),
+            }),
+          ),
+        ),
+      ),
+    );
+
     const refresh = rxMethod<void>((trigger$) =>
       trigger$.pipe(
         exhaustMap(() =>
@@ -89,7 +116,7 @@ export const AuthStore = signalStore(
       patchState(store, clearAuth());
     };
 
-    return { register, refresh, logout };
+    return { register, login, refresh, logout };
   }),
   withHooks((store) => ({
     onInit: () => {

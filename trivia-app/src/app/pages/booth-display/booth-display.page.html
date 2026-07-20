@@ -52,7 +52,9 @@
           <!-- QR + Stats card -->
           <div class="qr-card">
             <div class="qr-img-wrap">
-              <qrcode [qrdata]="playUrl" [width]="qrSize" elementType="svg" errorCorrectionLevel="M" [margin]="0"></qrcode>
+              @if (qrData(); as qr) {
+                <qrcode [qrdata]="qr" [width]="qrSize" elementType="svg" errorCorrectionLevel="M" [margin]="0"></qrcode>
+              }
             </div>
             <div class="qr-info">
               <h2 class="scan-title">Scan to play</h2>

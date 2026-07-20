@@ -7,6 +7,7 @@
     "EMAIL": "Email Address",
     "COMPANY": "Company",
     "PHONE": "Phone",
+    "PASSWORD": "Password",
     "CONSENT": "By playing, you agree to the ",
     "CONSENT_LINK": "Terms and Conditions and Privacy Policy",
     "CONSENT_SHORT": "By playing, you agree to be added to the Practical Machinist list.",
@@ -16,6 +17,15 @@
     "ERROR_GENERIC_2": "Please try again.",
     "TOKEN_EXPIRED_1": "This QR code has expired.",
     "TOKEN_EXPIRED_2": "Please scan again the QR code to play."
+  },
+  "AUTH": {
+    "LOGIN_TITLE": "Welcome back.",
+    "LOGIN_SUBMIT": "Log In →",
+    "LOGGING_IN": "Logging in…",
+    "HAVE_ACCOUNT": "Already have an account?",
+    "LOGIN_LINK": "Log in",
+    "NO_ACCOUNT": "New here?",
+    "REGISTER_LINK": "Create an account"
   },
   "GAME": {
     "LOADING": "Loading questions…",
@@ -31,11 +41,19 @@
     "SPONSORED": "SPONSORED",
     "PRESENTED_BY": "Presented by",
     "PTS": "PTS",
+    "PER_CORRECT": "per correct answer",
     "PLAYING": "Playing sponsor reel…",
     "UNLOCKED": "Bonus question unlocked",
     "QUESTION_PLACEHOLDER": "Which of our products is rated #1 for precision milling applications?",
     "UNLOCK_HINT": "Watch the sponsor video to unlock the bonus question",
-    "TIME_LEFT": "Time left"
+    "TIME_LEFT": "Time left",
+    "INTRO_TITLE": "Think you're done? Not quite.",
+    "INTRO_BODY": "The next {{ count }} questions come from today's sponsor — and they play by different rules. Each correct answer is worth a flat +{{ points }} points, not the usual multiplier. Don't leave them on the table.",
+    "CONTINUE": "Continue",
+    "OUTRO_TITLE": "Want to find out more?",
+    "OUTRO_BODY": "Scan the code to explore {{ sponsor }} and everything they brought to the booth.",
+    "SCAN_HINT": "Tap or scan to visit",
+    "SEE_RESULTS": "See my results"
   },
   "RESULTS": {
     "LOADING": "Loading results…",
