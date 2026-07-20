@@ -14,10 +14,30 @@ import { AuthStore } from '../../core/stores/auth/auth.store';
 import { BoothTokenStore } from '../../core/stores/booth-token/booth-token.store';
 import { PlayerStore } from '../../core/stores/player/player.store';
 import { addIcons } from 'ionicons';
-import { alertCircle, close, eyeOutline, eyeOffOutline } from 'ionicons/icons';
+import {
+  alertCircle,
+  close,
+  eyeOutline,
+  eyeOffOutline,
+  personOutline,
+  mailOutline,
+  businessOutline,
+  callOutline,
+  lockClosedOutline,
+} from 'ionicons/icons';
 import { PmHeaderComponent } from '../../shared/components/pm-header/pm-header.component';
 
-addIcons({ alertCircle, close, eyeOutline, eyeOffOutline });
+addIcons({
+  alertCircle,
+  close,
+  eyeOutline,
+  eyeOffOutline,
+  personOutline,
+  mailOutline,
+  businessOutline,
+  callOutline,
+  lockClosedOutline,
+});
 
 @Component({
   selector: 'app-register',

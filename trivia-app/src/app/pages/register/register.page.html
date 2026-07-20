@@ -69,48 +69,64 @@
 
           <div class="mb-3">
             <label class="pm-label">{{ 'REGISTER.FIRST_NAME' | translate }} <span class="text-orange">*</span></label>
-            <input class="pm-input"
-                   type="text"
-                   formControlName="firstName"
-                   placeholder="Jake"
-                   autocomplete="given-name" />
+            <div class="pm-input-wrap">
+              <span class="pm-input-icon"><ion-icon name="person-outline"></ion-icon></span>
+              <input class="pm-input pm-input--with-leading"
+                     type="text"
+                     formControlName="firstName"
+                     placeholder="Jake"
+                     autocomplete="given-name" />
+            </div>
           </div>
           <div class="mb-3">
             <label class="pm-label">{{ 'REGISTER.LAST_NAME' | translate }} <span class="text-orange">*</span></label>
-            <input class="pm-input"
-                   type="text"
-                   formControlName="lastName"
-                   placeholder="Thompson"
-                   autocomplete="family-name" />
+            <div class="pm-input-wrap">
+              <span class="pm-input-icon"><ion-icon name="person-outline"></ion-icon></span>
+              <input class="pm-input pm-input--with-leading"
+                     type="text"
+                     formControlName="lastName"
+                     placeholder="Thompson"
+                     autocomplete="family-name" />
+            </div>
           </div>
           <div class="mb-3">
             <label class="pm-label">{{ 'REGISTER.EMAIL' | translate }} <span class="text-orange">*</span></label>
-            <input class="pm-input"
-                   type="email"
-                   formControlName="email"
-                   placeholder="you@company.com"
-                   autocomplete="email" />
+            <div class="pm-input-wrap">
+              <span class="pm-input-icon"><ion-icon name="mail-outline"></ion-icon></span>
+              <input class="pm-input pm-input--with-leading"
+                     type="email"
+                     formControlName="email"
+                     placeholder="you@company.com"
+                     autocomplete="email" />
+            </div>
           </div>
           <div class="mb-3">
             <label class="pm-label">{{ 'REGISTER.COMPANY' | translate }} <span class="text-orange">*</span></label>
-            <input class="pm-input"
-                   type="text"
-                   formControlName="company"
-                   placeholder="Company Name"
-                   autocomplete="organization" />
+            <div class="pm-input-wrap">
+              <span class="pm-input-icon"><ion-icon name="business-outline"></ion-icon></span>
+              <input class="pm-input pm-input--with-leading"
+                     type="text"
+                     formControlName="company"
+                     placeholder="Company Name"
+                     autocomplete="organization" />
+            </div>
           </div>
           <div class="mb-3">
             <label class="pm-label">{{ 'REGISTER.PHONE' | translate }} <span class="text-orange">*</span></label>
-            <input class="pm-input"
-                   type="tel"
-                   formControlName="phone"
-                   placeholder="(555) 123-4567"
-                   autocomplete="tel" />
+            <div class="pm-input-wrap">
+              <span class="pm-input-icon"><ion-icon name="call-outline"></ion-icon></span>
+              <input class="pm-input pm-input--with-leading"
+                     type="tel"
+                     formControlName="phone"
+                     placeholder="(555) 123-4567"
+                     autocomplete="tel" />
+            </div>
           </div>
           <div class="mb-3">
             <label class="pm-label">{{ 'REGISTER.PASSWORD' | translate }} <span class="text-orange">*</span></label>
             <div class="pm-input-wrap">
-              <input class="pm-input pm-input--with-affix"
+              <span class="pm-input-icon"><ion-icon name="lock-closed-outline"></ion-icon></span>
+              <input class="pm-input pm-input--with-leading pm-input--with-affix"
                      [type]="showRegisterPassword() ? 'text' : 'password'"
                      formControlName="password"
                      placeholder="••••••••"
@@ -176,16 +192,20 @@
 
           <div class="mb-3">
             <label class="pm-label">{{ 'REGISTER.EMAIL' | translate }} <span class="text-orange">*</span></label>
-            <input class="pm-input"
-                   type="email"
-                   formControlName="email"
-                   placeholder="you@company.com"
-                   autocomplete="email" />
+            <div class="pm-input-wrap">
+              <span class="pm-input-icon"><ion-icon name="mail-outline"></ion-icon></span>
+              <input class="pm-input pm-input--with-leading"
+                     type="email"
+                     formControlName="email"
+                     placeholder="you@company.com"
+                     autocomplete="email" />
+            </div>
           </div>
           <div class="mb-3">
             <label class="pm-label">{{ 'REGISTER.PASSWORD' | translate }} <span class="text-orange">*</span></label>
             <div class="pm-input-wrap">
-              <input class="pm-input pm-input--with-affix"
+              <span class="pm-input-icon"><ion-icon name="lock-closed-outline"></ion-icon></span>
+              <input class="pm-input pm-input--with-leading pm-input--with-affix"
                      [type]="showLoginPassword() ? 'text' : 'password'"
                      formControlName="password"
                      placeholder="••••••••"

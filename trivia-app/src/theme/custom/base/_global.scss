@@ -74,7 +74,7 @@ body {
   }
 }
 
-// ── Input with trailing affix (e.g. password reveal toggle) ──────────────────
+// ── Input with leading icon / trailing affix (e.g. password reveal toggle) ───
 .pm-input-wrap {
   position: relative;
 }
@@ -82,6 +82,29 @@ body {
 // Reserve room so typed text never slides under the toggle button.
 .pm-input--with-affix {
   padding-right: 46px;
+}
+
+// Reserve room on the left for a decorative leading icon (spec: register/login field icons).
+.pm-input--with-leading {
+  padding-left: 42px;
+}
+
+// Decorative leading glyph inside a field — non-interactive so clicks fall through to the input.
+.pm-input-icon {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-muted);
+  pointer-events: none;
+
+  ion-icon {
+    font-size: 18px;
+  }
 }
 
 .pm-input-affix {
