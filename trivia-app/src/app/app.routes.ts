@@ -50,5 +50,5 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./pages/static-page/static-page.page').then((m) => m.StaticPagePage),
   },
-  { path: '**', redirectTo: 'register' },
+  // { path: '**', redirectTo: 'register' },
 ];

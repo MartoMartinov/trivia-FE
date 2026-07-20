@@ -170,11 +170,18 @@ ion-content {
   padding: 0 0.42vw;
   border-radius: 0.52vw;
 
-  &[data-rank="1"] { background: #fef7e0; }
-  &[data-rank="2"] { background: #f1f5f9; }
-  &[data-rank="3"] { background: #fff1e6; }
-  &[data-rank="4"] { background: #fff; }
-
+  &[data-rank="1"] {
+    background: #fef7e0;
+  }
+  &[data-rank="2"] {
+    background: #f1f5f9;
+  }
+  &[data-rank="3"] {
+    background: #fff1e6;
+  }
+  &[data-rank="4"] {
+    background: #fff;
+  }
 }
 
 .rank-badge {
@@ -188,10 +195,19 @@ ion-content {
   color: #323b66;
   flex-shrink: 0;
 
-  &[data-rank="1"] { background: #f5b400; }
-  &[data-rank="2"] { background: #cbd5e1; }
-  &[data-rank="3"] { background: #fdba74; }
-  &[data-rank="4"] { background: #f7f8fa; color: #6b7280; }
+  &[data-rank="1"] {
+    background: #f5b400;
+  }
+  &[data-rank="2"] {
+    background: #cbd5e1;
+  }
+  &[data-rank="3"] {
+    background: #fdba74;
+  }
+  &[data-rank="4"] {
+    background: #f7f8fa;
+    color: #6b7280;
+  }
 }
 
 .avatar {
@@ -279,11 +295,11 @@ ion-content {
   display: flex;
   align-items: center;
   justify-content: center;
-
-  img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
+  qrcode {
+    display: flex;
+    width: 15.47vw;
+    height: 15.47vw;
+    padding: 0.3vw;
   }
 }
 
@@ -337,7 +353,9 @@ ion-content {
     color: #323b66;
     line-height: 1;
 
-    &.orange { color: #f34d23; }
+    &.orange {
+      color: #f34d23;
+    }
   }
 
   .stat-unit {

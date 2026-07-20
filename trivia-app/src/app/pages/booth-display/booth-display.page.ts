@@ -1,6 +1,7 @@
-import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { IonContent } from '@ionic/angular/standalone';
+import { QRCodeComponent } from 'angularx-qrcode';
 import { timer, switchMap } from 'rxjs';
 
 import { ApiService } from '../../core/services/api.service';
@@ -16,7 +17,7 @@ const QR_SIZE = 220;
   templateUrl: 'booth-display.page.html',
   styleUrls: ['booth-display.page.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [IonContent],
+  imports: [IonContent, QRCodeComponent],
 })
 export class BoothDisplayPage implements OnInit {
   private readonly api = inject(ApiService);
@@ -25,12 +26,7 @@ export class BoothDisplayPage implements OnInit {
 
   readonly data = signal<BoothDisplayResponse | null>(null);
 
-  /** QR code image pointing at the public game URL (spec §8.3), generated dynamically. */
-  readonly qrSrc = computed(() =>
-    environment.qrApiUrl
-      .replace(/\{size\}/g, String(QR_SIZE))
-      .replace('{data}', encodeURIComponent(environment.playUrl)),
-  );
+  readonly qrSize = QR_SIZE;
   readonly playUrl = environment.playUrl;
 
   ngOnInit(): void {
