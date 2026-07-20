@@ -20,7 +20,7 @@
     <!-- Mobile: column — hero on top, paper + form below                    -->
     <!-- Desktop: row — hero left, form card right, vertically centered      -->
     <div class="flex flex-col flex-1
-                lg:flex-row lg:items-center lg:justify-between lg:gap-20 lg:px-[62px]
+                lg:flex-row lg:items-center lg:justify-between 2xl:gap-20 lg:px-[62px]
                 2xl:px-[150px] 2xl:justify-center">
 
       <!-- Hero text -->
@@ -34,7 +34,7 @@
           @if(landingHeadline()){
           {{ landingHeadline() }}
           } @else {
-          <div class="lg:max-w-[400px]">
+          <div class="2xl:max-w-[400px]">
             {{ 'REGISTER.HERO_TITLE' | translate }}
             <p class="text-orange">{{ ('REGISTER.HERO_SUBTITLE' | translate)}}</p>
           </div>
