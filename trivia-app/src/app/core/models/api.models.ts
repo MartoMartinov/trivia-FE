@@ -220,6 +220,16 @@ export interface StaticPageResponse {
   content: string;
 }
 
+// ── Notification preferences (unsubscribe / resubscribe) ───────────────────────
+
+export interface NotificationTokenRequest {
+  token: string;
+}
+
+export interface NotificationTokenResponse {
+  message: string;
+}
+
 // ── Booth display ─────────────────────────────────────────────────────────────
 
 /** The player currently on the hottest correct-answer streak (spec §8.2 hot-streak panel). */

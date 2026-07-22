@@ -50,5 +50,17 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./pages/static-page/static-page.page').then((m) => m.StaticPagePage),
   },
+  {
+    path: 'unsubscribe',
+    canActivate: [translationGuard],
+    loadComponent: () =>
+      import('./pages/unsubscribe/unsubscribe.page').then((m) => m.UnsubscribePage),
+  },
+  {
+    path: 'resubscribe',
+    canActivate: [translationGuard],
+    loadComponent: () =>
+      import('./pages/resubscribe/resubscribe.page').then((m) => m.ResubscribePage),
+  },
   // { path: '**', redirectTo: 'register' },
 ];

@@ -97,5 +97,27 @@
     "STREAK_SUFFIX": "in a row",
     "SCAN_TO_PLAY": "Scan to play",
     "SPONSORS": "Sponsors"
+  },
+  "UNSUBSCRIBE": {
+    "TITLE": "Unsubscribe from notifications",
+    "BODY": "You are about to unsubscribe from all email and SMS notifications sent by this platform. You can re-subscribe at any time.",
+    "BUTTON": "Unsubscribe",
+    "SUBMITTING": "Unsubscribing…",
+    "SUCCESS": "You have been successfully unsubscribed.",
+    "SUCCESS_BODY": "A confirmation email has been sent to you with a link to re-subscribe if you change your mind.",
+    "ERROR": "This link is invalid or has already been used.",
+    "NO_TOKEN": "This link is invalid.",
+    "BACK_TO_PLAY": "Back to start"
+  },
+  "RESUBSCRIBE": {
+    "TITLE": "Re-subscribe to notifications",
+    "BODY": "Click below to re-subscribe to email and SMS notifications from this platform.",
+    "BUTTON": "Re-subscribe",
+    "SUBMITTING": "Re-subscribing…",
+    "SUCCESS": "You have been successfully re-subscribed.",
+    "SUCCESS_BODY": "You will now receive notifications again.",
+    "ERROR": "This link is invalid or has already been used.",
+    "NO_TOKEN": "This link is invalid.",
+    "BACK_TO_PLAY": "Back to start"
   }
 }

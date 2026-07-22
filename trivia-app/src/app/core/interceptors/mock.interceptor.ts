@@ -3,8 +3,9 @@ import {
   HttpRequest,
   HttpHandlerFn,
   HttpResponse,
+  HttpErrorResponse,
 } from '@angular/common/http';
-import { of, delay } from 'rxjs';
+import { of, throwError, delay } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
 const MOCK_PLAYER = {
@@ -267,6 +268,8 @@ export const mockInterceptor: HttpInterceptorFn = (
 
   const respond = (body: unknown) =>
     of(new HttpResponse({ status: 200, body })).pipe(delay(300));
+  const respondError = (status: number, error: unknown) =>
+    throwError(() => new HttpErrorResponse({ status, error, url })).pipe(delay(300));
 
   // GET /register/verify-token — mock: token value 'expired' simulates an expired/invalid QR token
   if (matchesRoute(url, method, '/register/verify-token', 'GET')) {
@@ -458,6 +461,24 @@ export const mockInterceptor: HttpInterceptorFn = (
       },
       sponsorCards: MOCK_SPONSOR_CARDS,
     });
+  }
+
+  // POST /unsubscribe — mock: token value 'invalid' simulates a not-found/already-used token
+  if (matchesRoute(url, method, '/unsubscribe', 'POST')) {
+    const body = req.body as { token: string };
+    if (body.token === 'invalid') {
+      return respondError(404, { message: 'Invalid token.' });
+    }
+    return respond({ message: 'You have been unsubscribed.' });
+  }
+
+  // POST /resubscribe — mock: token value 'invalid' simulates a not-found/already-used token
+  if (matchesRoute(url, method, '/resubscribe', 'POST')) {
+    const body = req.body as { token: string };
+    if (body.token === 'invalid') {
+      return respondError(404, { message: 'Invalid token.' });
+    }
+    return respond({ message: 'You have been re-subscribed.' });
   }
 
   return next(req);

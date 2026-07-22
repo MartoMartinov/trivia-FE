@@ -21,6 +21,7 @@ import type {
   EventConfigResponse,
   StaticPageResponse,
   VerifyRegistrationTokenResponse,
+  NotificationTokenResponse,
 } from '../models/api.models';
 
 @Injectable({ providedIn: 'root' })
@@ -113,5 +114,13 @@ export class ApiService {
 
   getPage(id: number): Observable<StaticPageResponse> {
     return this.http.get<StaticPageResponse>(`${this.base}/pages/${id}`);
+  }
+
+  unsubscribe(token: string): Observable<NotificationTokenResponse> {
+    return this.http.post<NotificationTokenResponse>(`${this.base}/unsubscribe`, { token });
+  }
+
+  resubscribe(token: string): Observable<NotificationTokenResponse> {
+    return this.http.post<NotificationTokenResponse>(`${this.base}/resubscribe`, { token });
   }
 }
