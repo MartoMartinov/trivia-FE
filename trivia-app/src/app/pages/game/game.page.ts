@@ -1,20 +1,25 @@
 import {
-  ChangeDetectionStrategy, Component, computed, effect, inject, OnDestroy, OnInit, signal,
+  ChangeDetectionStrategy, Component, computed, effect, inject, OnDestroy, OnInit, signal, untracked,
 } from '@angular/core';
 import { UpperCasePipe } from '@angular/common';
 import { Router } from '@angular/router';
-import { IonContent } from '@ionic/angular/standalone';
-import { TranslatePipe } from '@ngx-translate/core';
+import { IonContent, ToastController } from '@ionic/angular/standalone';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+import { addIcons } from 'ionicons';
+import { alertCircle, close } from 'ionicons/icons';
 
 import { GameStore } from '../../core/stores/game/game.store';
 import { PmHeaderComponent } from '../../shared/components/pm-header/pm-header.component';
 import type { LastResult } from '../../core/stores/game/game.slice';
+
+addIcons({ alertCircle, close });
 
 /** Game lifecycle phase: waiting for the session, the pre-game countdown, or active play. */
 type GamePhase = 'loading' | 'countdown' | 'playing';
 
 const DEFAULT_DURATION_SECONDS = 90;
 const REVEAL_DELAY_MS = 1100;
+const START_ERROR_TOAST_DURATION_MS = 10000;
 
 @Component({
   selector: 'app-game',
@@ -26,6 +31,8 @@ const REVEAL_DELAY_MS = 1100;
 export class GamePage implements OnInit, OnDestroy {
   readonly gameStore = inject(GameStore);
   private readonly router = inject(Router);
+  private readonly toastCtrl = inject(ToastController);
+  private readonly translate = inject(TranslateService);
 
   readonly phase = signal<GamePhase>('loading');
   readonly countdownValue = signal(0);
@@ -59,6 +66,29 @@ export class GamePage implements OnInit, OnDestroy {
       if (!this.gameStore.currentQuestion()) return;
       this.beginCountdown();
     });
+
+    // startSession() can fail (replay blocked, event closed, etc.) — there's no game
+    // to fall back into, so surface it and send the player back to register.
+    effect(() => {
+      if (!this.gameStore.hasError()) return;
+      untracked(() => this.showStartErrorToast());
+    });
+  }
+
+  private async showStartErrorToast(): Promise<void> {
+    const fallback = `${this.translate.instant('GAME.START_ERROR_1')}\n${this.translate.instant('GAME.START_ERROR_2')}`;
+    const msg = this.gameStore.errorMessage() ?? fallback;
+    const toast = await this.toastCtrl.create({
+      message: msg,
+      duration: START_ERROR_TOAST_DURATION_MS,
+      position: 'top',
+      cssClass: 'pm-toast-warning',
+      icon: 'alert-circle',
+      buttons: [{ icon: 'close', role: 'cancel' }],
+    });
+    await toast.present();
+    await toast.onDidDismiss();
+    this.router.navigate(['/register']);
   }
 
   ngOnInit(): void {

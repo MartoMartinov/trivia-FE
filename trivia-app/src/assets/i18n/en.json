@@ -36,7 +36,9 @@
     "TIME_LEFT": "TIME LEFT",
     "SCORE": "SCORE",
     "MULTIPLIER": "MULTIPLIER!",
-    "ANSWERED": "ANSWERED"
+    "ANSWERED": "ANSWERED",
+    "START_ERROR_1": "We couldn't start your game.",
+    "START_ERROR_2": "Please scan the booth QR code to try again."
   },
   "SPONSOR": {
     "BONUS_ROUND": "BONUS ROUND",

@@ -19,12 +19,12 @@
     <!-- ── Main content ──────────────────────────────────────────────────── -->
     <!-- Mobile: column — hero on top, paper + form below                    -->
     <!-- Desktop: row — hero left, form card right, vertically centered      -->
-    <div class="flex flex-col flex-1
-                lg:flex-row lg:items-center lg:justify-between 2xl:gap-20 lg:px-[62px]
-                2xl:px-[150px] 2xl:justify-center">
+    <div class="flex flex-col flex-1 gap-20
+                lg:flex-row lg:items-center lg:justify-between  lg:px-[62px]
+                2xl:justify-center 2xl:gap-20 2xl:px-[150px] ">
 
       <!-- Hero text -->
-      <section class="relative z-[1] px-7 pt-9 pb-[96px] bg-navy
+      <section class="relative z-[1] px-7 pt-9 pb-7 bg-navy
                       md:bg-transparent
                       lg:px-0 lg:pt-0 lg:pb-0 lg:flex-none
                       lg:max-w-[680px]">
@@ -130,7 +130,7 @@
                      [type]="showRegisterPassword() ? 'text' : 'password'"
                      formControlName="password"
                      placeholder="••••••••"
-                     autocomplete="new-password" />
+                     autocomplete="password" />
               <button type="button"
                       class="pm-input-affix"
                       (click)="showRegisterPassword.set(!showRegisterPassword())"

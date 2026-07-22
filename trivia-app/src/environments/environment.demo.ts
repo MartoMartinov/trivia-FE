@@ -1,8 +1,8 @@
 export const environment = {
-  production: true,
+  production: false,
   staging: false,
-  demo: false,
-  apiUrl: 'https://practicalmachinist.com/api/en',
+  demo: true,
+  apiUrl: 'https://backend-mock-fawn.vercel.app/api/trivia/en',
   appName: 'Practical Machinist Trivia',
   useMockApi: false,
 };
