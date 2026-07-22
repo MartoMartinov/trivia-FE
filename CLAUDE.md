@@ -21,4 +21,5 @@
 
 ## Backend
 - for developing purposes use mock-backend you can find in `C:/Users/twrkh/Projects/backend-mock`
+- for staging/live environment  real backend is located in `E:\Projects\pm-trivia-BE`
 - if there is changes made in frontend always check if they are reflected in backend
