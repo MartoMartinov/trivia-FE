@@ -178,14 +178,16 @@ export interface EventConfigResponse {
   /** Combined app + event logo for the booth/TV display. */
   tvLogoUrl: string | null;
   /**
-   * Register/landing hero headline (admin-editable). Free text, e.g.
-   * "Think you're the smartest machinist at IMTS? Prove it." Null falls back to the bundled copy.
+   * Register/landing hero headline (admin-editable). HTML string, e.g.
+   * "Think you're the smartest machinist at IMTS? <span class=\"text-orange\">Prove it.</span>"
+   * Rendered via [innerHTML] (Angular-sanitized) — null falls back to the bundled copy.
    */
   landingHeadline: string | null;
   /**
-   * Register/landing hero body copy (admin-editable). The backend renders event specifics into
-   * it — session length and prize count depend on the admin panel — so it always reflects the
-   * current config. Null falls back to the bundled copy.
+   * Register/landing hero body copy (admin-editable). HTML string — the backend renders event
+   * specifics into it (session length and prize count depend on the admin panel) so it always
+   * reflects the current config. Rendered via [innerHTML] (Angular-sanitized) — null falls back
+   * to the bundled copy.
    */
   landingBody: string | null;
 }
