@@ -6,54 +6,59 @@
 
 @theme {
   /* Brand */
-  --color-orange:        #F34D23;
-  --color-orange-shade:  #C7421B;
-  --color-orangesoft:    #FFF5F0;
-  --color-gold:          #F5B400;
-  --color-goldsoft:      #FFF8E8;
-  --color-sandvik:       #DE0016;
+  --color-orange: #f34d23;
+  --color-orange-shade: #c7421b;
+  --color-orangesoft: #fff5f0;
+  --color-gold: #f5b400;
+  --color-goldsoft: #fff8e8;
+  --color-sandvik: #de0016;
 
   /* Navy scale */
-  --color-navy:          #0E1524;
-  --color-navyband:      #1B213D;
-  --color-navymid:       #0E1524;
-  --color-ink:           #0E1524;
+  --color-navy: #0e1524;
+  --color-navyband: #1b213d;
+  --color-navymid: #0e1524;
+  --color-ink: #0e1524;
 
   /* Light / paper */
-  --color-paper:         #F7F8FA;
-  --color-cream:         #FFF8E8;
-  --color-line:          #E5E7EB;
-  --color-muted:         #6B7280;
-  --color-muted-light:   #9CA3AF;
+  --color-paper: #f7f8fa;
+  --color-cream: #fff8e8;
+  --color-line: #e5e7eb;
+  --color-muted: #6b7280;
+  --color-muted-light: #9ca3af;
 
   /* Semantic */
-  --color-correct:       #16A34A;
-  --color-correct-tint:  #E6F6EA;
-  --color-wrong:         #DC2323;
-  --color-wrong-tint:    #FEE2E2;
+  --color-correct: #16a34a;
+  --color-correct-tint: #e6f6ea;
+  --color-wrong: #dc2323;
+  --color-wrong-tint: #fee2e2;
 
   /* Typography */
-  --font-sans:           'Inter', sans-serif;
+  --font-sans: "Inter", sans-serif;
 
   /* Breakpoints */
-  --breakpoint-xs:       360px;
-  --breakpoint-sm:       640px;
-  --breakpoint-md:       768px;
-  --breakpoint-lg:       1024px;
-  --breakpoint-xl:       1280px;
-  --breakpoint-2xl:      1440px;
+  --breakpoint-xs: 360px;
+  --breakpoint-sm: 640px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+  --breakpoint-2xl: 1440px;
 }
 
 @layer utilities {
-  .container-app { @apply max-w-7xl mx-auto px-6; }
-  .tabular { font-variant-numeric: tabular-nums; }
+  .container-app {
+    @apply max-w-7xl mx-auto px-6;
+  }
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
 }
 
 .editor {
   a {
     @apply text-blue-500 underline;
   }
-  ul,ol {
+  ul,
+  ol {
     @apply list-disc list-inside;
   }
   ol {
@@ -84,7 +89,7 @@
     @apply border-line my-4;
   }
   p {
-    @apply mb-4;
+    @apply mb-0.5;
   }
   code {
     @apply p-1 rounded bg-gray-100;
@@ -104,7 +109,8 @@
   table {
     @apply w-full;
   }
-  th, td {
+  th,
+  td {
     @apply p-2;
   }
   th {
@@ -113,13 +119,16 @@
   td {
     @apply text-right;
   }
-  th, td {
+  th,
+  td {
     @apply border border-line;
   }
-  th:first-child, td:first-child {
+  th:first-child,
+  td:first-child {
     @apply pl-0;
   }
-  th:last-child, td:last-child {
+  th:last-child,
+  td:last-child {
     @apply pr-0;
   }
   th {
@@ -176,6 +185,4 @@
   pre + hr {
     @apply mt-4;
   }
-
-
 }
