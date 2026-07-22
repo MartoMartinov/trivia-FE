@@ -1,6 +1,7 @@
-import { ChangeDetectionStrategy, Component, effect, inject, OnDestroy, OnInit, signal, untracked } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, OnDestroy, OnInit, signal, untracked } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { DomSanitizer } from '@angular/platform-browser';
 import { IonContent, IonIcon, ToastController } from '@ionic/angular/standalone';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { firstValueFrom } from 'rxjs';
@@ -13,6 +14,7 @@ import { AppConfigStore } from '../../core/stores/app-config/app-config.store';
 import { AuthStore } from '../../core/stores/auth/auth.store';
 import { BoothTokenStore } from '../../core/stores/booth-token/booth-token.store';
 import { PlayerStore } from '../../core/stores/player/player.store';
+import { sanitizeAdminHtml } from '../../shared/utils/sanitize-admin-html';
 import { addIcons } from 'ionicons';
 import {
   alertCircle,
@@ -57,6 +59,7 @@ export class RegisterPage implements OnInit, OnDestroy {
   private readonly router = inject(Router);
   private readonly toastCtrl = inject(ToastController);
   private readonly translate = inject(TranslateService);
+  private readonly sanitizer = inject(DomSanitizer);
 
   readonly isPending = this.authStore.isPending;
   readonly hasError = this.authStore.hasError;
@@ -69,6 +72,12 @@ export class RegisterPage implements OnInit, OnDestroy {
    */
   readonly landingHeadline = this.appConfigStore.landingHeadline;
   readonly landingBody = this.appConfigStore.landingBody;
+  /**
+   * HTML-sanitized (DOMPurify, `style` attribute allowed) versions for [innerHTML] binding —
+   * Angular's built-in sanitizer strips `style` outright, which admin color styling relies on.
+   */
+  readonly landingHeadlineHtml = computed(() => sanitizeAdminHtml(this.sanitizer, this.landingHeadline()));
+  readonly landingBodyHtml = computed(() => sanitizeAdminHtml(this.sanitizer, this.landingBody()));
 
   /** No booth QR token in the URL at all — block registration outright (spec F9: registration is only reachable via the on-screen QR). */
   readonly tokenBlocked = signal(false);
