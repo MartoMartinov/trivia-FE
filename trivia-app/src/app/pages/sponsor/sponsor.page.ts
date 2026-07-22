@@ -148,7 +148,7 @@ export class SponsorPage implements OnInit, OnDestroy {
     if (!sq?.sponsor.websiteUrl) return;
     const sessionId = this.gameStore.sessionId();
     if (sessionId) {
-      this.api.trackSponsorClick(sessionId, { sponsorId: sq.sponsor.id, questionId: sq.id, event: 'website_click' }).subscribe();
+      this.api.trackSponsorClick(sessionId, { sponsorId: sq.sponsor.id, event: 'website_click' }).subscribe();
     }
     window.open(sq.sponsor.websiteUrl, '_blank', 'noopener,noreferrer');
   }
@@ -161,7 +161,7 @@ export class SponsorPage implements OnInit, OnDestroy {
     const lastQuestion = questions[questions.length - 1];
     if (!sponsor?.websiteUrl || !sessionId || !lastQuestion) return;
     this.api
-      .trackSponsorClick(sessionId, { questionId: lastQuestion.id, event: 'website_click' })
+      .trackSponsorClick(sessionId, { sponsorId: sponsor.id, event: 'website_click' })
       .subscribe();
   }
 

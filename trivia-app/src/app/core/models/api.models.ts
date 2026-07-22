@@ -135,7 +135,7 @@ export interface SubmitSponsorAnswerRequest {
 }
 
 export interface SponsorTrackRequest {
-  questionId: number;
+  sponsorId: number;
   event: 'website_click';
 }
 
