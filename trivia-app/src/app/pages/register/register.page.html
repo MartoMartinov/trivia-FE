@@ -31,13 +31,13 @@
         <h1 class="text-balance font-black leading-[1.08] text-white text-[34px] animate-rise
         lg:text-[46px]
         2xl:text-[56px] ">
+        <span [innerHTML]="landingHeadlineHtml()"></span>
           @if(landingHeadline()){
-          <span [innerHTML]="landingHeadlineHtml()"></span>
           } @else {
-          <div class="2xl:max-w-[400px]">
+          <!-- <div class="2xl:max-w-[400px]">
             {{ 'REGISTER.HERO_TITLE' | translate }}
             <p class="text-orange">{{ ('REGISTER.HERO_SUBTITLE' | translate)}}</p>
-          </div>
+          </div> -->
           }
         </h1>
         <div class="mt-5 text-balance text-[14px] text-white/70
