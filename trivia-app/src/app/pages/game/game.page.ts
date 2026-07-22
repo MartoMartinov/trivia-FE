@@ -48,6 +48,9 @@ export class GamePage implements OnInit, OnDestroy {
   // Guards against the answer-advance path and the timer-expiry path both ending the game (race).
   private hasEnded = false;
 
+  private pollRef: ReturnType<typeof setInterval> | null = null;
+  private revealRef: ReturnType<typeof setTimeout> | null = null;
+
   constructor() {
     // Once the session has loaded its first question, kick off the pre-game countdown.
     effect(() => {
@@ -64,6 +67,14 @@ export class GamePage implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.clearTimer();
+    this.clearAnswerCycle();
+  }
+
+  private clearAnswerCycle(): void {
+    if (this.pollRef) clearInterval(this.pollRef);
+    this.pollRef = null;
+    if (this.revealRef) clearTimeout(this.revealRef);
+    this.revealRef = null;
   }
 
   private beginCountdown(): void {
@@ -86,6 +97,13 @@ export class GamePage implements OnInit, OnDestroy {
   }
 
   private beginPlaying(): void {
+    // Clears any leftover answer-selection state/timers from a prior, abandoned session
+    // (the GameStore and this page's phase-gated effect both survive Ionic's route caching).
+    this.clearAnswerCycle();
+    this.selectedIndex.set(null);
+    this.lastResult.set(null);
+    this.hasEnded = false;
+
     const duration = this.gameStore.durationSeconds() || DEFAULT_DURATION_SECONDS;
     this.totalSeconds.set(duration);
     this.timeLeft.set(duration);
@@ -158,28 +176,31 @@ export class GamePage implements OnInit, OnDestroy {
     this.gameStore.clearLastResult();
     this.gameStore.submitAnswer({ questionId: question.id, choiceIndex: index });
 
-    const poll = setInterval(() => {
+    this.pollRef = setInterval(() => {
       const result = this.gameStore.lastResult();
-      if (result) {
-        this.lastResult.set(result);
-        clearInterval(poll);
-        setTimeout(() => {
-          this.selectedIndex.set(null);
-          this.lastResult.set(null);
-          // Advance the display only after the reveal — the store already has the next question.
-          const nextQuestion = this.gameStore.currentQuestion();
-          if (nextQuestion) {
-            this.displayQuestion.set(nextQuestion);
+      if (!result) return;
+
+      this.lastResult.set(result);
+      if (this.pollRef) clearInterval(this.pollRef);
+      this.pollRef = null;
+
+      this.revealRef = setTimeout(() => {
+        this.revealRef = null;
+        this.selectedIndex.set(null);
+        this.lastResult.set(null);
+        // Advance the display only after the reveal — the store already has the next question.
+        const nextQuestion = this.gameStore.currentQuestion();
+        if (nextQuestion) {
+          this.displayQuestion.set(nextQuestion);
+        } else {
+          this.displayQuestion.set(null);
+          if (this.gameStore.hasSponsorRound()) {
+            this.goToSponsor();
           } else {
-            this.displayQuestion.set(null);
-            if (this.gameStore.hasSponsorRound()) {
-              this.goToSponsor();
-            } else {
-              this.endGame();
-            }
+            this.endGame();
           }
-        }, REVEAL_DELAY_MS);
-      }
+        }
+      }, REVEAL_DELAY_MS);
     }, 100);
   }
 

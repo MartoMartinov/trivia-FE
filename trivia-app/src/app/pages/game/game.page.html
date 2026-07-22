@@ -96,7 +96,7 @@
         </h1>
 
         <div class="mt-5 grid gap-3">
-          @for (choice of q.choices; track choice.index) {
+          @for (choice of q.choices; track q.id + '-' + choice.index) {
             <div class="pm-answer"
                  [class.is-selected]="selectedIndex() === choice.index && lastResult() === null"
                  [class.is-correct]="lastResult() !== null && choice.index === lastResult()!.correctIndex"
