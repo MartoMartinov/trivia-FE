@@ -21,7 +21,8 @@
             "inlineStyleLanguage": "scss",
             "assets": [
               { "glob": "**/*", "input": "src/assets", "output": "assets" },
-              { "glob": "**/*", "input": "public", "output": "public" }
+              { "glob": "**/*", "input": "public", "output": "public" },
+              { "glob": ".htaccess", "input": ".", "output": "" }
             ],
             "styles": ["src/tailwind-out.css", "src/global.scss"],
             "scripts": []
