@@ -148,7 +148,7 @@ export class SponsorPage implements OnInit, OnDestroy {
     if (!sq?.sponsor.websiteUrl) return;
     const sessionId = this.gameStore.sessionId();
     if (sessionId) {
-      this.api.trackSponsorClick(sessionId, { questionId: sq.id, event: 'website_click' }).subscribe();
+      this.api.trackSponsorClick(sessionId, { sponsorId: sq.sponsor.id, questionId: sq.id, event: 'website_click' }).subscribe();
     }
     window.open(sq.sponsor.websiteUrl, '_blank', 'noopener,noreferrer');
   }
