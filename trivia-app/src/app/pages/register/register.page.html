@@ -31,7 +31,7 @@
         <h1 class="editor text-balance font-black leading-[1.08] text-white text-[34px]  animate-rise
         lg:text-[46px]
         2xl:text-[56px] ">
-        <span [innerHTML]="landingHeadlineHtml()"></span>
+          <span [innerHTML]="landingHeadlineHtml()"></span>
           @if(landingHeadline()){
           } @else {
           <!-- <div class="2xl:max-w-[400px]">
@@ -146,9 +146,10 @@
               <input type="checkbox"
                      class="pm-checkbox"
                      formControlName="consent" />
-              <span class="pm-checkbox-label">{{ 'REGISTER.CONSENT' | translate }}<a [routerLink]="['/page', 1]"
-                   target="_blank"
-                   rel="noopener noreferrer">{{ 'REGISTER.CONSENT_LINK' | translate }}</a><span class="text-orange"> *</span></span>
+              <span class="pm-checkbox-label">{{ 'REGISTER.CONSENT' | translate }}
+                <a [routerLink]="['/page', 1]">{{ 'REGISTER.CONSENT_LINK' | translate }}</a>
+                <span class="text-orange"> *</span>
+              </span>
             </label>
           </div>
 
