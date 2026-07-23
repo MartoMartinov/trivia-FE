@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, effect, inject, OnDestroy
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { DomSanitizer } from '@angular/platform-browser';
-import { IonContent, IonIcon, ToastController } from '@ionic/angular/standalone';
+import { IonContent, IonIcon, ToastController, ViewWillEnter } from '@ionic/angular/standalone';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { firstValueFrom } from 'rxjs';
 
@@ -13,6 +13,7 @@ import { ApiService } from '../../core/services/api.service';
 import { AppConfigStore } from '../../core/stores/app-config/app-config.store';
 import { AuthStore } from '../../core/stores/auth/auth.store';
 import { BoothTokenStore } from '../../core/stores/booth-token/booth-token.store';
+import { GameStore } from '../../core/stores/game/game.store';
 import { PlayerStore } from '../../core/stores/player/player.store';
 import { sanitizeAdminHtml } from '../../shared/utils/sanitize-admin-html';
 import { addIcons } from 'ionicons';
@@ -48,12 +49,13 @@ addIcons({
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [IonContent, IonIcon, ReactiveFormsModule, TranslatePipe, PmHeaderComponent, RouterLink],
 })
-export class RegisterPage implements OnInit, OnDestroy {
+export class RegisterPage implements OnInit, OnDestroy, ViewWillEnter {
   private authCheckInterval: ReturnType<typeof setInterval> | null = null;
   private readonly api = inject(ApiService);
   private readonly appConfigStore = inject(AppConfigStore);
   private readonly authStore = inject(AuthStore);
   private readonly boothTokenStore = inject(BoothTokenStore);
+  private readonly gameStore = inject(GameStore);
   private readonly playerStore = inject(PlayerStore);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -134,6 +136,30 @@ export class RegisterPage implements OnInit, OnDestroy {
     } catch {}
 
     await this.checkRegistrationToken();
+  }
+
+  /**
+   * Ionic's router outlet keeps the game page alive in the background instead of destroying it
+   * on back-navigation, so a player can land back here with a session still marked 'active' (its
+   * timer counting down unseen). Every time this page becomes active again, clear out any such
+   * abandoned session and let the player know, rather than leaving it to silently expire later.
+   */
+  ionViewWillEnter(): void {
+    if (this.gameStore.status() !== 'active') return;
+    this.gameStore.reset();
+    this.showGameResetToast();
+  }
+
+  private async showGameResetToast(): Promise<void> {
+    const toast = await this.toastCtrl.create({
+      message: `${this.translate.instant('REGISTER.GAME_RESET_1')}\n${this.translate.instant('REGISTER.GAME_RESET_2')}`,
+      duration: 40000,
+      position: 'top',
+      cssClass: 'pm-toast-warning',
+      icon: 'alert-circle',
+      buttons: [{ icon: 'close', role: 'cancel' }],
+    });
+    await toast.present();
   }
 
   /** Flip between register and login without losing either form's state; clear any stale error toast trigger. */

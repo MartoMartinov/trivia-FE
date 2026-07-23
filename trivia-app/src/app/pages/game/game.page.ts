@@ -3,7 +3,7 @@ import {
 } from '@angular/core';
 import { UpperCasePipe } from '@angular/common';
 import { Router } from '@angular/router';
-import { IonContent, ToastController } from '@ionic/angular/standalone';
+import { IonContent, ToastController, ViewWillLeave } from '@ionic/angular/standalone';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { addIcons } from 'ionicons';
 import { alertCircle, close } from 'ionicons/icons';
@@ -28,7 +28,7 @@ const START_ERROR_TOAST_DURATION_MS = 10000;
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [IonContent, TranslatePipe, UpperCasePipe, PmHeaderComponent],
 })
-export class GamePage implements OnInit, OnDestroy {
+export class GamePage implements OnInit, OnDestroy, ViewWillLeave {
   readonly gameStore = inject(GameStore);
   private readonly router = inject(Router);
   private readonly toastCtrl = inject(ToastController);
@@ -96,6 +96,15 @@ export class GamePage implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.clearTimer();
+    this.clearAnswerCycle();
+  }
+
+  // Ionic's router outlet keeps this page instance alive (for swipe-back/animations)
+  // instead of destroying it on navigation, so ngOnDestroy isn't reliable here — without
+  // this, the timer kept counting down in the background after the player navigated away
+  // and eventually forced them into the sponsor round/results.
+  ionViewWillLeave(): void {
     this.clearTimer();
     this.clearAnswerCycle();
   }

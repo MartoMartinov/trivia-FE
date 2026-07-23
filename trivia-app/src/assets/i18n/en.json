@@ -17,7 +17,9 @@
     "ERROR_GENERIC_1": "Something went wrong.",
     "ERROR_GENERIC_2": "Please try again.",
     "TOKEN_EXPIRED_1": "This QR code has expired.",
-    "TOKEN_EXPIRED_2": "Please scan again the QR code to play."
+    "TOKEN_EXPIRED_2": "Please scan again the QR code to play.",
+    "GAME_RESET_1": "Your game session has ended.",
+    "GAME_RESET_2": "Start a new game whenever you're ready to play again."
   },
   "AUTH": {
     "LOGIN_TITLE": "Welcome back.",
