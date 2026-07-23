@@ -18,12 +18,22 @@
             <a routerLink="/register" [queryParams]="registerQueryParams()" class="text-orange hover:underline text-sm">← Back to register</a>
           </div>
         } @else {
+          <a routerLink="/register" [queryParams]="registerQueryParams()"
+             class="inline-flex items-center gap-1 text-orange hover:underline text-sm font-semibold mb-6">
+            <ion-icon name="chevron-back-outline"></ion-icon>
+            Back to register
+          </a>
+
           @if (title()) {
             <h1 class="text-[24px] lg:text-[30px] font-black text-ink mb-8 border-b border-line pb-6">
               {{ title() }}
             </h1>
           }
           <div class="prose prose-ink max-w-none" [innerHTML]="content()"></div>
+
+          <button routerLink="/register" [queryParams]="registerQueryParams()" class="pm-cta mt-8">
+            Back to register
+          </button>
         }
 
       </div>

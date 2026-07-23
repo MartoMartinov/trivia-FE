@@ -8,17 +8,21 @@ import {
 } from '@angular/core';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { IonContent } from '@ionic/angular/standalone';
+import { IonContent, IonIcon } from '@ionic/angular/standalone';
+import { addIcons } from 'ionicons';
+import { chevronBackOutline } from 'ionicons/icons';
 
 import { ApiService } from '../../core/services/api.service';
 import { BoothTokenStore } from '../../core/stores/booth-token/booth-token.store';
 import { PmHeaderComponent } from '../../shared/components/pm-header/pm-header.component';
 
+addIcons({ chevronBackOutline });
+
 @Component({
   selector: 'app-static-page',
   templateUrl: 'static-page.page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [IonContent, PmHeaderComponent, RouterLink],
+  imports: [IonContent, IonIcon, PmHeaderComponent, RouterLink],
 })
 export class StaticPagePage implements OnInit {
   private readonly api = inject(ApiService);
