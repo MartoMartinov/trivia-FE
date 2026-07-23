@@ -268,7 +268,13 @@ body {
     border-color: var(--color-ink);
   }
 }
-
+@media (hover: hover) and (pointer: fine) {
+  .pm-answer {
+    &:hover:not(.is-disabled):not(.is-correct):not(.is-wrong) {
+      border-color: var(--color-orange);
+    }
+  }
+}
 // ── Answer cards ───────────────────────────────────────────────────────────
 .pm-answer {
   display: flex;
@@ -282,10 +288,6 @@ body {
   transition:
     border-color 0.15s,
     background 0.15s;
-
-  &:hover:not(.is-disabled):not(.is-correct):not(.is-wrong) {
-    border-color: var(--color-orange);
-  }
 
   &.is-selected {
     border-color: var(--color-orange);
