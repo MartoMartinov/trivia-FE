@@ -18,6 +18,7 @@ import {
 import { withRequestStatus, setPending, setFulfilled, setError } from '../features/with-request-status.feature';
 import { withLoading } from '../features/with-loading.feature';
 import { ApiService } from '../../services/api.service';
+import type { GameStatus } from './game.slice';
 import type { SubmitAnswerRequest, SubmitSponsorAnswerRequest } from '../../models/api.models';
 
 // Root-scoped: a single session spans the game and sponsor pages, so both must share state.
@@ -155,7 +156,7 @@ export const GameStore = signalStore(
       clearLastResult: () => patchState(store, { lastResult: null }),
       clearSponsorResult: () => patchState(store, { lastSponsorResult: null }),
       skipSponsorQuestion: () => patchState(store, (state) => ({ sponsorIndex: state.sponsorIndex + 1 })),
-      reset: () => patchState(store, resetGame()),
+      reset: (status?: GameStatus) => patchState(store, resetGame(status)),
       fetchNextBatch,
     };
   }),

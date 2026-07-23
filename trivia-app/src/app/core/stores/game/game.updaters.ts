@@ -1,4 +1,4 @@
-import type { GameSlice, LastResult } from './game.slice';
+import type { GameSlice, GameStatus, LastResult } from './game.slice';
 import type {
   QuestionDto,
   StartSessionResponse,
@@ -118,7 +118,9 @@ export const setGameCompleted = (): Partial<GameSlice> => ({
   status: 'completed',
 });
 
-export const resetGame = (): GameSlice => ({
+// Defaults to 'idle' (a truly clean slate, ready for startSession() to run) — pass 'abandoned'
+// specifically for the "player left mid-game" case, so activeSessionGuard can tell the two apart.
+export const resetGame = (status: GameStatus = 'idle'): GameSlice => ({
   sessionId: null,
   endsAt: null,
   durationSeconds: 0,
@@ -135,7 +137,7 @@ export const resetGame = (): GameSlice => ({
   bestStreak: 0,
   correctAnswers: 0,
   totalAnswers: 0,
-  status: 'idle',
+  status,
   lastResult: null,
   lastSponsorResult: null,
   sponsorBonus: 0,

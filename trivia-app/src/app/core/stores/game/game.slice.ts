@@ -1,6 +1,9 @@
 import type { QuestionDto, SponsorQuestionDto } from '../../models/api.models';
 
-export type GameStatus = 'idle' | 'active' | 'completed';
+// 'abandoned' is distinct from the initial 'idle' — it marks a session RegisterPage reset
+// after finding the player had left it mid-game, so route guards can tell "never started
+// a game yet" (idle, fine to enter /game) apart from "left one running, don't resurrect it".
+export type GameStatus = 'idle' | 'active' | 'completed' | 'abandoned';
 
 export interface LastResult {
   correct: boolean;

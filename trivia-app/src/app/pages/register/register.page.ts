@@ -1,8 +1,28 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, OnDestroy, OnInit, signal, untracked } from '@angular/core';
-import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  OnDestroy,
+  OnInit,
+  signal,
+  untracked,
+} from '@angular/core';
+import {
+  FormControl,
+  FormGroup,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { DomSanitizer } from '@angular/platform-browser';
-import { IonContent, IonIcon, ToastController, ViewWillEnter } from '@ionic/angular/standalone';
+import {
+  IonContent,
+  IonIcon,
+  ToastController,
+  ViewWillEnter,
+} from '@ionic/angular/standalone';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { firstValueFrom } from 'rxjs';
 
@@ -47,7 +67,14 @@ addIcons({
   templateUrl: 'register.page.html',
   styleUrls: ['register.page.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [IonContent, IonIcon, ReactiveFormsModule, TranslatePipe, PmHeaderComponent, RouterLink],
+  imports: [
+    IonContent,
+    IonIcon,
+    ReactiveFormsModule,
+    TranslatePipe,
+    PmHeaderComponent,
+    RouterLink,
+  ],
 })
 export class RegisterPage implements OnInit, OnDestroy, ViewWillEnter {
   private authCheckInterval: ReturnType<typeof setInterval> | null = null;
@@ -78,8 +105,12 @@ export class RegisterPage implements OnInit, OnDestroy, ViewWillEnter {
    * HTML-sanitized (DOMPurify, `style` attribute allowed) versions for [innerHTML] binding —
    * Angular's built-in sanitizer strips `style` outright, which admin color styling relies on.
    */
-  readonly landingHeadlineHtml = computed(() => sanitizeAdminHtml(this.sanitizer, this.landingHeadline()));
-  readonly landingBodyHtml = computed(() => sanitizeAdminHtml(this.sanitizer, this.landingBody()));
+  readonly landingHeadlineHtml = computed(() =>
+    sanitizeAdminHtml(this.sanitizer, this.landingHeadline()),
+  );
+  readonly landingBodyHtml = computed(() =>
+    sanitizeAdminHtml(this.sanitizer, this.landingBody()),
+  );
 
   /** No booth QR token in the URL at all — block registration outright (spec F9: registration is only reachable via the on-screen QR). */
   readonly tokenBlocked = signal(false);
@@ -109,22 +140,45 @@ export class RegisterPage implements OnInit, OnDestroy, ViewWillEnter {
   readonly showLoginPassword = signal(false);
 
   readonly form = new FormGroup({
-    firstName: new FormControl('', [Validators.required, Validators.minLength(2)]),
-    lastName: new FormControl('', [Validators.required, Validators.minLength(2)]),
+    firstName: new FormControl('', [
+      Validators.required,
+      Validators.minLength(2),
+    ]),
+    lastName: new FormControl('', [
+      Validators.required,
+      Validators.minLength(2),
+    ]),
     email: new FormControl('', [Validators.required, Validators.email]),
     company: new FormControl('', [Validators.required]),
     // Phone is required (spec §3.2). Pattern allows digits, spaces, and common separators.
-    phone: new FormControl('', [Validators.required, Validators.pattern(/^[+]?[\d\s()-]{7,}$/)]),
-    password: new FormControl('', [Validators.required, Validators.minLength(6)]),
+    phone: new FormControl('', [
+      Validators.required,
+      Validators.pattern(/^[+]?[\d\s()-]{7,}$/),
+    ]),
+    password: new FormControl('', [
+      Validators.required,
+      Validators.minLength(6),
+    ]),
     consent: new FormControl(false, [Validators.requiredTrue]),
   });
 
   readonly loginForm = new FormGroup({
     email: new FormControl('', [Validators.required, Validators.email]),
-    password: new FormControl('', [Validators.required, Validators.minLength(6)]),
+    password: new FormControl('', [
+      Validators.required,
+      Validators.minLength(6),
+    ]),
   });
 
-  async ngOnInit(): Promise<void> {
+  async ngOnInit(): Promise<void> {}
+
+  /**
+   * Ionic's router outlet keeps the game page alive in the background instead of destroying it
+   * on back-navigation, so a player can land back here with a session still marked 'active' (its
+   * timer counting down unseen). Every time this page becomes active again, clear out any such
+   * abandoned session and let the player know, rather than leaving it to silently expire later.
+   */
+  async ionViewWillEnter(): Promise<void> {
     try {
       const saved = await SecureStorage.get(STORAGE_KEYS.REGISTRATION);
       if (typeof saved === 'string') {
@@ -136,17 +190,8 @@ export class RegisterPage implements OnInit, OnDestroy, ViewWillEnter {
     } catch {}
 
     await this.checkRegistrationToken();
-  }
-
-  /**
-   * Ionic's router outlet keeps the game page alive in the background instead of destroying it
-   * on back-navigation, so a player can land back here with a session still marked 'active' (its
-   * timer counting down unseen). Every time this page becomes active again, clear out any such
-   * abandoned session and let the player know, rather than leaving it to silently expire later.
-   */
-  ionViewWillEnter(): void {
     if (this.gameStore.status() !== 'active') return;
-    this.gameStore.reset();
+    this.gameStore.reset('abandoned');
     this.showGameResetToast();
   }
 
@@ -209,7 +254,9 @@ export class RegisterPage implements OnInit, OnDestroy, ViewWillEnter {
     if (!boothToken) return false;
 
     try {
-      const res = await firstValueFrom(this.api.verifyRegistrationToken(boothToken));
+      const res = await firstValueFrom(
+        this.api.verifyRegistrationToken(boothToken),
+      );
       if (res.valid) {
         this.boothTokenStore.set(boothToken);
         return true;
@@ -262,10 +309,14 @@ export class RegisterPage implements OnInit, OnDestroy, ViewWillEnter {
   submit(): void {
     if (this.form.invalid || this.isPending() || this.tokenBlocked()) return;
 
-    const { firstName, lastName, email, company, phone, password, consent } = this.form.getRawValue();
+    const { firstName, lastName, email, company, phone, password, consent } =
+      this.form.getRawValue();
 
     // Persist the profile (minus password) so a returning player's registration is pre-filled next time.
-    SecureStorage.set(STORAGE_KEYS.REGISTRATION, JSON.stringify({ firstName, lastName, email, company, phone })).catch(() => {});
+    SecureStorage.set(
+      STORAGE_KEYS.REGISTRATION,
+      JSON.stringify({ firstName, lastName, email, company, phone }),
+    ).catch(() => {});
 
     this.authStore.register({
       firstName: firstName!,
@@ -281,7 +332,8 @@ export class RegisterPage implements OnInit, OnDestroy, ViewWillEnter {
   }
 
   loginSubmit(): void {
-    if (this.loginForm.invalid || this.isPending() || this.tokenBlocked()) return;
+    if (this.loginForm.invalid || this.isPending() || this.tokenBlocked())
+      return;
 
     const { email, password } = this.loginForm.getRawValue();
 
@@ -293,6 +345,11 @@ export class RegisterPage implements OnInit, OnDestroy, ViewWillEnter {
   /** Poll the auth store until authentication lands, then hand the player to PlayerStore and enter the game. */
   private watchAuthAndNavigate(): void {
     if (this.authCheckInterval) return;
+    // Clears a lingering 'abandoned' marker from a previously left-behind session, right as the
+    // player declares intent to start a new one — otherwise activeSessionGuard would keep
+    // bouncing every future game start back here. Safe unconditionally: ionViewWillEnter already
+    // turns a genuinely 'active' session into 'abandoned' before the player can reach this form.
+    this.gameStore.reset();
     this.authCheckInterval = setInterval(() => {
       if (this.authStore.isAuthenticated()) {
         clearInterval(this.authCheckInterval!);

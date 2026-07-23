@@ -40,7 +40,9 @@
     "MULTIPLIER": "MULTIPLIER!",
     "ANSWERED": "ANSWERED",
     "START_ERROR_1": "We couldn't start your game.",
-    "START_ERROR_2": "Please scan the booth QR code to try again."
+    "START_ERROR_2": "Please scan the booth QR code to try again.",
+    "SESSION_ENDED_1": "Your game session has ended.",
+    "SESSION_ENDED_2": "Start a new game whenever you're ready to play again."
   },
   "SPONSOR": {
     "BONUS_ROUND": "BONUS ROUND",

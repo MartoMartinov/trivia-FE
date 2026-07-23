@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { translationGuard } from './core/guards/translation.guard';
 import { authGuard } from './core/guards/auth.guard';
+import { activeSessionGuard } from './core/guards/active-session.guard';
 
 export const routes: Routes = [
   {
@@ -16,13 +17,13 @@ export const routes: Routes = [
   },
   {
     path: 'game',
-    canActivate: [translationGuard, authGuard],
+    canActivate: [translationGuard, authGuard, activeSessionGuard],
     loadComponent: () =>
       import('./pages/game/game.page').then((m) => m.GamePage),
   },
   {
     path: 'sponsor',
-    canActivate: [translationGuard, authGuard],
+    canActivate: [translationGuard, authGuard, activeSessionGuard],
     loadComponent: () =>
       import('./pages/sponsor/sponsor.page').then((m) => m.SponsorPage),
   },
