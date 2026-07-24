@@ -430,3 +430,10 @@ body {
   background: var(--color-orange);
   animation: dot-bounce 1.1s ease-in-out infinite;
 }
+
+qrcode {
+  svg {
+    width: 100%;
+    height: 100%;
+  }
+}
