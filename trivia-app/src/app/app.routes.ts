@@ -63,5 +63,11 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./pages/resubscribe/resubscribe.page').then((m) => m.ResubscribePage),
   },
-  // { path: '**', redirectTo: 'register' },
+  {
+    path: 'not-found',
+    canActivate: [translationGuard],
+    loadComponent: () =>
+      import('./pages/not-found/not-found.page').then((m) => m.NotFoundPage),
+  },
+  { path: '**', redirectTo: 'not-found' },
 ];

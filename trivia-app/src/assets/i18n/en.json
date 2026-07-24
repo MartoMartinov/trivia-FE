@@ -123,5 +123,10 @@
     "ERROR": "This link is invalid or has already been used.",
     "NO_TOKEN": "This link is invalid.",
     "BACK_TO_PLAY": "Back to start"
+  },
+  "NOT_FOUND": {
+    "TITLE": "Page not found",
+    "BODY": "The page you're looking for doesn't exist or has been moved.",
+    "BACK_TO_PLAY": "Back to start"
   }
 }
