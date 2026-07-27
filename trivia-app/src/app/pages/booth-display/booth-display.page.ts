@@ -53,4 +53,10 @@ export class BoothDisplayPage implements OnInit {
       .map(w => w.charAt(0).toUpperCase())
       .join('');
   }
+  onQrClick(): void {
+    const qr = this.qrData();
+    if (qr) {
+      window.open(qr, '_blank');
+    }
+  }
 }
