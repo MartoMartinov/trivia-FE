@@ -1,0 +1,662 @@
+<title>Bug Report — "Too Many Attempts." Blocks Players Who Have Not Played</title>
+<meta name="description" content="Root-cause analysis: Laravel's per-IP request throttler (10/min) — not the play-limit logic — locks out everyone sharing a public IP, and Cloudflare collapses that into one global bucket.">
+
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:        #ECEAE7;
+    --surface:   #FFFFFF;
+    --ink:       #181716;
+    --muted:     #68655F;
+    --accent:    #C74A1E;
+    --accent-lt: #FAF0EC;
+    --border:    #D6D3CD;
+    --ok:        #1A6B3A;
+    --ok-lt:     #EBF5EF;
+    --warn:      #8B5E00;
+    --warn-lt:   #FDF5E6;
+    --bug:       #C74A1E;
+    --bug-lt:    #FAF0EC;
+  }
+
+  html { font-size: 16px; background: var(--bg); }
+
+  body {
+    font-family: system-ui, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif;
+    color: var(--ink);
+    line-height: 1.6;
+    padding: 3rem 1.5rem 6rem;
+  }
+
+  /* ── Page shell ── */
+  .doc {
+    max-width: 760px;
+    margin: 0 auto;
+  }
+
+  /* ── Header ── */
+  .doc-header {
+    border-top: 3px solid var(--ink);
+    padding-top: 1.5rem;
+    margin-bottom: 2.5rem;
+  }
+
+  .doc-eyebrow {
+    font-size: 0.6875rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.5rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .doc-title {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 2rem;
+    line-height: 1.2;
+    font-weight: normal;
+    text-wrap: balance;
+    margin-bottom: 1.25rem;
+  }
+
+  .doc-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 2rem;
+    border-top: 1px solid var(--border);
+    padding-top: 0.875rem;
+    font-size: 0.8125rem;
+    color: var(--muted);
+  }
+
+  .doc-meta span { display: flex; gap: 0.4em; }
+  .doc-meta strong { color: var(--ink); font-weight: 600; }
+
+  /* ── Issue cards ── */
+  .issue {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+  }
+
+  .issue-header {
+    padding: 1.125rem 1.375rem 0.875rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .issue-number {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.6875rem;
+    color: var(--muted);
+    margin-top: 0.15rem;
+    min-width: 2ch;
+    flex-shrink: 0;
+  }
+
+  .issue-title-group { flex: 1; }
+
+  .issue-title {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 1.125rem;
+    font-weight: normal;
+    line-height: 1.3;
+    margin-bottom: 0.35rem;
+  }
+
+  .issue-client-q {
+    font-size: 0.8125rem;
+    color: var(--muted);
+    font-style: italic;
+    line-height: 1.5;
+  }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35em;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 0.25em 0.6em;
+    border-radius: 2px;
+    flex-shrink: 0;
+    margin-top: 0.1rem;
+  }
+
+  .chip::before {
+    content: '';
+    display: block;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: 0.7;
+  }
+
+  .chip-ok    { background: var(--ok-lt);   color: var(--ok); }
+  .chip-bug   { background: var(--bug-lt);  color: var(--bug); }
+  .chip-warn  { background: var(--warn-lt); color: var(--warn); }
+  .chip-info  { background: #EEF2F8;        color: #2B52A0; }
+
+  .issue-body { padding: 1.25rem 1.375rem; display: flex; flex-direction: column; gap: 1.125rem; }
+
+  /* ── Sections within a card ── */
+  .section-label {
+    font-size: 0.625rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: var(--muted);
+    margin-bottom: 0.4rem;
+  }
+
+  .finding {
+    background: var(--bg);
+    border-left: 3px solid var(--border);
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+    border-radius: 0 3px 3px 0;
+  }
+
+  .finding.accent { border-color: var(--accent); }
+  .finding.ok     { border-color: var(--ok); }
+  .finding.warn   { border-color: var(--warn); }
+
+  .finding p + p { margin-top: 0.5rem; }
+  .finding ul, .finding ol { margin-top: 0.5rem; padding-left: 1.1rem; }
+  .finding li + li { margin-top: 0.35rem; }
+
+  code {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.8125em;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    padding: 0.05em 0.35em;
+    border-radius: 2px;
+    color: var(--ink);
+  }
+
+  .finding code { background: var(--surface); }
+
+  pre {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.78rem;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 0.75rem 0.9rem;
+    overflow-x: auto;
+    line-height: 1.55;
+  }
+
+  .client-response {
+    border: 1px dashed var(--border);
+    border-radius: 3px;
+    padding: 0.875rem 1rem;
+    font-size: 0.875rem;
+    color: var(--ink);
+    background: #FAFAF9;
+    line-height: 1.65;
+  }
+
+  .client-response em { color: var(--muted); font-style: italic; }
+  .client-response p + p { margin-top: 0.6rem; }
+
+  /* ── Logic / data tables ── */
+  .logic-table, .opt-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8125rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .logic-table th, .opt-table th {
+    text-align: left;
+    font-size: 0.625rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 700;
+    padding: 0.4rem 0.75rem;
+    border-bottom: 2px solid var(--border);
+  }
+
+  .logic-table td, .opt-table td {
+    padding: 0.45rem 0.75rem;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+
+  .logic-table tr:last-child td, .opt-table tr:last-child td { border-bottom: none; }
+  .logic-table tr:hover td, .opt-table tr:hover td { background: var(--bg); }
+
+  .key-ip     { color: #8B2000; font-weight: 600; }
+  .key-player { color: #1A6B3A; font-weight: 600; }
+
+  .sev {
+    font-size: 0.625rem; font-weight: 700; letter-spacing: 0.08em;
+    text-transform: uppercase; padding: 0.15em 0.45em;
+    border-radius: 2px; white-space: nowrap;
+  }
+  .sev-crit { background: var(--bug-lt);  color: var(--bug);  border: 1px solid var(--bug); }
+  .sev-high { background: var(--warn-lt); color: #8B2000;     border: 1px solid #8B2000; }
+  .sev-med  { background: var(--warn-lt); color: var(--warn); border: 1px solid var(--warn); }
+
+  .rec-row td { background: var(--accent-lt) !important; font-weight: 500; }
+  .rec-badge {
+    font-size: 0.6rem; font-weight: 700; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--accent);
+    background: white; border: 1px solid var(--accent);
+    padding: 0.15em 0.4em; border-radius: 2px; margin-left: 0.4em;
+    vertical-align: middle;
+  }
+
+  /* ── Fix list ── */
+  .fix-list { display: flex; flex-direction: column; gap: 0.875rem; }
+
+  .fix {
+    background: var(--bg);
+    border-left: 3px solid var(--ok);
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+    border-radius: 0 3px 3px 0;
+  }
+
+  .fix h3 {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 0.9375rem;
+    font-weight: normal;
+    margin-bottom: 0.35rem;
+  }
+
+  .fix ul { margin-top: 0.5rem; padding-left: 1.1rem; }
+  .fix li + li { margin-top: 0.35rem; }
+  .fix code { background: var(--surface); }
+
+  /* ── Checklist ── */
+  .check { list-style: none; padding-left: 0; font-size: 0.875rem; }
+  .check li { padding-left: 1.5rem; position: relative; }
+  .check li + li { margin-top: 0.45rem; }
+  .check li::before {
+    position: absolute; left: 0; top: 0;
+    font-weight: 700;
+  }
+  .check li.done::before  { content: '✓'; color: var(--ok); }
+  .check li.open::before  { content: '○'; color: var(--warn); }
+
+  /* ── Divider ── */
+  .divider {
+    border: none;
+    border-top: 1px solid var(--border);
+  }
+
+  /* ── Footer ── */
+  .doc-footer {
+    margin-top: 3rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+    font-size: 0.75rem;
+    color: var(--muted);
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  /* ── Overflow containers for tables ── */
+  .table-wrap { overflow-x: auto; }
+
+  @media (max-width: 600px) {
+    body { padding: 1.5rem 1rem 4rem; }
+    .doc-title { font-size: 1.5rem; }
+    .issue-header { flex-direction: column; gap: 0.5rem; }
+    .chip { align-self: flex-start; }
+  }
+</style>
+
+<div class="doc">
+
+  <!-- ── Header ── -->
+  <header class="doc-header">
+    <p class="doc-eyebrow">Bug Report · Backend Rate Limiting / Frontend Error Handling</p>
+    <h1 class="doc-title">“Too Many Attempts.” Blocks Players Who Have Not Played Today</h1>
+    <div class="doc-meta">
+      <span><strong>Date</strong> 29 July 2026</span>
+      <span><strong>Reported by</strong> Client (via Martin Martinov)</span>
+      <span><strong>Severity</strong> High now · Critical for event day</span>
+      <span><strong>Status</strong> Root cause confirmed · frontend fixed · backend pending</span>
+    </div>
+  </header>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       ISSUE 1 — Per-IP throttle mistaken for a play limit
+  ═══════════════════════════════════════════════════════════════ -->
+  <article class="issue">
+    <div class="issue-header">
+      <span class="issue-number">01</span>
+      <div class="issue-title-group">
+        <h2 class="issue-title">Laravel’s Per-IP Request Throttler — Not the Play-Limit Logic</h2>
+        <p class="issue-client-q">“I tried testing the trivia again today, and noticed that it said ‘too many attempts’. I still haven’t played for this day so I should be allowed. Also a coworker tried and she hasn’t played since 2 weeks ago.”</p>
+      </div>
+      <span class="chip chip-bug">Bug Confirmed</span>
+    </div>
+
+    <div class="issue-body">
+
+      <div>
+        <p class="section-label">Root cause</p>
+        <div class="finding accent">
+          <p>Four hot API routes carry <code>throttle:10,1</code> — ten requests per minute (<code>pm-trivia-BE/routes/api.php:21-28, 53</code>). The three <code>/auth/*</code> routes are unauthenticated, so Laravel falls back to <code>$request-&gt;ip()</code> for the rate-limiter key. <strong>Everyone behind the same public IP shares one ten-per-minute bucket</strong> — and failed requests count too (401 invalid-credentials and 422 validation errors each consume a slot).</p>
+          <p>Once the bucket is empty the API answers <code>429</code> with Laravel’s stock body, and the frontend prints the backend <code>message</code> verbatim — so the player is told <em>“Too Many Attempts.”</em>, which reads exactly like a play-limit rejection even though no play-limit check ever ran.</p>
+        </div>
+      </div>
+
+      <div>
+        <p class="section-label">Throttled routes and how each bucket is keyed</p>
+        <div class="table-wrap">
+          <table class="logic-table">
+            <thead>
+              <tr>
+                <th>Route</th>
+                <th>Limit</th>
+                <th>Bucket keyed by</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>POST /auth/register</code></td>
+                <td>10 / min</td>
+                <td><span class="key-ip">client IP</span></td>
+              </tr>
+              <tr>
+                <td><code>POST /auth/login</code></td>
+                <td>10 / min</td>
+                <td><span class="key-ip">client IP</span></td>
+              </tr>
+              <tr>
+                <td><code>POST /auth/refresh</code></td>
+                <td>10 / min</td>
+                <td><span class="key-ip">client IP</span></td>
+              </tr>
+              <tr>
+                <td><code>POST /sessions/start</code></td>
+                <td>10 / min</td>
+                <td><span class="key-player">player id</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div>
+        <p class="section-label">Reproduced on the live backend</p>
+        <pre>POST https://backend.pm.trivia.kipo.work/api/en/auth/login   (bogus credentials)
+
+attempt  1 -&gt; HTTP 401 : {"message": "Invalid credentials."}
+...
+attempt 10 -&gt; HTTP 401 : {"message": "Invalid credentials."}
+attempt 11 -&gt; HTTP 429 : {"message": "Too Many Attempts.",
+                          "exception": "Illuminate\\Http\\Exceptions\\ThrottleRequestsException"}
+attempt 12 -&gt; HTTP 429 : {"message": "Too Many Attempts."}</pre>
+        <div class="finding" style="margin-top: 0.75rem;">
+          <p>Bucket keying verified empirically: 12 unauthenticated <code>POST /sessions/start</code> calls all returned <code>401 Unauthenticated.</code> and never <code>429</code> → the <code>Authenticate</code> middleware runs <em>before</em> <code>ThrottleRequests</code>, so <code>/sessions/start</code> is keyed per player while the <code>/auth/*</code> routes are keyed per IP.</p>
+        </div>
+      </div>
+
+      <div>
+        <p class="section-label">Why both people were blocked without having played</p>
+        <div class="finding warn">
+          <ol>
+            <li>Client and coworker are on the same office NAT → <strong>same public IP → same bucket</strong>. Ten submits in a minute between the two of them locks out everyone on that IP for 60 seconds, regardless of play history.</li>
+            <li>Compounding it: every cold app load fires <code>POST /auth/refresh</code> (<code>trivia-app/src/app/core/stores/auth/auth.store.ts:121-126</code>), which is also 10/min per IP. A first-time visitor with no refresh cookie still burns a slot on the resulting 401. When <em>that</em> call got throttled, the interceptor treated it as a failed refresh, logged the user out and redirected to <code>/register</code> — dropping them onto the login form, which is itself throttled.</li>
+            <li>On native, <code>NativeAuthStrategy.refresh()</code> posted <code>refreshToken: null</code> when secure storage was empty — a guaranteed-401 network round trip that consumed a shared slot for nothing.</li>
+          </ol>
+        </div>
+      </div>
+
+      <div>
+        <p class="section-label">Ruled out — the play-limit logic is innocent</p>
+        <div class="finding ok">
+          <ul>
+            <li>The play-limit message is different copy: <code>"You've used up your plays for today. Try tomorrow!"</code> (<code>pm-trivia-BE/lang/en/api.php:11</code>). The client did not see this.</li>
+            <li>The live deploy <strong>does</strong> include commit <code>bf3316f</code> (“scope replay-block check to today”), so the coworker’s two-week-old session cannot block her. Verified by route probe: <code>POST /api/en/unsubscribe</code> answers <code>"Invalid token."</code> <em>from the controller</em> (not route-not-found), and that route landed in <code>aad96a5</code>, which is newer than <code>bf3316f</code>.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div>
+        <p class="section-label">Where the raw message reaches the UI</p>
+        <div class="finding">
+          <p>The frontend contains no “too many attempts” string anywhere — it passes the backend message straight through:</p>
+          <ul>
+            <li><code>core/stores/auth/auth.store.ts:57-62, 84-89</code> — register / login</li>
+            <li><code>core/stores/game/game.store.ts:80, 104, 126</code> — start / answer / sponsor</li>
+            <li>toasted at <code>register.page.ts:91-105</code> and <code>game.page.ts:78-91</code></li>
+          </ul>
+        </div>
+      </div>
+
+    </div>
+  </article>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       ISSUE 2 — Secondary backend findings
+  ═══════════════════════════════════════════════════════════════ -->
+  <article class="issue">
+    <div class="issue-header">
+      <span class="issue-number">02</span>
+      <div class="issue-title-group">
+        <h2 class="issue-title">Secondary Findings — Backend (Not Fixed in This Pass)</h2>
+        <p class="issue-client-q">Scope for this pass was frontend only. A–E below are left for the BE team; B is an event-day blocker.</p>
+      </div>
+      <span class="chip chip-warn">Backend Action</span>
+    </div>
+
+    <div class="issue-body">
+
+      <div>
+        <p class="section-label">Overview</p>
+        <div class="table-wrap">
+          <table class="logic-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Finding</th>
+                <th>Severity</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>A</td>
+                <td><code>APP_DEBUG=true</code> / <code>APP_ENV=local</code> on live</td>
+                <td><span class="sev sev-crit">Critical</span></td>
+              </tr>
+              <tr>
+                <td>B</td>
+                <td>Cloudflare + no <code>TrustProxies</code> = one global bucket</td>
+                <td><span class="sev sev-crit">Event-day blocker</span></td>
+              </tr>
+              <tr>
+                <td>C</td>
+                <td>10/min per IP far too tight for a trade-show booth</td>
+                <td><span class="sev sev-high">High</span></td>
+              </tr>
+              <tr>
+                <td>D</td>
+                <td><code>Retry-After</code> not exposed through CORS</td>
+                <td><span class="sev sev-med">Medium</span></td>
+              </tr>
+              <tr>
+                <td>E</td>
+                <td><code>daily_reset_time</code> is dead config; replay gate uses UTC</td>
+                <td><span class="sev sev-med">Medium</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      <div>
+        <p class="section-label">A · <code>APP_DEBUG=true</code> / <code>APP_ENV=local</code> on live 🔴</p>
+        <div class="finding accent">
+          <p>Every API error returns a full stack trace with absolute server paths (<code>/home/trivia/public_html/trivia-backend/vendor/...</code>), visible in the probe output above. Should be <code>APP_DEBUG=false</code>, <code>APP_ENV=production</code>.</p>
+        </div>
+      </div>
+
+      <div>
+        <p class="section-label">B · Cloudflare + no TrustProxies = one global bucket 🔴 <strong>event-day blocker</strong></p>
+        <div class="finding accent">
+          <p>The production API host <code>practicalmachinist.com</code> sits behind <strong>Cloudflare</strong> (it currently returns a CF interstitial for <code>/api/en/event-config</code>). <code>pm-trivia-BE/bootstrap/app.php</code> never calls <code>$middleware-&gt;trustProxies(...)</code> and there is no <code>TrustProxies</code> class in <code>app/Http/Middleware/</code>.</p>
+          <p>Behind Cloudflare, <code>$request-&gt;ip()</code> returns the <strong>Cloudflare edge IP</strong>, so the per-IP bucket collapses into <strong>10 requests/minute for every player worldwide</strong>. Staging (plain Apache, no CDN) hides this — a fresh request there correctly gets its own bucket (<code>X-RateLimit-Remaining: 29</code>).</p>
+        </div>
+      </div>
+
+      <div>
+        <p class="section-label">C · 10/min per IP is far too tight for a trade-show booth 🟠</p>
+        <div class="finding warn">
+          <p>Even with correct client IPs, venue WiFi and mobile-carrier CGNAT put the whole crowd into one bucket. At IMTS that caps the booth at <strong>ten registrations per minute total</strong>.</p>
+          <p>Suggested: keep strict brute-force protection on <code>login</code> keyed by <strong>email + IP</strong> (the named <code>login</code> limiter already exists at <code>AppServiceProvider.php:24</code> but is applied to no route), and loosen the pure-IP caps on <code>register</code> / <code>refresh</code> to ~60/min.</p>
+        </div>
+      </div>
+
+      <div>
+        <p class="section-label">D · <code>Retry-After</code> is not exposed through CORS 🟡</p>
+        <div class="finding warn">
+          <p><code>pm-trivia-BE/config/cors.php</code> has <code>'exposed_headers' =&gt; []</code>, so a browser on a different origin than the API cannot read <code>Retry-After</code> or <code>X-RateLimit-*</code>. The frontend fix below reads the header when it is available (production is same-origin: FE and API both on <code>practicalmachinist.com</code>) and degrades to a seconds-less message when it is not (staging FE → <code>backend.pm.trivia.kipo.work</code>).</p>
+          <p>Adding <code>'exposed_headers' =&gt; ['Retry-After', 'X-RateLimit-Limit', 'X-RateLimit-Remaining']</code> makes the countdown work everywhere. One-line change.</p>
+        </div>
+      </div>
+
+      <div>
+        <p class="section-label">E · <code>daily_reset_time</code> is dead config; replay gate uses UTC 🟡</p>
+        <div class="finding warn">
+          <p><code>daily_reset_time</code> is migrated, seeded and admin-settable but <strong>no query ever reads it</strong> (only written: <code>EventController.php:140</code>, <code>GameSettingsController.php:68</code>). The replay gate uses <code>today()</code> = UTC midnight (<code>SessionController.php:50,57</code>, <code>AuthController.php:72,79</code>), while the play window uses the event’s own timezone (<code>Event::todaysPlayWindow</code>, <code>Event::isWithinDateRange</code>, <code>config/app.php:71</code> = <code>'UTC'</code>).</p>
+          <p>For a Chicago event the UTC day rolls over at 19:00 local, so a player finishing after 7pm is stamped as <em>tomorrow</em> and the following day’s gate can misfire. Latent — not what bit the client this time, but it is the same class of bug they described, so worth closing.</p>
+        </div>
+      </div>
+
+    </div>
+  </article>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       ISSUE 3 — Frontend fixes applied
+  ═══════════════════════════════════════════════════════════════ -->
+  <article class="issue">
+    <div class="issue-header">
+      <span class="issue-number">03</span>
+      <div class="issue-title-group">
+        <h2 class="issue-title">Frontend Fixes Applied</h2>
+        <p class="issue-client-q">No API contract changed — nothing to mirror in the backend or mock-backend.</p>
+      </div>
+      <span class="chip chip-ok">Done</span>
+    </div>
+
+    <div class="issue-body">
+
+      <div class="fix-list">
+
+        <div class="fix">
+          <h3>1 · Rate-limit-aware error mapping — new <code>core/http/api-error.ts</code></h3>
+          <p>Single helper used by every store that surfaces an API error:</p>
+          <ul>
+            <li><code>isRateLimited(err)</code> — true for HTTP 429.</li>
+            <li><code>isAuthFailure(err)</code> — true only for 401 / 403. A 429, a 5xx or an offline browser is <strong>transient</strong>, not an expired session.</li>
+            <li><code>retryAfterSeconds(err)</code> — parses <code>Retry-After</code> (delay-seconds or HTTP-date form); returns <code>null</code> when the header is absent or hidden by CORS.</li>
+            <li><code>apiErrorMessage(err, translate)</code> — passes the backend message through unchanged, <strong>except</strong> for 429, which becomes translated copy that names the real cause and, when the header is readable, the wait time. Translations load asynchronously over HTTP and <code>translate.instant()</code> returns the <em>key</em> until they land — so the helper only uses its copy when both halves resolved, otherwise it falls back to the backend wording rather than putting <code>ERRORS.RATE_LIMITED_1</code> in front of a player.</li>
+          </ul>
+        </div>
+
+        <div class="fix">
+          <h3>2 · Translated copy — new <code>ERRORS</code> block in <code>src/assets/i18n/en.json</code></h3>
+          <pre>ERRORS.RATE_LIMITED_1          "Too many requests from your network right now."
+ERRORS.RATE_LIMITED_2          "Please wait a moment and try again."
+ERRORS.RATE_LIMITED_2_SECONDS  "Please wait {{seconds}} seconds and try again."</pre>
+          <p style="margin-top: 0.5rem;">Wording deliberately says <em>“from your network”</em> — the limit is per IP, so a player who has not played is not being accused of replaying.</p>
+        </div>
+
+        <div class="fix">
+          <h3>3 · A throttled refresh no longer destroys the session</h3>
+          <ul>
+            <li><code>core/interceptors/auth.interceptor.ts</code> — the post-refresh failure path now logs out and redirects to <code>/register</code> <strong>only on a genuine auth failure (401/403)</strong>. A 429 / network / 5xx refresh failure propagates the original error and leaves the session intact, so the player is no longer bounced onto a login form that is itself rate-limited.</li>
+            <li><code>core/stores/auth/auth.store.ts</code> — the cold-start <code>refresh()</code> clears auth state only on 401/403. A 429 now leaves the session untouched. It stays silent deliberately: that call fires unprompted at app start, and the throttle gets explained properly the moment the player submits something.</li>
+          </ul>
+        </div>
+
+        <div class="fix">
+          <h3>4 · Stop wasting throttle slots on native</h3>
+          <p><code>core/auth/native-auth.strategy.ts</code> — when secure storage holds no refresh token, fail locally with a synthetic 401 instead of POSTing <code>refreshToken: null</code> to the server. Removes one guaranteed-401 request per cold start from the shared per-IP bucket.</p>
+        </div>
+
+        <div class="fix">
+          <h3>5 · Stores now route through the helper</h3>
+          <p><code>auth.store.ts</code> (register / login / refresh) and <code>game.store.ts</code> (start / answer / sponsor answer) replace their inline <code>err.error.message</code> reads with <code>apiErrorMessage(...)</code>. Page-level generic fallbacks (<code>REGISTER.ERROR_GENERIC_*</code>, <code>GAME.START_ERROR_*</code>) are unchanged and still apply when the backend sends no message.</p>
+        </div>
+
+      </div>
+
+      <div>
+        <p class="section-label">Optional frontend follow-up (not done)</p>
+        <div class="finding">
+          <p>The booth-display TV is token-free, but <code>AuthStore</code> is root-provided and the auth interceptor injects it on every request, so its <code>onInit</code> hook fires <code>POST /auth/refresh</code> on the booth page too. Each TV reload therefore spends one slot from the venue’s shared bucket. Gating the cold-start refresh on route would remove that, at the cost of putting route awareness inside a store — worth doing only if the booth page turns out to reload often.</p>
+        </div>
+      </div>
+
+    </div>
+  </article>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       ISSUE 4 — Verification
+  ═══════════════════════════════════════════════════════════════ -->
+  <article class="issue">
+    <div class="issue-header">
+      <span class="issue-number">04</span>
+      <div class="issue-title-group">
+        <h2 class="issue-title">Verification</h2>
+        <p class="issue-client-q">What was proven, and what still needs a manual pass.</p>
+      </div>
+      <span class="chip chip-info">Evidence</span>
+    </div>
+
+    <div class="issue-body">
+
+      <div>
+        <p class="section-label">Confirmed</p>
+        <div class="finding ok">
+          <ul class="check">
+            <li class="done"><code>429</code> reproduced and the exact string <code>"Too Many Attempts."</code> confirmed against the live backend.</li>
+            <li class="done">Throttle keying (per-IP vs per-player) confirmed by probing <code>/sessions/start</code> unauthenticated.</li>
+            <li class="done">Deployed backend version dated via the <code>/unsubscribe</code> route probe.</li>
+            <li class="done">Frontend: <code>npx tsc --noEmit -p tsconfig.app.json</code> clean, <code>ng build --configuration=staging</code> succeeds, <code>ng lint</code> reports no new problems (the one pre-existing <code>pm-header</code> selector-prefix error is untouched and unrelated).</li>
+          </ul>
+        </div>
+      </div>
+
+      <div>
+        <p class="section-label">Still open</p>
+        <div class="finding warn">
+          <ul class="check">
+            <li class="open"><strong>Not</strong> verified end-to-end in a browser against a throttled backend — the changed paths have no automated coverage either, since the project ships no <code>*.spec.ts</code> files. Worth one manual pass: trip the limiter (11 login submits inside a minute) and confirm the toast reads the new copy.</li>
+            <li class="open">No API contract changed, so nothing to mirror in the backend or mock-backend. The only optional backend enabler is finding D (<code>exposed_headers</code>), which upgrades the message from <em>“wait a moment”</em> to <em>“wait N seconds”</em> on cross-origin deployments.</li>
+          </ul>
+        </div>
+      </div>
+
+    </div>
+  </article>
+
+  <!-- Footer -->
+  <footer class="doc-footer">
+    <span>Practical Machinist Trivia · Internal Technical Report</span>
+    <span>29 July 2026 · m.martinov@kipo.bg</span>
+  </footer>
+
+</div>

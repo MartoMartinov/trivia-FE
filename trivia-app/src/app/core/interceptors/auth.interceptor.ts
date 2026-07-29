@@ -10,6 +10,7 @@ import { throwError, catchError, switchMap } from 'rxjs';
 import { AuthStore } from '../stores/auth/auth.store';
 import { BoothTokenStore } from '../stores/booth-token/booth-token.store';
 import { AuthStrategyService } from '../auth/auth-strategy.service';
+import { isAuthFailure } from '../http/api-error';
 import { environment } from '../../../environments/environment';
 
 export const authInterceptor: HttpInterceptorFn = (
@@ -46,10 +47,16 @@ export const authInterceptor: HttpInterceptorFn = (
             });
             return next(retried);
           }),
-          catchError(() => {
-            authStore.logout();
-            const boothToken = boothTokenStore.boothToken();
-            router.navigate(['/register'], { queryParams: boothToken ? { boothToken } : {} });
+          catchError((refreshErr: unknown) => {
+            // Only a rejected refresh token means the session is really gone. The refresh
+            // endpoint is rate-limited per IP, so on shared networks it can answer 429 while
+            // the session is still perfectly valid — logging out there would strand the player
+            // on the login form, which is rate-limited by the same bucket.
+            if (isAuthFailure(refreshErr)) {
+              authStore.logout();
+              const boothToken = boothTokenStore.boothToken();
+              router.navigate(['/register'], { queryParams: boothToken ? { boothToken } : {} });
+            }
             return throwError(() => err);
           }),
         );

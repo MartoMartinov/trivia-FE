@@ -2,6 +2,7 @@ import { computed, inject } from '@angular/core';
 import { signalStore, withState, withComputed, withMethods, patchState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { tapResponse } from '@ngrx/operators';
+import { TranslateService } from '@ngx-translate/core';
 import { EMPTY, exhaustMap, switchMap, tap } from 'rxjs';
 
 import { initialGameSlice } from './game.slice';
@@ -18,6 +19,7 @@ import {
 import { withRequestStatus, setPending, setFulfilled, setError } from '../features/with-request-status.feature';
 import { withLoading } from '../features/with-loading.feature';
 import { ApiService } from '../../services/api.service';
+import { apiErrorMessage } from '../../http/api-error';
 import type { GameStatus } from './game.slice';
 import type { SubmitAnswerRequest, SubmitSponsorAnswerRequest } from '../../models/api.models';
 
@@ -47,6 +49,7 @@ export const GameStore = signalStore(
   })),
   withMethods((store) => {
     const api = inject(ApiService);
+    const translate = inject(TranslateService);
 
     const fetchNextBatch = rxMethod<void>((trigger$) =>
       trigger$.pipe(
@@ -77,8 +80,7 @@ export const GameStore = signalStore(
                 patchState(store, setFulfilled());
               },
               error: (err: unknown) => {
-                const msg = (err as { error?: { message?: string } })?.error?.message ?? null;
-                patchState(store, setError(msg ?? undefined));
+                patchState(store, setError(apiErrorMessage(err, translate) ?? undefined));
               },
               finalize: () => patchState(store, { isLoading: false }),
             }),
@@ -101,8 +103,7 @@ export const GameStore = signalStore(
                 fetchNextBatch(undefined);
               },
               error: (err: unknown) => {
-                const msg = (err as { error?: { message?: string } })?.error?.message ?? null;
-                patchState(store, setError(msg ?? undefined));
+                patchState(store, setError(apiErrorMessage(err, translate) ?? undefined));
               },
             }),
           );
@@ -123,8 +124,7 @@ export const GameStore = signalStore(
                 patchState(store, setFulfilled());
               },
               error: (err: unknown) => {
-                const msg = (err as { error?: { message?: string } })?.error?.message ?? null;
-                patchState(store, setError(msg ?? undefined));
+                patchState(store, setError(apiErrorMessage(err, translate) ?? undefined));
               },
             }),
           );

@@ -1,4 +1,9 @@
 {
+  "ERRORS": {
+    "RATE_LIMITED_1": "Too many requests from your network right now.",
+    "RATE_LIMITED_2": "Please wait a moment and try again.",
+    "RATE_LIMITED_2_SECONDS": "Please wait {{seconds}} seconds and try again."
+  },
   "REGISTER": {
     "HERO_TITLE": "Practical Machinist",
     "HERO_SUBTITLE": "Trivia.",

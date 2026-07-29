@@ -1,0 +1,453 @@
+<title>Bug Report — Easy Questions Exhausted Mid-Game</title>
+<meta name="description" content="Root-cause analysis: the buffer stops serving easy questions around question 15–20 despite the admin panel showing 35 easy questions available.">
+
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:        #ECEAE7;
+    --surface:   #FFFFFF;
+    --ink:       #181716;
+    --muted:     #68655F;
+    --accent:    #C74A1E;
+    --accent-lt: #FAF0EC;
+    --border:    #D6D3CD;
+    --ok:        #1A6B3A;
+    --ok-lt:     #EBF5EF;
+    --warn:      #8B5E00;
+    --warn-lt:   #FDF5E6;
+    --bug:       #C74A1E;
+    --bug-lt:    #FAF0EC;
+  }
+
+  html { font-size: 16px; background: var(--bg); }
+
+  body {
+    font-family: system-ui, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif;
+    color: var(--ink);
+    line-height: 1.6;
+    padding: 3rem 1.5rem 6rem;
+  }
+
+  /* ── Page shell ── */
+  .doc {
+    max-width: 760px;
+    margin: 0 auto;
+  }
+
+  /* ── Header ── */
+  .doc-header {
+    border-top: 3px solid var(--ink);
+    padding-top: 1.5rem;
+    margin-bottom: 2.5rem;
+  }
+
+  .doc-eyebrow {
+    font-size: 0.6875rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.5rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .doc-title {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 2rem;
+    line-height: 1.2;
+    font-weight: normal;
+    text-wrap: balance;
+    margin-bottom: 1.25rem;
+  }
+
+  .doc-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 2rem;
+    border-top: 1px solid var(--border);
+    padding-top: 0.875rem;
+    font-size: 0.8125rem;
+    color: var(--muted);
+  }
+
+  .doc-meta span { display: flex; gap: 0.4em; }
+  .doc-meta strong { color: var(--ink); font-weight: 600; }
+
+  /* ── Issue cards ── */
+  .issue {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+  }
+
+  .issue-header {
+    padding: 1.125rem 1.375rem 0.875rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .issue-number {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.6875rem;
+    color: var(--muted);
+    margin-top: 0.15rem;
+    min-width: 2ch;
+    flex-shrink: 0;
+  }
+
+  .issue-title-group { flex: 1; }
+
+  .issue-title {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 1.125rem;
+    font-weight: normal;
+    line-height: 1.3;
+    margin-bottom: 0.35rem;
+  }
+
+  .issue-client-q {
+    font-size: 0.8125rem;
+    color: var(--muted);
+    font-style: italic;
+    line-height: 1.5;
+  }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35em;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 0.25em 0.6em;
+    border-radius: 2px;
+    flex-shrink: 0;
+    margin-top: 0.1rem;
+  }
+
+  .chip::before {
+    content: '';
+    display: block;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: 0.7;
+  }
+
+  .chip-ok    { background: var(--ok-lt);   color: var(--ok); }
+  .chip-bug   { background: var(--bug-lt);  color: var(--bug); }
+  .chip-warn  { background: var(--warn-lt); color: var(--warn); }
+  .chip-info  { background: #EEF2F8;        color: #2B52A0; }
+
+  .issue-body { padding: 1.25rem 1.375rem; display: flex; flex-direction: column; gap: 1.125rem; }
+
+  /* ── Sections within a card ── */
+  .section-label {
+    font-size: 0.625rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: var(--muted);
+    margin-bottom: 0.4rem;
+  }
+
+  .finding {
+    background: var(--bg);
+    border-left: 3px solid var(--border);
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+    border-radius: 0 3px 3px 0;
+  }
+
+  .finding.accent { border-color: var(--accent); }
+  .finding.ok     { border-color: var(--ok); }
+  .finding.warn   { border-color: var(--warn); }
+
+  .finding p + p { margin-top: 0.5rem; }
+  .finding ul { margin-top: 0.5rem; padding-left: 1.1rem; }
+  .finding li + li { margin-top: 0.35rem; }
+
+  code {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.8125em;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    padding: 0.05em 0.35em;
+    border-radius: 2px;
+    color: var(--ink);
+  }
+
+  pre {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.78rem;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 0.75rem 0.9rem;
+    overflow-x: auto;
+    line-height: 1.55;
+  }
+
+  .client-response {
+    border: 1px dashed var(--border);
+    border-radius: 3px;
+    padding: 0.875rem 1rem;
+    font-size: 0.875rem;
+    color: var(--ink);
+    background: #FAFAF9;
+    line-height: 1.65;
+  }
+
+  .client-response em { color: var(--muted); font-style: italic; }
+
+  /* ── Logic / data tables ── */
+  .logic-table, .opt-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8125rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .logic-table th, .opt-table th {
+    text-align: left;
+    font-size: 0.625rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 700;
+    padding: 0.4rem 0.75rem;
+    border-bottom: 2px solid var(--border);
+  }
+
+  .logic-table td, .opt-table td {
+    padding: 0.45rem 0.75rem;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+
+  .logic-table tr:last-child td, .opt-table tr:last-child td { border-bottom: none; }
+  .logic-table tr:hover td, .opt-table tr:hover td { background: var(--bg); }
+
+  .diff-easy   { color: #1A6B3A; font-weight: 600; }
+  .diff-medium { color: #8B5E00; font-weight: 600; }
+  .diff-hard   { color: #8B2000; font-weight: 600; }
+  .diff-hp     { color: #581845; font-weight: 600; }
+
+  .rec-row td { background: var(--accent-lt) !important; font-weight: 500; }
+  .rec-badge {
+    font-size: 0.6rem; font-weight: 700; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--accent);
+    background: white; border: 1px solid var(--accent);
+    padding: 0.15em 0.4em; border-radius: 2px; margin-left: 0.4em;
+    vertical-align: middle;
+  }
+
+  /* ── Divider ── */
+  .divider {
+    border: none;
+    border-top: 1px solid var(--border);
+  }
+
+  /* ── Footer ── */
+  .doc-footer {
+    margin-top: 3rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+    font-size: 0.75rem;
+    color: var(--muted);
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  /* ── Overflow containers for tables ── */
+  .table-wrap { overflow-x: auto; }
+
+  @media (max-width: 600px) {
+    body { padding: 1.5rem 1rem 4rem; }
+    .doc-title { font-size: 1.5rem; }
+    .issue-header { flex-direction: column; gap: 0.5rem; }
+    .chip { align-self: flex-start; }
+  }
+</style>
+
+<div class="doc">
+
+  <!-- ── Header ── -->
+  <header class="doc-header">
+    <p class="doc-eyebrow">Bug Report · Backend / Question Selection</p>
+    <h1 class="doc-title">Buffer Runs Out of Easy Questions Mid-Game</h1>
+    <div class="doc-meta">
+      <span><strong>Date</strong> 25 July 2026</span>
+      <span><strong>Author</strong> Martin Martinov</span>
+      <span><strong>Status</strong> Root cause confirmed · fix pending decision</span>
+    </div>
+  </header>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       ISSUE 1 — Easy pool exhaustion
+  ═══════════════════════════════════════════════════════════════ -->
+  <article class="issue">
+    <div class="issue-header">
+      <span class="issue-number">01</span>
+      <div class="issue-title-group">
+        <h2 class="issue-title">Easy Questions Disappear From the Buffer After ~15–20 Questions</h2>
+        <p class="issue-client-q">"Timer set to 90 sec, answering rapidly (~1 sec/question) — around question 15–20 I only get medium and hard in the buffer. Admin shows 35 easy, 39 medium, 50 hard questions."</p>
+      </div>
+      <span class="chip chip-bug">Bug Confirmed</span>
+    </div>
+
+    <div class="issue-body">
+
+      <div>
+        <p class="section-label">Symptom</p>
+        <div class="finding">
+          <p>Network log of <code>GET /questions/next</code>: early buffers lead with an <code>easy</code> question (id 6, id 15). From roughly question 15–20 onward, every buffer leads with <code>medium</code> (id 21) or <code>hard</code> — <code>easy</code> never reappears for the rest of the session, even though the admin panel reports 35 easy questions in the bank.</p>
+        </div>
+      </div>
+
+      <div>
+        <p class="section-label">Root cause — an <code>event_id</code> scoping mismatch</p>
+        <div class="finding accent">
+          <p>The admin panel counts questions <strong>globally</strong>. The game can only serve the subset whose <code>event_id</code> matches the live event. <code>easy</code> is simply the tier that hits the wall first.</p>
+        </div>
+      </div>
+
+      <div>
+        <p class="section-label">Evidence</p>
+        <div class="finding">
+          <p><strong>1. The game filters strictly by the live event's id</strong> — every selection query in <code>SessionStarter</code> (<code>firstQuestion</code>, <code>bufferFor</code> slot 0/1, <code>selectStandardIds</code>):</p>
+          <pre>// app/Services/Game/SessionStarter.php:119, 148, 213
+-&gt;where('event_id', $eventId)   // $eventId = Event::where('status','live')-&gt;first()-&gt;id</pre>
+          <p><strong>2. Admin-created questions get <code>event_id = NULL</code></strong> — neither creation path sets it:</p>
+          <ul>
+            <li>Single create — <code>Admin/QuestionController.php:63-73</code> (no <code>event_id</code> key)</li>
+            <li>CSV import — <code>Admin/QuestionCsvController.php:93-98</code> (no <code>event_id</code> key)</li>
+            <li>No global scope / boot hook backfills it. The model even documents the intent: <em>"Questions are NOT event-scoped: event_id stays nullable"</em> (<code>Question.php:13</code>).</li>
+          </ul>
+          <p><strong>3. The admin count is global, no event filter:</strong></p>
+          <pre>// app/Http/Controllers/Admin/QuestionController.php:43
+'total' =&gt; Question::count(),   // counts every row, incl. event_id = NULL</pre>
+          <p><strong>4. Only seeded questions carry the event id</strong> — <code>DemoSeeder</code> creates the bank with <code>event_id</code> set, 15 questions per difficulty (<code>DemoSeeder.php:26, 180-181</code>).</p>
+        </div>
+      </div>
+
+      <div>
+        <p class="section-label">Why Q15–20, and why easy specifically</p>
+        <div class="table-wrap">
+          <table class="logic-table">
+            <thead>
+              <tr>
+                <th>Tier</th>
+                <th>Admin shows (global)</th>
+                <th>Game-visible (event-scoped)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="diff-easy">easy</span></td>
+                <td>35</td>
+                <td>~15 (seeded only)</td>
+              </tr>
+              <tr>
+                <td><span class="diff-medium">medium</span></td>
+                <td>39</td>
+                <td>~15 (seeded only)</td>
+              </tr>
+              <tr>
+                <td><span class="diff-hard">hard</span></td>
+                <td>50</td>
+                <td>~30 (15 hard + 15 hard_plus, hard_plus disabled → merged)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="finding warn">
+          <p><code>bufferFor</code> always fills slot 0 with the easiest available question, so an <code>easy</code> question is pulled into every buffer and answered on nearly every turn. At ~1 sec/question, the ~15 real <code>easy</code> questions are exhausted (moved into <code>answered_ids</code> + <code>in_flight_ids</code>) in roughly 15–20 turns. Slot 0's fallback then steps up the chain (<code>easy → medium → hard</code>), so from that point the buffer contains only <code>medium</code>/<code>hard</code>. <code>hard</code> lasts longest because it also absorbs the seeded <code>hard_plus</code> rows.</p>
+        </div>
+      </div>
+
+      <div>
+        <p class="section-label">Frontend — not the cause</p>
+        <div class="finding ok">
+          <p>The FE consumes whatever the buffer contains. Its <code>pickFromBuffer</code> fallback to <code>buffer[0]</code> when the requested tier is absent (<code>game.updaters.ts:43</code>) is a symptom, not the origin — once <code>easy</code> is exhausted on the BE, a post-wrong-answer "easy" request correctly returns whatever tier is available instead.</p>
+        </div>
+      </div>
+
+      <div>
+        <p class="section-label">Confirm on staging</p>
+        <pre>SELECT difficulty,
+       COUNT(*) FILTER (WHERE event_id = '&lt;live-event-id&gt;') AS in_event,
+       COUNT(*) AS global
+FROM questions
+WHERE type = 'standard' AND status = 'active' AND deleted_at IS NULL
+GROUP BY difficulty;</pre>
+        <p style="font-size: 0.8125rem; color: var(--muted); margin-top: 0.5rem;">Expected: <code>in_event</code> ≈ 15 for <code>easy</code> while <code>global</code> = 35.</p>
+      </div>
+
+      <div>
+        <p class="section-label">Fix options</p>
+        <div class="table-wrap">
+          <table class="opt-table">
+            <thead>
+              <tr>
+                <th>Approach</th>
+                <th>Complexity</th>
+                <th>Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="rec-row">
+                <td><strong>Make the game event-agnostic</strong> — drop <code>->where('event_id', …)</code> filters in <code>SessionStarter</code><span class="rec-badge">Recommended</span></td>
+                <td>Low</td>
+                <td>Matches the model's stated "NOT event-scoped" design; smallest change; aligns game pool with admin's global count.</td>
+              </tr>
+              <tr>
+                <td>Assign <code>event_id</code> on admin create + CSV import</td>
+                <td>Medium</td>
+                <td>Correct if questions are genuinely meant to be per-event going forward; requires backfilling existing NULL rows.</td>
+              </tr>
+              <tr>
+                <td>Scope the admin count to the live event</td>
+                <td>Low</td>
+                <td>Minimum fix — stops the admin panel from overstating availability, but doesn't grow the usable pool.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="finding">
+          <p>Options 1 and 2 are contradictory design choices — decide whether questions are scoped per-event or form a single global bank, then align both the admin panel and the game to it. Recommend also logging when a difficulty tier is genuinely exhausted, so a silent fallback up the chain stays observable.</p>
+        </div>
+      </div>
+
+      <div>
+        <p class="section-label">Affected files</p>
+        <div class="finding">
+          <p>
+            <code>app/Services/Game/SessionStarter.php</code> ·
+            <code>app/Http/Controllers/Admin/QuestionController.php</code> ·
+            <code>app/Http/Controllers/Admin/QuestionCsvController.php</code> ·
+            <code>app/Models/Question.php</code> ·
+            <code>database/seeders/DemoSeeder.php</code> ·
+            <code>src/app/core/stores/game/game.updaters.ts</code> (symptom only)
+          </p>
+        </div>
+      </div>
+
+    </div>
+  </article>
+
+  <!-- Footer -->
+  <footer class="doc-footer">
+    <span>Practical Machinist Trivia · Internal Technical Report</span>
+    <span>25 July 2026 · m.martinov@kipo.bg</span>
+  </footer>
+
+</div>

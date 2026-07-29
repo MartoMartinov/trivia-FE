@@ -10,6 +10,7 @@ import {
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { tapResponse } from '@ngrx/operators';
 import { exhaustMap, tap } from 'rxjs';
+import { TranslateService } from '@ngx-translate/core';
 
 import { initialAuthSlice } from './auth.slice';
 import { setAuthFromLogin, setAccessToken, clearAuth } from './auth.updaters';
@@ -22,6 +23,7 @@ import {
 import { withLoading } from '../features/with-loading.feature';
 import { ApiService } from '../../services/api.service';
 import { AuthStrategyService } from '../../auth/auth-strategy.service';
+import { apiErrorMessage, isAuthFailure } from '../../http/api-error';
 import type { RegisterRequest, LoginRequest, LoginResponse } from '../../models/api.models';
 
 export const AuthStore = signalStore(
@@ -39,6 +41,7 @@ export const AuthStore = signalStore(
   withMethods((store) => {
     const api = inject(ApiService);
     const strategy = inject(AuthStrategyService);
+    const translate = inject(TranslateService);
 
     const register = rxMethod<RegisterRequest>((req$) =>
       req$.pipe(
@@ -55,10 +58,7 @@ export const AuthStore = signalStore(
                 patchState(store, setFulfilled());
               },
               error: (err: unknown) => {
-                const msg =
-                  (err as { error?: { message?: string } })?.error?.message ??
-                  null;
-                patchState(store, setError(msg ?? undefined));
+                patchState(store, setError(apiErrorMessage(err, translate) ?? undefined));
               },
               finalize: () => patchState(store, { isLoading: false }),
             }),
@@ -82,10 +82,7 @@ export const AuthStore = signalStore(
                 patchState(store, setFulfilled());
               },
               error: (err: unknown) => {
-                const msg =
-                  (err as { error?: { message?: string } })?.error?.message ??
-                  null;
-                patchState(store, setError(msg ?? undefined));
+                patchState(store, setError(apiErrorMessage(err, translate) ?? undefined));
               },
               finalize: () => patchState(store, { isLoading: false }),
             }),
@@ -104,7 +101,14 @@ export const AuthStore = signalStore(
                   store,
                   setAccessToken(res.accessToken, res.accessExpiresAt),
                 ),
-              error: () => patchState(store, clearAuth()),
+              // Only a rejected refresh token means the session is gone. A 429 from the per-IP
+              // throttle (or an offline browser) must leave the session alone — clearing it would
+              // force a re-login through the same throttled bucket. Stays silent either way:
+              // this runs unprompted on cold start, and the throttle gets explained properly the
+              // moment the player actually submits something.
+              error: (err: unknown) => {
+                if (isAuthFailure(err)) patchState(store, clearAuth());
+              },
             }),
           ),
         ),
