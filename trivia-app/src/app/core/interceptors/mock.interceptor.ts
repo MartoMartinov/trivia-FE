@@ -133,6 +133,9 @@ const DIFFICULTY_BY_QUESTION_ID: Record<number, string> = MOCK_QUESTIONS.reduce<
   return map;
 }, {});
 
+/** The one code the mock accepts on /auth/verify-reset-code. */
+const MOCK_RESET_CODE = '123456';
+
 const SESSION_DURATION_SECONDS = 90;
 const SESSION_COUNTDOWN_SECONDS = 3;
 // Flat points per correct sponsor question (admin-configurable, spec §5.3) — replaces
@@ -301,6 +304,38 @@ export const mockInterceptor: HttpInterceptorFn = (
   // POST /auth/logout
   if (matchesRoute(url, method, '/auth/logout', 'POST')) {
     return respond({ message: 'Logged out' });
+  }
+
+  // ── Password reset (no auth) ────────────────────────────────────────────────
+  // Three-step flow. Mock fixtures so the frontend can exercise every branch:
+  //   • email 'unknown@example.com' → no account (404)
+  //   • code MOCK_RESET_CODE → verified; anything else → rejected (422)
+
+  // POST /auth/forgotten-password
+  if (matchesRoute(url, method, '/auth/forgotten-password', 'POST')) {
+    const body = req.body as { email: string };
+    if (body.email?.trim().toLowerCase() === 'unknown@example.com') {
+      return respondError(404, { message: 'No account found for this email.' });
+    }
+    return respond({ message: 'A reset code has been sent to your email.' });
+  }
+
+  // POST /auth/verify-reset-code
+  if (matchesRoute(url, method, '/auth/verify-reset-code', 'POST')) {
+    const body = req.body as { email: string; code: string };
+    if (body.code !== MOCK_RESET_CODE) {
+      return respondError(422, { message: 'This code is invalid or has expired.' });
+    }
+    return respond({ resetToken: 'mock-reset-token' });
+  }
+
+  // PUT /auth/reset-password
+  if (matchesRoute(url, method, '/auth/reset-password', 'PUT')) {
+    const body = req.body as { resetToken: string; password: string };
+    if (body.resetToken !== 'mock-reset-token') {
+      return respondError(422, { message: 'This reset link is no longer valid. Please start over.' });
+    }
+    return respond({ message: 'Your password has been updated.' });
   }
 
   // POST /sessions/start

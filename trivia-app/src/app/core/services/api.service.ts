@@ -22,6 +22,12 @@ import type {
   StaticPageResponse,
   VerifyRegistrationTokenResponse,
   NotificationTokenResponse,
+  ForgottenPasswordRequest,
+  ForgottenPasswordResponse,
+  VerifyResetCodeRequest,
+  VerifyResetCodeResponse,
+  ResetPasswordRequest,
+  ResetPasswordResponse,
 } from '../models/api.models';
 
 @Injectable({ providedIn: 'root' })
@@ -38,6 +44,21 @@ export class ApiService {
 
   login(req: LoginRequest): Observable<LoginResponse> {
     return this.http.post<LoginResponse>(`${this.base}/auth/login`, req);
+  }
+
+  /** Step 1 of the reset flow — mails a time-limited code to the address, if it has an account. */
+  forgottenPassword(req: ForgottenPasswordRequest): Observable<ForgottenPasswordResponse> {
+    return this.http.post<ForgottenPasswordResponse>(`${this.base}/auth/forgotten-password`, req);
+  }
+
+  /** Step 2 — exchanges the emailed code for a short-lived reset token. */
+  verifyResetCode(req: VerifyResetCodeRequest): Observable<VerifyResetCodeResponse> {
+    return this.http.post<VerifyResetCodeResponse>(`${this.base}/auth/verify-reset-code`, req);
+  }
+
+  /** Step 3 — sets the new password against the verified reset token. */
+  resetPassword(req: ResetPasswordRequest): Observable<ResetPasswordResponse> {
+    return this.http.put<ResetPasswordResponse>(`${this.base}/auth/reset-password`, req);
   }
 
   verifyRegistrationToken(token: string): Observable<VerifyRegistrationTokenResponse> {

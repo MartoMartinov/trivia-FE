@@ -46,6 +46,38 @@ export interface LoginRequest {
   password: string;
 }
 
+// ── Password reset ────────────────────────────────────────────────────────────
+// Three calls, in order (backend spec): request a code by email, trade the code for a
+// short-lived reset token, then trade that token for a new password. The code never
+// reaches the reset call itself, so a leaked code alone can't change a password.
+
+export interface ForgottenPasswordRequest {
+  email: string;
+}
+
+export interface ForgottenPasswordResponse {
+  message: string;
+}
+
+export interface VerifyResetCodeRequest {
+  email: string;
+  code: string;
+}
+
+export interface VerifyResetCodeResponse {
+  /** Proof the emailed code was verified — required by the reset-password call. */
+  resetToken: string;
+}
+
+export interface ResetPasswordRequest {
+  resetToken: string;
+  password: string;
+}
+
+export interface ResetPasswordResponse {
+  message: string;
+}
+
 // ── Game ──────────────────────────────────────────────────────────────────────
 
 export interface ChoiceDto {

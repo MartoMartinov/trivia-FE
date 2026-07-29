@@ -222,6 +222,13 @@
             </div>
           </div>
 
+          <p class="-mt-1 text-right">
+            <a routerLink="/forgotten-password"
+               class="text-[13px] text-orange font-bold underline underline-offset-2 hover:opacity-80">
+              {{ 'AUTH.FORGOT_PASSWORD' | translate }}
+            </a>
+          </p>
+
           <button type="submit"
                   class="pm-cta mt-[22px]"
                   [disabled]="loginForm.invalid || isPending() || tokenBlocked()">

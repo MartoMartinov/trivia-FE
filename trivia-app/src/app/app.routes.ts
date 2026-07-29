@@ -16,6 +16,15 @@ export const routes: Routes = [
       import('./pages/register/register.page').then((m) => m.RegisterPage),
   },
   {
+    // No authGuard and no QR-token gate: a player who can't log in has neither.
+    path: 'forgotten-password',
+    canActivate: [translationGuard],
+    loadComponent: () =>
+      import('./pages/forgotten-password/forgotten-password.page').then(
+        (m) => m.ForgottenPasswordPage,
+      ),
+  },
+  {
     path: 'game',
     canActivate: [translationGuard, authGuard, activeSessionGuard],
     loadComponent: () =>
