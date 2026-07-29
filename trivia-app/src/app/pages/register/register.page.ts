@@ -230,7 +230,11 @@ export class RegisterPage implements OnInit, OnDestroy, ViewWillEnter {
 
     if (!token) {
       this.tokenBlocked.set(true);
-      this.showTokenExpiredToast();
+      // Toast intentionally off on the page-load paths: the in-card expired-QR notice is
+      // already in view here (nothing typed, nothing scrolled), so the toast only repeated
+      // it. Still toasts on the submit-time block in verifyTokenIsStillValid, where the
+      // notice sits above a filled-in form and can be scrolled out of sight.
+      // this.showTokenExpiredToast();
       return;
     }
 
@@ -240,12 +244,12 @@ export class RegisterPage implements OnInit, OnDestroy, ViewWillEnter {
           this.activeToken = token;
         } else {
           this.tokenBlocked.set(true);
-          this.showTokenExpiredToast();
+          // this.showTokenExpiredToast(); — see note above
         }
       },
       error: () => {
         this.tokenBlocked.set(true);
-        this.showTokenExpiredToast();
+        // this.showTokenExpiredToast(); — see note above
       },
     });
   }
@@ -254,7 +258,9 @@ export class RegisterPage implements OnInit, OnDestroy, ViewWillEnter {
    * Re-verifies the token right as the player commits to starting a game — the per-player QR
    * rotates every 5-10 min (spec F9), so the check done on page load can have gone stale by the
    * time the form is filled in and submitted. Blocks the same way an invalid token at page-load
-   * does: sets tokenBlocked (disabling the form) and shows the expired-token toast.
+   * does — sets tokenBlocked, which disables submit and renders the expired-QR notice in the
+   * card. Unlike the page-load paths this one also toasts: the player is at the bottom of a
+   * filled-in form, where the in-card notice can be scrolled out of view.
    */
   private async verifyTokenIsStillValid(): Promise<boolean> {
     if (!this.activeToken) {

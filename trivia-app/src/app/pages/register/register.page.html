@@ -68,6 +68,17 @@
             {{ 'REGISTER.FORM_TITLE' | translate }}
           </h2>
 
+          <!-- In-card reason for the disabled submit — the announcing toast is dismissible and easily missed (spec F9). -->
+          @if (tokenBlocked()) {
+          <div class="mb-[18px] flex items-start gap-2 rounded-[10px] border border-orange bg-orangesoft px-3 py-2.5"
+               role="alert">
+            <ion-icon name="alert-circle" class="mt-[1px] shrink-0 text-[16px] text-orange"></ion-icon>
+            <span class="text-[13px] font-semibold leading-[1.45] text-ink">
+              {{ 'REGISTER.TOKEN_EXPIRED_1' | translate }} {{ 'REGISTER.TOKEN_EXPIRED_2' | translate }}
+            </span>
+          </div>
+          }
+
           <div class="mb-3">
             <label class="pm-label">{{ 'REGISTER.FIRST_NAME' | translate }} <span class="text-orange">*</span></label>
             <div class="pm-input-wrap">
@@ -191,6 +202,17 @@
           <h2 class="text-[22px] lg:text-[26px] font-black text-ink mb-[18px]">
             {{ 'AUTH.LOGIN_TITLE' | translate }}
           </h2>
+
+          <!-- In-card reason for the disabled submit — the announcing toast is dismissible and easily missed (spec F9). -->
+          @if (tokenBlocked()) {
+          <div class="mb-[18px] flex items-start gap-2 rounded-[10px] border border-orange bg-orangesoft px-3 py-2.5"
+               role="alert">
+            <ion-icon name="alert-circle" class="mt-[1px] shrink-0 text-[16px] text-orange"></ion-icon>
+            <span class="text-[13px] font-semibold leading-[1.45] text-ink">
+              {{ 'REGISTER.TOKEN_EXPIRED_1' | translate }} {{ 'REGISTER.TOKEN_EXPIRED_2' | translate }}
+            </span>
+          </div>
+          }
 
           <div class="mb-3">
             <label class="pm-label">{{ 'REGISTER.EMAIL' | translate }} <span class="text-orange">*</span></label>
