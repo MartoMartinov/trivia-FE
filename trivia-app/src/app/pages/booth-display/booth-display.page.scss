@@ -48,6 +48,8 @@ ion-content {
 }
 
 .header-left {
+  // align-self: end;
+  // margin-bottom: 1.1vw;
   .trivia-label {
     margin: 0;
     font-size: 0.83vw;
@@ -59,7 +61,7 @@ ion-content {
 
   .live-title {
     margin: 0;
-    font-size: 4.58vw;
+    font-size: 4.55vw;
     font-weight: 900;
     color: #fff;
     line-height: 1;

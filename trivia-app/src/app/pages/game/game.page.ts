@@ -228,6 +228,7 @@ export class GamePage implements OnInit, OnDestroy, ViewWillLeave {
         this.selectedIndex.set(null);
         this.lastResult.set(null);
         // Advance the display only after the reveal — the store already has the next question.
+
         const nextQuestion = this.gameStore.currentQuestion();
         if (nextQuestion) {
           this.displayQuestion.set(nextQuestion);

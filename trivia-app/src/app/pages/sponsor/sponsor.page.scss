@@ -1,0 +1,18 @@
+/**
+ * iOS Safari draws its own grey "start playback" button over a <video> that hasn't
+ * been played yet, even with no `controls` attribute. That collides with our gold ▶
+ * overlay — two play buttons on iPhone/iPad. Suppress the native chrome and let the
+ * custom overlay (which also drives startVideo() and the unlock countdown) be the
+ * only affordance.
+ */
+video {
+  &::-webkit-media-controls,
+  &::-webkit-media-controls-enclosure,
+  &::-webkit-media-controls-panel,
+  &::-webkit-media-controls-play-button,
+  &::-webkit-media-controls-start-playback-button {
+    display: none !important;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+}
