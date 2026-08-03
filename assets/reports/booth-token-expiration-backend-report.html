@@ -1,0 +1,735 @@
+<meta charset="utf-8">
+<title>Booth Token Expiration — Backend Report</title>
+<meta name="description" content="Audit of the 24-hour booth registration token lifecycle: four backend defects in issuance, rotation timing and enforcement, plus the frontend changes already shipped in commit 89522f1.">
+
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:        #ECEAE7;
+    --surface:   #FFFFFF;
+    --ink:       #181716;
+    --muted:     #68655F;
+    --accent:    #C74A1E;
+    --accent-lt: #FAF0EC;
+    --border:    #D6D3CD;
+    --ok:        #1A6B3A;
+    --ok-lt:     #EBF5EF;
+    --warn:      #8B5E00;
+    --warn-lt:   #FDF5E6;
+    --bug:       #C74A1E;
+    --bug-lt:    #FAF0EC;
+    --code-bg:   #F4F2EF;
+    --pre-bg:    #1E1D1B;
+    --pre-ink:   #E8E5E0;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg:        #161614;
+      --surface:   #1F1E1C;
+      --ink:       #EDEAE5;
+      --muted:     #A09B93;
+      --accent:    #E8863C;
+      --accent-lt: #2E1E17;
+      --border:    #35332F;
+      --ok:        #5FBF87;
+      --ok-lt:     #17251C;
+      --warn:      #D9A63C;
+      --warn-lt:   #2A2214;
+      --bug:       #EF7A4E;
+      --bug-lt:    #2E1E17;
+      --code-bg:   #2A2825;
+      --pre-bg:    #100F0E;
+      --pre-ink:   #E8E5E0;
+    }
+  }
+
+  /* The in-page toggle must win over the OS preference, in both directions. */
+  :root[data-theme="light"] {
+    --bg:        #ECEAE7;
+    --surface:   #FFFFFF;
+    --ink:       #181716;
+    --muted:     #68655F;
+    --accent:    #C74A1E;
+    --accent-lt: #FAF0EC;
+    --border:    #D6D3CD;
+    --ok:        #1A6B3A;
+    --ok-lt:     #EBF5EF;
+    --warn:      #8B5E00;
+    --warn-lt:   #FDF5E6;
+    --bug:       #C74A1E;
+    --bug-lt:    #FAF0EC;
+    --code-bg:   #F4F2EF;
+    --pre-bg:    #1E1D1B;
+    --pre-ink:   #E8E5E0;
+  }
+
+  :root[data-theme="dark"] {
+    --bg:        #161614;
+    --surface:   #1F1E1C;
+    --ink:       #EDEAE5;
+    --muted:     #A09B93;
+    --accent:    #E8863C;
+    --accent-lt: #2E1E17;
+    --border:    #35332F;
+    --ok:        #5FBF87;
+    --ok-lt:     #17251C;
+    --warn:      #D9A63C;
+    --warn-lt:   #2A2214;
+    --bug:       #EF7A4E;
+    --bug-lt:    #2E1E17;
+    --code-bg:   #2A2825;
+    --pre-bg:    #100F0E;
+    --pre-ink:   #E8E5E0;
+  }
+
+  html { font-size: 16px; background: var(--bg); }
+
+  body {
+    font-family: system-ui, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif;
+    color: var(--ink);
+    line-height: 1.6;
+    padding: 3rem 1.5rem 6rem;
+    transition: background-color 0.15s ease, color 0.15s ease;
+  }
+
+  .doc { max-width: 820px; margin: 0 auto; }
+
+  /* ── Theme toggle ── */
+  .theme-toggle {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    z-index: 10;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+    font: inherit;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--muted);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 0.5em 0.9em;
+    cursor: pointer;
+    transition: color 0.15s ease, border-color 0.15s ease;
+  }
+
+  .theme-toggle:hover { color: var(--ink); border-color: var(--muted); }
+  .theme-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .theme-toggle svg { width: 14px; height: 14px; }
+  .theme-toggle .icon-dark { display: none; }
+  :root[data-theme="dark"] .theme-toggle .icon-dark { display: block; }
+  :root[data-theme="dark"] .theme-toggle .icon-light { display: none; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .theme-toggle .icon-dark { display: block; }
+    :root:not([data-theme="light"]) .theme-toggle .icon-light { display: none; }
+  }
+
+  /* ── Header ── */
+  .doc-header {
+    border-top: 3px solid var(--ink);
+    padding-top: 1.5rem;
+    margin-bottom: 2.5rem;
+  }
+
+  .doc-eyebrow {
+    font-size: 0.6875rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.5rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .doc-title {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 2rem;
+    line-height: 1.2;
+    font-weight: normal;
+    text-wrap: balance;
+    margin-bottom: 1.25rem;
+  }
+
+  .doc-standfirst {
+    font-size: 1.0625rem;
+    color: var(--muted);
+    line-height: 1.55;
+    margin-bottom: 1.25rem;
+    max-width: 62ch;
+  }
+
+  .doc-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 2rem;
+    border-top: 1px solid var(--border);
+    padding-top: 0.875rem;
+    font-size: 0.8125rem;
+    color: var(--muted);
+  }
+
+  .doc-meta span { display: flex; gap: 0.4em; }
+  .doc-meta strong { color: var(--ink); font-weight: 600; }
+
+  /* ── Section rule ── */
+  .section-rule {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 1.375rem;
+    font-weight: normal;
+    border-top: 1px solid var(--ink);
+    padding-top: 0.75rem;
+    margin: 3rem 0 1.5rem;
+  }
+
+  .section-intro {
+    color: var(--muted);
+    font-size: 0.9375rem;
+    margin: -0.75rem 0 1.5rem;
+    max-width: 68ch;
+  }
+
+  /* ── Summary table ── */
+  .summary {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .summary th, .summary td {
+    text-align: left;
+    padding: 0.7rem 0.75rem;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+
+  .summary th {
+    font-size: 0.6875rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    border-bottom: 1px solid var(--ink);
+    white-space: nowrap;
+  }
+
+  .summary td:first-child {
+    font-family: 'Courier New', Courier, monospace;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+  /* ── Issue cards ── */
+  .issue {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+  }
+
+  .issue-header {
+    padding: 1.125rem 1.375rem 0.875rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .issue-number {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.6875rem;
+    color: var(--muted);
+    margin-top: 0.15rem;
+    min-width: 2ch;
+    flex-shrink: 0;
+  }
+
+  .issue-title-group { flex: 1; min-width: 0; }
+
+  .issue-title {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 1.125rem;
+    font-weight: normal;
+    line-height: 1.3;
+    margin-bottom: 0.35rem;
+  }
+
+  .issue-sub {
+    font-size: 0.8125rem;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 0.25em 0.6em;
+    border-radius: 2px;
+    flex-shrink: 0;
+    margin-top: 0.1rem;
+    white-space: nowrap;
+  }
+
+  .chip-bug  { background: var(--bug-lt);  color: var(--bug);  }
+  .chip-warn { background: var(--warn-lt); color: var(--warn); }
+  .chip-ok   { background: var(--ok-lt);   color: var(--ok);   }
+
+  .issue-body {
+    padding: 1.25rem 1.375rem 1.375rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+
+  .section-label {
+    font-size: 0.6875rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+  }
+
+  .issue-body p { margin-bottom: 0.7rem; font-size: 0.9375rem; }
+  .issue-body p:last-child { margin-bottom: 0; }
+
+  .finding {
+    border-left: 2px solid var(--border);
+    padding-left: 1rem;
+  }
+
+  .finding.accent { border-left-color: var(--accent); }
+  .finding.ok     { border-left-color: var(--ok); }
+  .finding.warn   { border-left-color: var(--warn); }
+
+  ul, ol { margin: 0 0 0.7rem 1.25rem; font-size: 0.9375rem; }
+  li { margin-bottom: 0.35rem; }
+  li:last-child { margin-bottom: 0; }
+
+  code {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.8125em;
+    background: var(--code-bg);
+    padding: 0.15em 0.4em;
+    border-radius: 2px;
+    word-break: break-word;
+  }
+
+  pre {
+    background: var(--pre-bg);
+    color: var(--pre-ink);
+    padding: 1rem 1.125rem;
+    border-radius: 3px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    font-size: 0.8125rem;
+    line-height: 1.55;
+    margin-bottom: 0.7rem;
+  }
+
+  pre code { background: none; padding: 0; font-size: inherit; color: inherit; }
+  pre .cm { color: #8C8880; }
+  pre .add { color: #7DD692; }
+  pre .del { color: #EF8A6A; }
+
+  .callout {
+    background: var(--accent-lt);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 3px;
+    padding: 1rem 1.125rem;
+    font-size: 0.9375rem;
+  }
+
+  .callout.ok { background: var(--ok-lt); border-left-color: var(--ok); }
+
+  .callout p { margin-bottom: 0.6rem; }
+  .callout p:last-child { margin-bottom: 0; }
+
+  .doc-footer {
+    margin-top: 3.5rem;
+    border-top: 1px solid var(--border);
+    padding-top: 1rem;
+    font-size: 0.8125rem;
+    color: var(--muted);
+  }
+
+  @media (max-width: 560px) {
+    body { padding: 4rem 1rem 4rem; }
+    .doc-title { font-size: 1.625rem; }
+    .issue-header { flex-wrap: wrap; gap: 0.6rem; }
+    .issue-body, .issue-header { padding-left: 1rem; padding-right: 1rem; }
+  }
+</style>
+
+<button class="theme-toggle" id="themeToggle" type="button" aria-live="polite">
+  <svg class="icon-light" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+  <svg class="icon-dark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z"/></svg>
+  <span id="themeLabel">Theme</span>
+</button>
+
+<div class="doc">
+
+  <header class="doc-header">
+    <p class="doc-eyebrow">Backend Report · PM Trivia · 3 August 2026</p>
+    <h1 class="doc-title">The Booth Registration Token: 24-Hour Expiry Is Consistent, Its Lifecycle Is Not</h1>
+    <p class="doc-standfirst">The 24-hour TTL on the <code>booth</code> registration token is internally coherent — config, TTL and rotation cadence all agree. Four defects sit around it: the token is never issued on the day an event goes live, it rotates at 00:00&nbsp;UTC rather than event-local time, it has no grace overlap, and until now nothing enforced it server-side. The last of those is half-closed by a frontend change already shipped; the rest are backend-only.</p>
+    <div class="doc-meta">
+      <span><strong>Scope</strong> <code>pm-trivia-BE</code> (staging/live)</span>
+      <span><strong>Severity</strong> High — org tablets unusable on day one, and mid-show on US events</span>
+      <span><strong>FE status</strong> Shipped in <code>89522f1</code></span>
+    </div>
+  </header>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       WHAT IS ALREADY CORRECT
+  ═══════════════════════════════════════════════════════════════ -->
+  <h2 class="section-rule">What Is Already Correct</h2>
+  <p class="section-intro">Listed first so none of it gets rebuilt. The 24-hour value itself is not the problem.</p>
+
+  <article class="issue">
+    <div class="issue-header">
+      <span class="issue-number">00</span>
+      <div class="issue-title-group">
+        <h2 class="issue-title">The TTL, the Cadence and the Admin Copy All Agree</h2>
+        <p class="issue-sub">No change needed to the 24-hour value or to the request-validation layer.</p>
+      </div>
+      <span class="chip chip-ok">Verified</span>
+    </div>
+    <div class="issue-body">
+      <div class="finding ok">
+        <p><code>config/game.php:39</code> sets <code>booth_rotate_hours =&gt; 24</code>; <code>RotateRegistrationTokens.php:29</code> turns that into a 1440-minute TTL; <code>routes/console.php:35</code> schedules the command <code>-&gt;daily()</code>. TTL matches cadence. The admin copy matches the intent too — <em>“Scan this QR code every day on all of your organization's tablets… It refreshes automatically and stays active for 24 hours”</em> (<code>registration-qr.blade.php:17</code>).</p>
+      </div>
+      <div>
+        <p class="section-label">The auth endpoints already accept the token</p>
+        <div class="finding ok">
+          <p>Both <code>register</code> and <code>login</code> validate <code>'authPlayToken' =&gt; 'nullable|string|max:64'</code> (<code>AuthController.php:39</code> and <code>:106</code>) and call <code>validateRegistrationToken()</code> (<code>:42</code>, <code>:109</code>). Tokens are <code>Str::random(32)</code>, comfortably inside <code>max:64</code> and the <code>string('token', 64)</code> column.</p>
+          <p><code>bootstrap/app.php:44</code> renders JSON for <code>api/*</code>, so <code>abort(410, $msg)</code> emits <code>{"message": "…"}</code> — precisely the shape the frontend reads. <strong>The frontend change in <code>89522f1</code> therefore needs no backend work to function.</strong> It activates a path that was already built and simply had nothing feeding it.</p>
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       BACKEND DEFECTS
+  ═══════════════════════════════════════════════════════════════ -->
+  <h2 class="section-rule">Backend Defects</h2>
+  <p class="section-intro">Four items, ordered by operational impact. Only the first two are likely to be noticed by a customer at a live show.</p>
+
+  <div class="table-scroll">
+    <table class="summary">
+      <thead>
+        <tr><th>#</th><th>Defect</th><th>Impact</th><th>Severity</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>01</td><td>No booth token until the first midnight <em>after</em> the event goes live</td><td>Org tablets cannot be enabled at all on day one</td><td>High</td></tr>
+        <tr><td>02</td><td>Rotation fires at 00:00 UTC, not event-local midnight</td><td>Every tablet dies mid-show on non-UTC events</td><td>High</td></tr>
+        <tr><td>03</td><td>No grace overlap, unlike the player token</td><td>Hard cutover; brief window with no valid token at all</td><td>Medium</td></tr>
+        <tr><td>04</td><td>A missing <code>authPlayToken</code> is accepted</td><td>QR gate bypassable by omitting the field</td><td>Medium</td></tr>
+        <tr><td>05</td><td>Token not scoped to its event or the event's status</td><td>Cross-event admission once two events run concurrently</td><td>Medium</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <article class="issue">
+    <div class="issue-header">
+      <span class="issue-number">01</span>
+      <div class="issue-title-group">
+        <h2 class="issue-title">No Booth Token Exists Until the First Midnight After the Event Goes Live</h2>
+        <p class="issue-sub">The most likely of these to be hit, because it lands on the morning of the show.</p>
+      </div>
+      <span class="chip chip-bug">Bug</span>
+    </div>
+    <div class="issue-body">
+      <div>
+        <p class="section-label">Root cause</p>
+        <div class="finding accent">
+          <p>Booth tokens are created in exactly one place — the scheduled command — and it only considers events that are <em>already</em> live:</p>
+          <pre><code>// app/Console/Commands/RotateRegistrationTokens.php:31
+Event::where('status', 'live')->get()->each(function (Event $event) use ($type, $ttlMinutes) {</code></pre>
+          <p>Nothing issues a token when an admin flips an event from <code>draft</code> to <code>live</code>. There is no model observer and no call in the admin controller — the only other caller anywhere in the repo is <code>DevSeeder.php:26</code>.</p>
+        </div>
+      </div>
+      <div>
+        <p class="section-label">Observed behaviour</p>
+        <p>An event set live at 08:00 on show day has <code>activeRegistrationToken('booth') === null</code> for the rest of that day. The admin panel then renders the placeholder instead of a QR:</p>
+        <pre><code>{{-- resources/views/components/registration-qr.blade.php:58 --}}
+QR not available yet — it becomes active once the event is live.</code></pre>
+        <p>The message is actively misleading: the event <em>is</em> live. Staff have no way to enable any organization tablet until 00:00&nbsp;UTC.</p>
+        <p>Note the per-player token is unaffected — it rotates every ten minutes (<code>routes/console.php:28</code>), so it appears within minutes of the event going live. This is specific to the booth token.</p>
+      </div>
+      <div>
+        <p class="section-label">Caveat on severity</p>
+        <div class="finding warn">
+          <p>This only bites when the event is flipped live on show day. If it is created as <code>live</code> the day before, the midnight run picks it up and a token exists by morning. Whether this is currently a live outage therefore depends on operational practice — but the natural workflow is to go live on the day, so it should not be left to habit.</p>
+        </div>
+      </div>
+      <div>
+        <p class="section-label">Suggested fix</p>
+        <p>Issue a booth token (and a player token) on the <code>draft → live</code> transition — an <code>Event</code> observer on <code>updated()</code> watching <code>isDirty('status')</code>, or an explicit call in the admin controller that performs the transition. Make it idempotent so re-saving a live event does not mint duplicates.</p>
+      </div>
+    </div>
+  </article>
+
+  <article class="issue">
+    <div class="issue-header">
+      <span class="issue-number">02</span>
+      <div class="issue-title-group">
+        <h2 class="issue-title">Rotation Fires at 00:00 UTC, Not at Event-Local Midnight</h2>
+        <p class="issue-sub">On a US show this puts the cutover inside booth hours.</p>
+      </div>
+      <span class="chip chip-bug">Bug</span>
+    </div>
+    <div class="issue-body">
+      <div>
+        <p class="section-label">Root cause</p>
+        <div class="finding accent">
+          <p><code>config/app.php:71</code> is <code>'timezone' =&gt; 'UTC'</code>, and the booth schedule carries no <code>-&gt;timezone()</code> call:</p>
+          <pre><code>// routes/console.php:35
+Schedule::command('registration-token:rotate booth')
+    ->daily()                    <span class="cm">// ← 00:00 UTC</span>
+    ->withoutOverlapping(1)
+    ->runInBackground();</code></pre>
+          <p>Yet every event carries its own <code>timezone</code> column, honoured elsewhere in the codebase — <code>BoothDisplayController::buildPayload()</code> uses it for the daily leaderboard window, and <code>registration-qr.blade.php:27</code> uses it to render the token's own “Active until” label.</p>
+        </div>
+      </div>
+      <div>
+        <p class="section-label">Consequence</p>
+        <p>For an event in <code>America/Chicago</code> (UTC−5 in summer), 00:00&nbsp;UTC is <strong>19:00 the previous day, local</strong> — inside show hours. Every organization tablet's token expires at 7&nbsp;pm and every tablet must be re-scanned on the spot, mid-event.</p>
+        <p>The booth token is precisely the one that must not flip during the day: the whole point of the 24-hour TTL is a once-daily, out-of-hours re-scan.</p>
+      </div>
+      <div>
+        <p class="section-label">Suggested fix</p>
+        <p>Rotate per event at a local, pre-open hour rather than globally at UTC midnight — for example run the command hourly and have it issue for events whose local time has just passed 04:00, or schedule per-event with <code>-&gt;timezone($event-&gt;timezone)</code>. Either way the cutover should land well before doors open, not at an arbitrary UTC boundary.</p>
+      </div>
+    </div>
+  </article>
+
+  <article class="issue">
+    <div class="issue-header">
+      <span class="issue-number">03</span>
+      <div class="issue-title-group">
+        <h2 class="issue-title">No Grace Overlap, Unlike the Player Token</h2>
+        <p class="issue-sub">The player token was deliberately given an overlap; the booth token was not.</p>
+      </div>
+      <span class="chip chip-warn">Hardening</span>
+    </div>
+    <div class="issue-body">
+      <div>
+        <p class="section-label">The asymmetry</p>
+        <div class="finding accent">
+          <pre><code>// app/Console/Commands/RotateRegistrationTokens.php:27-29
+$ttlMinutes = $type === 'player'
+    ? config('game.registration_token.player_rotate_minutes')
+        + config('game.registration_token.player_grace_minutes')   <span class="cm">// 10 + 1</span>
+    : config('game.registration_token.booth_rotate_hours') * 60;   <span class="cm">// 24h, no grace</span></code></pre>
+          <p>The player token intentionally outlives its rotation by a minute — <code>config/game.php:34</code> explains it as <em>“grace overlap so a phone scanned just before rotation still gets in.”</em> The booth token gets an exact 24 hours against a 24-hour cadence, so there is zero overlap.</p>
+        </div>
+      </div>
+      <div>
+        <p class="section-label">Two effects</p>
+        <ol>
+          <li><strong>Hard cutover.</strong> The outgoing token is invalid the instant the new one is minted. A tablet that has not re-scanned is dead with no transition period.</li>
+          <li><strong>A brief window with no valid token at all.</strong> The command prunes before it creates (<code>:32-36</code> then <code>:37-42</code>), and runs via <code>runInBackground()</code> off a <code>schedule:run</code> tick. Between the old token's <code>expires_at</code> and the insert, <code>activeRegistrationToken('booth')</code> returns null — so the admin panel shows the “not available yet” placeholder and no tablet can be enrolled. Seconds, not minutes, but avoidable.</li>
+        </ol>
+      </div>
+      <div>
+        <p class="section-label">Suggested fix</p>
+        <p>Add a <code>booth_grace_hours</code> setting mirroring the player pattern (TTL = 24h + grace), and stop pruning a token that is still inside its grace window. That makes the handover overlap rather than butt up, and closes the null window as a side effect.</p>
+      </div>
+    </div>
+  </article>
+
+  <article class="issue">
+    <div class="issue-header">
+      <span class="issue-number">04</span>
+      <div class="issue-title-group">
+        <h2 class="issue-title">A Missing <code>authPlayToken</code> Is Still Accepted</h2>
+        <p class="issue-sub">Half-closed by the frontend change; the remaining half is backend-side.</p>
+      </div>
+      <span class="chip chip-warn">Hardening</span>
+    </div>
+    <div class="issue-body">
+      <div>
+        <p class="section-label">Background — why this was invisible</p>
+        <div class="finding accent">
+          <p>Until commit <code>89522f1</code> the frontend never sent <code>authPlayToken</code> at all. It verified the QR through the separate <code>GET /register/verify-token</code> endpoint and then posted <code>/auth/register</code> without the token, so <code>validateRegistrationToken()</code> returned early every time.</p>
+          <p>Two things followed. The gate was purely client-side — and the <code>410</code> branch was unreachable, which means <strong>the per-event <code>qr_rescan_message</code> was never once shown to a player</strong>, despite being a required field in both admin forms whose hint promises it is <em>“Shown when a player tries to register or log in with a QR code that has since rotated out.”</em> Players always saw the frontend's own hardcoded copy instead. The frontend change fixes that: the message now reaches them verbatim.</p>
+        </div>
+      </div>
+      <div>
+        <p class="section-label">What remains</p>
+        <p>The field is still optional, and the helper returns on null:</p>
+        <pre><code>// app/Http/Controllers/Api/AuthController.php:252-256
+private function validateRegistrationToken(?string $token): void
+{
+    if (! $token) {
+        return;              <span class="cm">// ← omit the field and the QR gate does not apply</span>
+    }</code></pre>
+        <p>Honest clients are now gated. A request that simply omits <code>authPlayToken</code> still registers and plays with no QR at all.</p>
+      </div>
+      <div>
+        <p class="section-label">Suggested fix — and one trap to avoid</p>
+        <div class="callout">
+          <p><strong>Do not change the rule to <code>required</code>.</strong> That produces a 422 in Laravel's validation-error shape, so a player with a missing token would get a generic field-validation message instead of the event's re-scan copy — losing exactly the behaviour we just restored.</p>
+          <p>Keep <code>nullable</code> in the validation rules and abort inside <code>validateRegistrationToken()</code> when the token is null, so <em>missing</em> and <em>expired</em> both land on the same 410 with <code>qr_rescan_message</code>. If ungated registration must remain possible for any deployment, gate that on a config or per-event flag rather than on the field's absence.</p>
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <article class="issue">
+    <div class="issue-header">
+      <span class="issue-number">05</span>
+      <div class="issue-title-group">
+        <h2 class="issue-title">The Token Is Not Scoped to Its Event or the Event's Status</h2>
+        <p class="issue-sub">Pre-existing and currently harmless; becomes a hole with two concurrent events.</p>
+      </div>
+      <span class="chip chip-warn">Design decision</span>
+    </div>
+    <div class="issue-body">
+      <div>
+        <p class="section-label">Observation</p>
+        <div class="finding accent">
+          <p>Both the verify endpoint and the auth-side helper look tokens up globally, checking only expiry:</p>
+          <pre><code>// app/Http/Controllers/Api/RegistrationTokenController.php:22
+RegistrationToken::where('token', $token)->where('expires_at', '>=', now())->exists();
+
+// app/Http/Controllers/Api/AuthController.php:258
+RegistrationToken::with('event')->where('token', $token)->first();</code></pre>
+          <p>No <code>event_id</code> match and no check that the owning event is still <code>live</code>. This is a consequence of the design rather than an oversight — the auth routes sit outside the <code>resolve.event</code> middleware group, so there is no event context at register/login time. Not matching on <code>type</code> is correct and deliberate: one endpoint validates both kinds.</p>
+        </div>
+      </div>
+      <div>
+        <p class="section-label">When it matters</p>
+        <p>With a single live event, never. With two concurrent events, a token issued for event A admits a player to event B. A token belonging to an event since paused or ended also keeps working until its own expiry — up to 24 hours for a booth token.</p>
+        <p>Worth an explicit decision now rather than a surprise the first time two events overlap. If the answer is that tokens should be event-scoped, the auth request needs to carry the event, or the token lookup needs to resolve it and reject non-live owners.</p>
+      </div>
+    </div>
+  </article>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       FRONTEND CHANGES ALREADY SHIPPED
+  ═══════════════════════════════════════════════════════════════ -->
+  <h2 class="section-rule">Frontend Changes Already Shipped</h2>
+  <p class="section-intro">Commit <code>89522f1</code> — <em>“send authPlayToken on register/login”</em>. Three files, no backend change required for any of it. Included here so the backend side knows what is now arriving on the wire.</p>
+
+  <article class="issue">
+    <div class="issue-header">
+      <span class="issue-number">FE</span>
+      <div class="issue-title-group">
+        <h2 class="issue-title">The QR Token Now Travels on the Auth Call Itself</h2>
+        <p class="issue-sub">Type-checked clean. The FE project has no test suite, so that is the available verification.</p>
+      </div>
+      <span class="chip chip-ok">Shipped</span>
+    </div>
+    <div class="issue-body">
+      <div>
+        <p class="section-label">1 · <code>core/models/api.models.ts</code></p>
+        <p>Added optional <code>authPlayToken?: string</code> to <code>RegisterRequest</code> (line 49) and <code>LoginRequest</code> (line 55), mirroring the backend's <code>nullable|string|max:64</code>.</p>
+      </div>
+      <div>
+        <p class="section-label">2 · <code>pages/register/register.page.ts</code></p>
+        <p>Both submit paths now send the token — line 328 in <code>submit()</code>, line 349 in <code>loginSubmit()</code>:</p>
+        <pre><code>this.authStore.register({
+  …
+  <span class="add">authPlayToken: this.activeToken ?? undefined,</span>
+});</code></pre>
+        <p>No store change was needed: <code>AuthStore.register</code>/<code>login</code> pass the request object straight through to <code>ApiService</code>.</p>
+        <p>The pre-flight <code>verifyTokenIsStillValid()</code> call was <strong>kept</strong>, deliberately. It still does two things the server cannot: it catches the “no token at all” case (which the nullable field accepts), and it sets the <code>tokenBlocked</code> signal that disables both submit buttons and renders the in-card notice. The store's error path only raises a toast, so without it a rejected player could keep resubmitting into the same 410.</p>
+      </div>
+      <div>
+        <p class="section-label">3 · <code>pages/register/register.page.ts</code> — unrelated fix in the same commit</p>
+        <div class="finding warn">
+          <p><code>tryBoothToken()</code> previously called <code>boothTokenStore.clear()</code> on <em>any</em> failure, including the <code>catch</code> branch. An offline blip, a 429 from the shared per-IP throttle, or a 5xx therefore wiped the tablet's stored booth token permanently and forced a re-scan over a transient error. <code>clear()</code> now runs only on an explicit <code>valid: false</code> (line 223).</p>
+          <p>Relevant to the backend because it interacts with defect 03: during the rotation window where no valid booth token exists, the old behaviour would have had every polling tablet discard its token.</p>
+        </div>
+      </div>
+      <div>
+        <p class="section-label">4 · <code>core/interceptors/mock.interceptor.ts</code></p>
+        <p>Added a <code>rejectExpiredQr</code> helper (line 289) that answers 410 with a re-scan message when <code>authPlayToken === 'expired'</code>, reusing the sentinel the existing <code>verify-token</code> mock already uses, plus a <code>/auth/login</code> route (line 312) which did not previously exist.</p>
+      </div>
+      <div>
+        <p class="section-label">No error-handling wiring was required</p>
+        <div class="callout ok">
+          <p><code>apiErrorMessage()</code> passes backend messages through verbatim (<code>core/http/api-error.ts:71</code>), <code>AuthStore</code> stores that via <code>setError</code>, and an effect in the register page toasts it. So <code>qr_rescan_message</code> now reaches the player automatically — that path was already built and only lacked something feeding it.</p>
+          <p><code>410</code> is deliberately outside <code>isAuthFailure()</code>, which matches 401/403 only, so an expired QR will not trigger a spurious logout in the auth interceptor.</p>
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       ASKS
+  ═══════════════════════════════════════════════════════════════ -->
+  <h2 class="section-rule">Asks, in Priority Order</h2>
+
+  <article class="issue">
+    <div class="issue-body">
+      <ol>
+        <li><strong>Issue a booth token on the <code>draft → live</code> transition</strong> (defect 01). Without this, organization tablets cannot be enabled on the day an event goes live — the highest-impact item.</li>
+        <li><strong>Move booth rotation off 00:00 UTC to a pre-open, event-local hour</strong> (defect 02). Currently every tablet at a US-Central event loses its token at 7&nbsp;pm local, mid-show.</li>
+        <li><strong>Add a grace overlap for the booth token</strong> (defect 03), mirroring <code>player_grace_minutes</code>, and stop pruning tokens still inside grace.</li>
+        <li><strong>Abort on a null <code>authPlayToken</code> instead of returning early</strong> (defect 04) — keeping the rule <code>nullable</code> so the rejection stays a 410 carrying <code>qr_rescan_message</code>, not a 422.</li>
+        <li><strong>Decide whether registration tokens should be event-scoped</strong> (defect 05) before two events ever run concurrently.</li>
+      </ol>
+      <p style="margin-top:1rem;">Items 1–3 are independent of the frontend commit and can land in any order. Item 4 is the only one that interacts with it, and the frontend already sends what it needs.</p>
+    </div>
+  </article>
+
+  <footer class="doc-footer">
+    <p>Sources: <code>pm-trivia-BE</code> — <code>app/Console/Commands/RotateRegistrationTokens.php</code>, <code>app/Http/Controllers/Api/AuthController.php</code>, <code>app/Http/Controllers/Api/RegistrationTokenController.php</code>, <code>app/Models/Event.php</code>, <code>app/Models/RegistrationToken.php</code>, <code>routes/console.php</code>, <code>routes/api.php</code>, <code>config/game.php</code>, <code>config/app.php</code>, <code>bootstrap/app.php</code>, <code>resources/views/components/registration-qr.blade.php</code>. Frontend — commit <code>89522f1</code>.</p>
+    <p style="margin-top:0.5rem;">Mock-backend parity (<code>backend-mock/projects/trivia/index.js</code> ignores <code>authPlayToken</code> on both auth routes) is out of scope for this report and tracked separately.</p>
+  </footer>
+
+</div>
+
+<script>
+  (function () {
+    var root = document.documentElement;
+    var btn = document.getElementById('themeToggle');
+    var label = document.getElementById('themeLabel');
+
+    function systemPrefersDark() {
+      return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    }
+
+    function currentIsDark() {
+      var explicit = root.getAttribute('data-theme');
+      if (explicit === 'dark') return true;
+      if (explicit === 'light') return false;
+      return systemPrefersDark();
+    }
+
+    function render() {
+      var dark = currentIsDark();
+      label.textContent = dark ? 'Dark' : 'Light';
+      btn.setAttribute('aria-label', 'Switch to ' + (dark ? 'light' : 'dark') + ' theme');
+    }
+
+    btn.addEventListener('click', function () {
+      root.setAttribute('data-theme', currentIsDark() ? 'light' : 'dark');
+      render();
+    });
+
+    // Follow the OS while the reader has not chosen explicitly.
+    if (window.matchMedia) {
+      window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function () {
+        if (!root.hasAttribute('data-theme')) render();
+      });
+    }
+
+    render();
+  })();
+</script>
