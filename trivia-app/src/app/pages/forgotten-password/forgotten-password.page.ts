@@ -26,6 +26,7 @@ import {
 import { STORAGE_KEYS } from '../../core/constants/storage-keys';
 import { apiErrorMessage } from '../../core/http/api-error';
 import { ApiService } from '../../core/services/api.service';
+import { AuthStore } from '../../core/stores/auth/auth.store';
 import { PmHeaderComponent } from '../../shared/components/pm-header/pm-header.component';
 
 addIcons({
@@ -63,7 +64,8 @@ function passwordsMatch(group: AbstractControl): ValidationErrors | null {
  *
  * Talks to ApiService directly rather than through a store: the flow is a one-shot,
  * unauthenticated wizard whose state dies with the page, so none of it belongs in
- * app-wide state (same reasoning as the unsubscribe/resubscribe pages).
+ * app-wide state (same reasoning as the unsubscribe/resubscribe pages). AuthStore is the
+ * one exception, and only to discard state — see submitNewPassword.
  */
 @Component({
   selector: 'app-forgotten-password',
@@ -73,6 +75,7 @@ function passwordsMatch(group: AbstractControl): ValidationErrors | null {
 })
 export class ForgottenPasswordPage implements OnInit {
   private readonly api = inject(ApiService);
+  private readonly authStore = inject(AuthStore);
   private readonly translate = inject(TranslateService);
 
   readonly codeLength = CODE_LENGTH;
@@ -180,7 +183,15 @@ export class ForgottenPasswordPage implements OnInit {
       });
   }
 
-  /** Step 3 — set the new password against the verified token. */
+  /**
+   * Step 3 — set the new password against the verified token.
+   *
+   * A successful reset revokes every token on the account server-side, so the session this device
+   * may still be holding (the access token outlives a finished game, and getting here is in-app
+   * routing) is dead the moment this returns. Dropping it locally keeps the two in step: left in
+   * place, it still reads as a valid login to the guards, and the next authenticated call would go
+   * out with a credential the API has already thrown away.
+   */
   submitNewPassword(): void {
     if (this.passwordForm.invalid || this.isPending()) return;
 
@@ -192,11 +203,12 @@ export class ForgottenPasswordPage implements OnInit {
         password: this.passwordForm.getRawValue().password!,
       })
       .subscribe({
-        next: () => {
+        next: async () => {
           // The token is single-use and the password is already changed — drop both so
           // nothing sensitive lingers behind the success screen.
           this.resetToken = '';
           this.passwordForm.reset();
+          await this.authStore.logout();
           this.isPending.set(false);
           this.step.set('done');
         },

@@ -308,6 +308,8 @@ export class RegisterPage implements OnInit, OnDestroy, ViewWillEnter {
     // Persist the profile (minus password) so a returning player's registration is pre-filled next time.
     SecureStorage.set(STORAGE_KEYS.REGISTRATION, JSON.stringify({ firstName, lastName, email, company, phone })).catch(() => {});
 
+    await this.dropStaleSession();
+
     this.authStore.register({
       firstName: firstName!,
       lastName: lastName!,
@@ -331,12 +333,38 @@ export class RegisterPage implements OnInit, OnDestroy, ViewWillEnter {
 
     const { email, password } = this.loginForm.getRawValue();
 
+    await this.dropStaleSession();
+
     this.authStore.login({ email: email!, password: password! });
 
     this.watchAuthAndNavigate();
   }
 
-  /** Poll the auth store until authentication lands, then hand the player to PlayerStore and enter the game. */
+  /**
+   * Discards whatever credentials are still in the store before a fresh auth attempt.
+   *
+   * The access token lives in memory for the whole SPA lifetime — nothing signs the player out
+   * after a finished game, and stepping through the forgotten-password wizard is in-app routing,
+   * so the token from the previous game is still there when they come back to log in. That token
+   * may well be dead server-side by now (a password reset revokes every token on the account), so
+   * keeping it around only means the next request goes out with a credential the API will reject.
+   */
+  private async dropStaleSession(): Promise<void> {
+    if (!this.authStore.isAuthenticated()) return;
+    await this.authStore.logout();
+  }
+
+  /**
+   * Hand the player to PlayerStore and enter the game once *this* auth attempt has landed.
+   *
+   * Gates on the request status rather than on isAuthenticated(): a leftover token would satisfy
+   * isAuthenticated() the instant the player hits submit, and navigating on that raced the login
+   * response — the game page would call /sessions/start with the previous token, and if that one
+   * had since been revoked (password reset) the 401 handler tore down the session login had just
+   * issued. requestStatus goes 'pending' synchronously inside login()/register(), and the store
+   * writes the new token immediately before flipping it to 'fulfilled', so by the time this sees
+   * 'fulfilled' the token in hand is the one that request returned.
+   */
   private watchAuthAndNavigate(): void {
     if (this.authCheckInterval) return;
     // Clears a lingering 'abandoned' marker from a previously left-behind session, right as the
@@ -345,14 +373,19 @@ export class RegisterPage implements OnInit, OnDestroy, ViewWillEnter {
     // turns a genuinely 'active' session into 'abandoned' before the player can reach this form.
     this.gameStore.reset();
     this.authCheckInterval = setInterval(() => {
-      if (this.authStore.isAuthenticated()) {
-        clearInterval(this.authCheckInterval!);
-        this.authCheckInterval = null;
-        if (this.authStore.player()) {
-          this.playerStore.setPlayer(this.authStore.player()!);
-        }
-        this.router.navigate(['/game']);
-      }
+      // Still in flight — keep waiting.
+      if (this.authStore.isPending()) return;
+
+      clearInterval(this.authCheckInterval!);
+      this.authCheckInterval = null;
+
+      // Rejected credentials, an expired QR, a throttled bucket: the error toast already covers
+      // it and the player stays on the form. Only a fulfilled attempt enters the game.
+      if (!this.authStore.isFulfilled() || !this.authStore.isAuthenticated()) return;
+
+      const player = this.authStore.player();
+      if (player) this.playerStore.setPlayer(player);
+      this.router.navigate(['/game']);
     }, 200);
   }
 }
