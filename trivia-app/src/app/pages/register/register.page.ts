@@ -219,9 +219,14 @@ export class RegisterPage implements OnInit, OnDestroy, ViewWillEnter {
         this.activeToken = boothToken;
         return true;
       }
-    } catch {}
+      // An explicit valid:false is the only proof the token has rotated out — drop it then.
+      this.boothTokenStore.clear();
+    } catch {
+      // A transient failure (offline, 429 from the shared per-IP bucket, 5xx) says nothing about
+      // whether the token is still good. Keep it: discarding it here would strand the kiosk on the
+      // blocked form until someone re-scans the admin QR, over a blip that fixes itself.
+    }
 
-    this.boothTokenStore.clear();
     return false;
   }
 
@@ -318,6 +323,9 @@ export class RegisterPage implements OnInit, OnDestroy, ViewWillEnter {
       phone: phone ?? '',
       password: password!,
       consent: consent!,
+      // Sent so the server is the one enforcing the QR gate — the pre-flight check above only
+      // keeps the UI honest. Guaranteed non-null here: verifyTokenIsStillValid bails without it.
+      authPlayToken: this.activeToken ?? undefined,
     });
 
     this.watchAuthAndNavigate();
@@ -335,7 +343,11 @@ export class RegisterPage implements OnInit, OnDestroy, ViewWillEnter {
 
     await this.dropStaleSession();
 
-    this.authStore.login({ email: email!, password: password! });
+    this.authStore.login({
+      email: email!,
+      password: password!,
+      authPlayToken: this.activeToken ?? undefined,
+    });
 
     this.watchAuthAndNavigate();
   }

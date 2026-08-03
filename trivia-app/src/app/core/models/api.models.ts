@@ -31,6 +31,13 @@ export interface VerifyRegistrationTokenResponse {
   valid: boolean;
 }
 
+/**
+ * `authPlayToken` carries the QR token (rotating per-player, or the durable booth token) on the
+ * auth call itself, so the backend — not just the client — enforces it. Without it the server
+ * accepts the request unconditionally and the expired-QR rejection (410, carrying the event's
+ * own re-scan copy) is never reached; `verifyRegistrationToken` alone is a client-side check.
+ * Optional to mirror the backend's nullable field; in practice the register page always sends it.
+ */
 export interface RegisterRequest {
   firstName: string;
   lastName: string;
@@ -39,11 +46,13 @@ export interface RegisterRequest {
   phone: string;
   password: string;
   consent: boolean;
+  authPlayToken?: string;
 }
 
 export interface LoginRequest {
   email: string;
   password: string;
+  authPlayToken?: string;
 }
 
 // ── Password reset ────────────────────────────────────────────────────────────

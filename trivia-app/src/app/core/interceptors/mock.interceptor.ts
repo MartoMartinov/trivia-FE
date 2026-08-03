@@ -280,8 +280,18 @@ export const mockInterceptor: HttpInterceptorFn = (
     return respond({ valid: token !== 'expired' });
   }
 
-  // POST /auth/register
-  if (matchesRoute(url, method, '/auth/register', 'POST')) {
+  /**
+   * Server-side half of the QR gate: register and login carry `authPlayToken`, and a token that
+   * has rotated out is rejected with 410 — mirroring the backend, which answers with the event's
+   * own `qr_rescan_message` copy. Returns null when the token passes, so callers fall through.
+   * Same 'expired' sentinel as verify-token above.
+   */
+  const rejectExpiredQr = (body: unknown) =>
+    (body as { authPlayToken?: string } | null)?.authPlayToken === 'expired'
+      ? respondError(410, { message: 'Please scan the QR code at our booth again to continue.' })
+      : null;
+
+  const authSuccess = () => {
     mockScore = 0;
     mockStreak = 0;
     mockMaxStreak = 0;
@@ -291,6 +301,16 @@ export const mockInterceptor: HttpInterceptorFn = (
       accessExpiresAt: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
       player: MOCK_PLAYER,
     });
+  };
+
+  // POST /auth/register
+  if (matchesRoute(url, method, '/auth/register', 'POST')) {
+    return rejectExpiredQr(req.body) ?? authSuccess();
+  }
+
+  // POST /auth/login — the mock accepts any credentials; only the QR token can reject it.
+  if (matchesRoute(url, method, '/auth/login', 'POST')) {
+    return rejectExpiredQr(req.body) ?? authSuccess();
   }
 
   // POST /auth/refresh
