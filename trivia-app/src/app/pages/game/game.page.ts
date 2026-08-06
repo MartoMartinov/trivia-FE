@@ -87,7 +87,9 @@ export class GamePage implements OnInit, OnDestroy, ViewWillLeave {
       buttons: [{ icon: 'close', role: 'cancel' }],
     });
     await toast.present();
-    await toast.onDidDismiss();
+    // Leave immediately instead of awaiting onDidDismiss(). The toast is a root-level overlay, so
+    // it rides along to /register and stays readable there for its full duration — waiting on it
+    // only pinned the player to the "Loading questions…" screen behind it for ten seconds.
     this.router.navigate(['/register']);
   }
 
