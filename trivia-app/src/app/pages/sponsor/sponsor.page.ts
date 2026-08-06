@@ -133,12 +133,17 @@ export class SponsorPage implements OnInit, OnDestroy {
     this.maybeAutoUnlock();
   }
 
-  /** Last question answered/expired → the outro CTA screen. */
+  /**
+   * Last question answered/expired → the outro CTA screen.
+   * Also finalizes the session here rather than waiting for "See my results" — a player who
+   * closes the tab on this screen still has their score committed and counted.
+   */
   private goToOutro(): void {
     this.clearQuestionTimer();
     this.videoRef()?.nativeElement.pause();
     this.sponsorQuestion.set(null);
     this.phase.set('outro');
+    this.gameStore.completeSession(undefined);
   }
 
   // ── Sponsor link ──────────────────────────────────────────────────────────────
@@ -330,6 +335,11 @@ export class SponsorPage implements OnInit, OnDestroy {
     }
   }
 
+  /**
+   * Navigates to results. completeSession() already ran in goToOutro() (or is skipped
+   * entirely when there's no sponsor round) — this call is a harmless, idempotent repeat,
+   * kept as defense in depth rather than the sole trigger.
+   */
   private finish(): void {
     const sessionId = this.gameStore.sessionId();
     this.gameStore.completeSession(undefined);

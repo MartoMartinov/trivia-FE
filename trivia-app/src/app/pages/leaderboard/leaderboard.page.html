@@ -9,7 +9,10 @@
       <div class="relative z-[1] lg:max-w-5xl lg:mx-auto">
         <h1 class="text-[38px] font-black text-white leading-none">{{ 'LEADERBOARD.TITLE' | translate }}</h1>
         <p class="mt-1.5 text-[13px] font-medium text-white/60">
-          {{ store.totalPlayers() }} {{ 'LEADERBOARD.PLAYERS_TODAY' | translate }} · {{ 'LEADERBOARD.RESETS' | translate }}
+          {{ store.totalPlayers() }} {{ 'LEADERBOARD.PLAYERS_TODAY' | translate }}
+          @if (resetsInLabel()) {
+            · {{ 'LEADERBOARD.RESETS' | translate: { time: resetsInLabel() } }}
+          }
         </p>
         <div class="mt-4 inline-grid grid-cols-2 bg-white/12 rounded-full p-1 w-[230px]">
           <button class="py-2 rounded-full text-[14px] font-bold cursor-pointer transition-all"
@@ -93,7 +96,13 @@
       lg:max-w-5xl lg:mx-auto ">
         <button class="pm-cta-outline"
                 (click)="goToRegister()">← {{ 'LEADERBOARD.BACK_TO_PLAY' | translate }}</button>
-        <p class="text-center text-[11px] text-muted mt-4">{{ 'LEADERBOARD.FOOTER' | translate }}</p>
+        <p class="text-center text-[11px] text-muted mt-4">
+          @if (resetsInLabel()) {
+            {{ 'LEADERBOARD.FOOTER' | translate: { time: resetsInLabel() } }}
+          } @else {
+            {{ 'LEADERBOARD.FOOTER_FALLBACK' | translate }}
+          }
+        </p>
       </div>
 
     </div>

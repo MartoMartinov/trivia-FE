@@ -1,0 +1,939 @@
+<meta charset="utf-8">
+<title>Daily Reset &amp; Session Finalization — FE/BE Report</title>
+<meta name="description" content="Two confirmed defects behind the client's 6 August report: the daily leaderboard window runs on UTC rather than event-local time, and a session is only finalized when the player taps 'See my results'. Split by frontend and backend ownership.">
+
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:        #ECEAE7;
+    --surface:   #FFFFFF;
+    --ink:       #181716;
+    --muted:     #5A574F;
+    --accent:    #B8431A;
+    --accent-lt: #FAF0EC;
+    --border:    #D6D3CD;
+    --ok:        #1A6B3A;
+    --ok-lt:     #EBF5EF;
+    --warn:      #8B5E00;
+    --warn-lt:   #FDF5E6;
+    --bug:       #B8431A;
+    --bug-lt:    #FAF0EC;
+    --code-bg:   #F4F2EF;
+    --pre-bg:    #1E1D1B;
+    --pre-ink:   #E8E5E0;
+    /* Ownership tags — desaturated on purpose so severity chips stay dominant. */
+    --be:        #2C4A70;
+    --be-bd:     #A9BFD8;
+    --fe:        #6E3B7E;
+    --fe-bd:     #C9AED2;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg:        #161614;
+      --surface:   #1F1E1C;
+      --ink:       #EDEAE5;
+      --muted:     #A09B93;
+      --accent:    #E8863C;
+      --accent-lt: #2E1E17;
+      --border:    #35332F;
+      --ok:        #5FBF87;
+      --ok-lt:     #17251C;
+      --warn:      #D9A63C;
+      --warn-lt:   #2A2214;
+      --bug:       #EF7A4E;
+      --bug-lt:    #2E1E17;
+      --code-bg:   #2A2825;
+      --pre-bg:    #100F0E;
+      --pre-ink:   #E8E5E0;
+      --be:        #8DAFD6;
+      --be-bd:     #33455A;
+      --fe:        #C89BD8;
+      --fe-bd:     #4A3B52;
+    }
+  }
+
+  /* The in-page toggle must win over the OS preference, in both directions. */
+  :root[data-theme="light"] {
+    --bg:        #ECEAE7;
+    --surface:   #FFFFFF;
+    --ink:       #181716;
+    --muted:     #5A574F;
+    --accent:    #B8431A;
+    --accent-lt: #FAF0EC;
+    --border:    #D6D3CD;
+    --ok:        #1A6B3A;
+    --ok-lt:     #EBF5EF;
+    --warn:      #8B5E00;
+    --warn-lt:   #FDF5E6;
+    --bug:       #B8431A;
+    --bug-lt:    #FAF0EC;
+    --code-bg:   #F4F2EF;
+    --pre-bg:    #1E1D1B;
+    --pre-ink:   #E8E5E0;
+    --be:        #2C4A70;
+    --be-bd:     #A9BFD8;
+    --fe:        #6E3B7E;
+    --fe-bd:     #C9AED2;
+  }
+
+  :root[data-theme="dark"] {
+    --bg:        #161614;
+    --surface:   #1F1E1C;
+    --ink:       #EDEAE5;
+    --muted:     #A09B93;
+    --accent:    #E8863C;
+    --accent-lt: #2E1E17;
+    --border:    #35332F;
+    --ok:        #5FBF87;
+    --ok-lt:     #17251C;
+    --warn:      #D9A63C;
+    --warn-lt:   #2A2214;
+    --bug:       #EF7A4E;
+    --bug-lt:    #2E1E17;
+    --code-bg:   #2A2825;
+    --pre-bg:    #100F0E;
+    --pre-ink:   #E8E5E0;
+    --be:        #8DAFD6;
+    --be-bd:     #33455A;
+    --fe:        #C89BD8;
+    --fe-bd:     #4A3B52;
+  }
+
+  html { font-size: 16px; background: var(--bg); }
+
+  body {
+    font-family: system-ui, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif;
+    color: var(--ink);
+    line-height: 1.6;
+    padding: 3rem 1.5rem 6rem;
+    transition: background-color 0.15s ease, color 0.15s ease;
+  }
+
+  .doc { max-width: 820px; margin: 0 auto; }
+
+  /* ── Theme toggle ── */
+  .theme-toggle {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    z-index: 10;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+    font: inherit;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--muted);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 0.5em 0.9em;
+    cursor: pointer;
+    transition: color 0.15s ease, border-color 0.15s ease;
+  }
+
+  .theme-toggle:hover { color: var(--ink); border-color: var(--muted); }
+  .theme-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .theme-toggle svg { width: 14px; height: 14px; }
+  .theme-toggle .icon-dark { display: none; }
+  :root[data-theme="dark"] .theme-toggle .icon-dark { display: block; }
+  :root[data-theme="dark"] .theme-toggle .icon-light { display: none; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .theme-toggle .icon-dark { display: block; }
+    :root:not([data-theme="light"]) .theme-toggle .icon-light { display: none; }
+  }
+
+  /* ── Header ── */
+  .doc-header {
+    border-top: 3px solid var(--ink);
+    padding-top: 1.5rem;
+    margin-bottom: 2.5rem;
+  }
+
+  .doc-eyebrow {
+    font-size: 0.6875rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.5rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .doc-title {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 2rem;
+    line-height: 1.2;
+    font-weight: normal;
+    text-wrap: balance;
+    margin-bottom: 1.25rem;
+  }
+
+  .doc-standfirst {
+    font-size: 1.0625rem;
+    color: var(--muted);
+    line-height: 1.55;
+    margin-bottom: 1.25rem;
+    max-width: 62ch;
+  }
+
+  .doc-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 2rem;
+    border-top: 1px solid var(--border);
+    padding-top: 0.875rem;
+    font-size: 0.8125rem;
+    color: var(--muted);
+  }
+
+  .doc-meta span { display: flex; gap: 0.4em; }
+  .doc-meta strong { color: var(--ink); font-weight: 600; }
+
+  /* ── Section rule ── */
+  .section-rule {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 1.375rem;
+    font-weight: normal;
+    border-top: 1px solid var(--ink);
+    padding-top: 0.75rem;
+    margin: 3rem 0 1.5rem;
+  }
+
+  .section-intro {
+    color: var(--muted);
+    font-size: 0.9375rem;
+    margin: -0.75rem 0 1.5rem;
+    max-width: 68ch;
+  }
+
+  /* ── Summary table ── */
+  .summary {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .summary th, .summary td {
+    text-align: left;
+    padding: 0.7rem 0.75rem;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+
+  .summary th {
+    font-size: 0.6875rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    border-bottom: 1px solid var(--ink);
+    white-space: nowrap;
+  }
+
+  .summary td:first-child {
+    font-family: 'Courier New', Courier, monospace;
+    color: var(--muted);
+  }
+
+  .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+  /* ── Ownership tag ── */
+  /* Occupies the marker slot in each card: the marker encodes who owns the fix,
+     not an arbitrary sequence position. */
+  .owner {
+    display: inline-flex;
+    align-items: center;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 0.2em 0.45em;
+    border: 1px solid currentColor;
+    border-radius: 2px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    margin-top: 0.15rem;
+  }
+
+  .owner-be   { color: var(--be); border-color: var(--be-bd); }
+  .owner-fe   { color: var(--fe); border-color: var(--fe-bd); }
+  .owner-both {
+    color: var(--muted);
+    border-color: var(--border);
+    background: var(--code-bg);
+  }
+
+  /* Inline owner tag for use inside tables and running text. */
+  .owner-inline {
+    display: inline-block;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    padding: 0.1em 0.4em;
+    border: 1px solid currentColor;
+    border-radius: 2px;
+    white-space: nowrap;
+  }
+
+  /* ── Issue cards ── */
+  .issue {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+  }
+
+  .issue-header {
+    padding: 1.125rem 1.375rem 0.875rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .issue-title-group { flex: 1; min-width: 0; }
+
+  .issue-title {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 1.125rem;
+    font-weight: normal;
+    line-height: 1.3;
+    margin-bottom: 0.35rem;
+  }
+
+  .issue-sub {
+    font-size: 0.8125rem;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 0.25em 0.6em;
+    border-radius: 2px;
+    flex-shrink: 0;
+    margin-top: 0.1rem;
+    white-space: nowrap;
+  }
+
+  .chip-bug  { background: var(--bug-lt);  color: var(--bug);  }
+  .chip-warn { background: var(--warn-lt); color: var(--warn); }
+  .chip-ok   { background: var(--ok-lt);   color: var(--ok);   }
+
+  .issue-body {
+    padding: 1.25rem 1.375rem 1.375rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+
+  .section-label {
+    font-size: 0.6875rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+  }
+
+  .issue-body p { margin-bottom: 0.7rem; font-size: 0.9375rem; }
+  .issue-body p:last-child { margin-bottom: 0; }
+
+  .finding {
+    border-left: 2px solid var(--border);
+    padding-left: 1rem;
+  }
+
+  .finding.accent { border-left-color: var(--accent); }
+  .finding.ok     { border-left-color: var(--ok); }
+  .finding.warn   { border-left-color: var(--warn); }
+  .finding.be     { border-left-color: var(--be); }
+  .finding.fe     { border-left-color: var(--fe); }
+
+  ul, ol { margin: 0 0 0.7rem 1.25rem; font-size: 0.9375rem; }
+  li { margin-bottom: 0.35rem; }
+  li:last-child { margin-bottom: 0; }
+
+  code {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.8125em;
+    background: var(--code-bg);
+    padding: 0.15em 0.4em;
+    border-radius: 2px;
+    word-break: break-word;
+  }
+
+  pre {
+    background: var(--pre-bg);
+    color: var(--pre-ink);
+    padding: 1rem 1.125rem;
+    border-radius: 3px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    font-size: 0.8125rem;
+    line-height: 1.55;
+    margin-bottom: 0.7rem;
+  }
+
+  pre code { background: none; padding: 0; font-size: inherit; color: inherit; }
+  pre .cm { color: #8C8880; }
+  pre .add { color: #7DD692; }
+  pre .del { color: #EF8A6A; }
+
+  .callout {
+    background: var(--accent-lt);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 3px;
+    padding: 1rem 1.125rem;
+    font-size: 0.9375rem;
+  }
+
+  .callout.ok { background: var(--ok-lt); border-left-color: var(--ok); }
+  .callout.warn { background: var(--warn-lt); border-left-color: var(--warn); }
+
+  .callout p { margin-bottom: 0.6rem; }
+  .callout p:last-child { margin-bottom: 0; }
+
+  /* ── Timeline for the midnight arithmetic ── */
+  .clock {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .clock th, .clock td {
+    text-align: left;
+    padding: 0.6rem 0.75rem;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+
+  .clock th {
+    font-size: 0.6875rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    border-bottom: 1px solid var(--ink);
+  }
+
+  .clock td:first-child, .clock td:nth-child(2) {
+    font-family: 'Courier New', Courier, monospace;
+  }
+
+  .verdict-in  { color: var(--bug); font-weight: 600; }
+  .verdict-out { color: var(--ok);  font-weight: 600; }
+
+  .doc-footer {
+    margin-top: 3.5rem;
+    border-top: 1px solid var(--border);
+    padding-top: 1rem;
+    font-size: 0.8125rem;
+    color: var(--muted);
+  }
+
+  .doc-footer p { margin-bottom: 0.5rem; }
+  .doc-footer p:last-child { margin-bottom: 0; }
+
+  @media (max-width: 560px) {
+    body { padding: 4rem 1rem 4rem; }
+    .doc-title { font-size: 1.625rem; }
+    .issue-header { flex-wrap: wrap; gap: 0.6rem; }
+    .issue-body, .issue-header { padding-left: 1rem; padding-right: 1rem; }
+  }
+</style>
+
+<button class="theme-toggle" id="themeToggle" type="button" aria-live="polite">
+  <svg class="icon-light" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+  <svg class="icon-dark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z"/></svg>
+  <span id="themeLabel">Theme</span>
+</button>
+
+<div class="doc">
+
+  <header class="doc-header">
+    <p class="doc-eyebrow">FE / BE Report · PM Trivia · 6 August 2026</p>
+    <h1 class="doc-title">The Leaderboard Day Never Ended, and the Game Never Finished</h1>
+    <p class="doc-standfirst">Both observations in the client's 6&nbsp;August report are reproducible defects, and they are independent of one another. The daily leaderboard window is being computed against the UTC calendar day rather than the event's local day, so a midnight CST rollover does nothing. Separately, a session is only ever finalized when the player taps <em>“See my results”</em> — until that tap, the game does not exist to the leaderboard, the admin panel, lifetime totals, or prize selection. The first is almost entirely backend; the second needs work on both sides.</p>
+    <div class="doc-meta">
+      <span><strong>Reported by</strong> Ines Gonzalez Di Martino (PM)</span>
+      <span><strong>Environment</strong> <code>frontend.staging.trivia.kipo.work</code></span>
+      <span><strong>Severity</strong> Show-blocking</span>
+      <span><strong>FE status</strong> Shipped — see below</span>
+    </div>
+  </header>
+
+  <div class="callout ok">
+    <p><strong>Update, same day.</strong> The three frontend-owned items below have shipped: a session now finalizes the moment the sponsor round ends rather than waiting on a button tap, and the leaderboard, booth display, and mock backend all render a live countdown to the reset instead of static “midnight” copy. The backend items — the event timezone data fix, centralizing the day-boundary logic across eight queries, and server-side finalization on the last answer — remain open, and are what's left before this is fully closed.</p>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       WHAT WAS REPORTED
+  ═══════════════════════════════════════════════════════════════ -->
+  <h2 class="section-rule">What Was Reported, and What Each Symptom Actually Is</h2>
+  <p class="section-intro">Three symptoms, two root causes. Mapping them before diving in, because the second and third symptoms share a cause and the first does not — which is why fixing one will not silence the others.</p>
+
+  <div class="table-scroll">
+    <table class="summary">
+      <thead>
+        <tr><th>Symptom as reported</th><th>Root cause</th><th>Owner</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>“Played at 11:55&nbsp;pm and 12:03&nbsp;am CST and the leaderboard still only shows the 11:55&nbsp;pm game.”</td>
+          <td><strong>A</strong> — daily window computed on the UTC day</td>
+          <td><span class="owner-inline owner-be">BE</span></td>
+        </tr>
+        <tr>
+          <td>“Shows it played 14 days ago, but I just played using it.”</td>
+          <td><strong>B</strong> — session never finalized</td>
+          <td><span class="owner-inline owner-be">BE</span> <span class="owner-inline owner-fe">FE</span></td>
+        </tr>
+        <tr>
+          <td>“Since I didn't continue saying <em>See my results</em> it didn't populate, now it has.”</td>
+          <td><strong>B</strong> — session never finalized</td>
+          <td><span class="owner-inline owner-be">BE</span> <span class="owner-inline owner-fe">FE</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout">
+    <p><strong>The client's own diagnosis of cause B is correct.</strong> She identified the <em>“See my results”</em> gate herself and asked for the leaderboard to populate without it. That request is not a UX preference — it is the fix for a data-integrity defect. Any player who closes the tab, loses signal, or simply walks away from the booth is currently discarded entirely.</p>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       CAUSE A
+  ═══════════════════════════════════════════════════════════════ -->
+  <h2 class="section-rule">Cause A — The Daily Window Runs on UTC, Not Event-Local Time</h2>
+  <p class="section-intro">The leaderboard query itself is written correctly. The defect is in the data it reads its timezone from, and in the seven other places that never ask for a timezone at all.</p>
+
+  <article class="issue">
+    <div class="issue-header">
+      <span class="owner owner-be">BE</span>
+      <div class="issue-title-group">
+        <h2 class="issue-title">Midnight CST Falls in the Middle of the UTC Day</h2>
+        <p class="issue-sub">Why 11:55&nbsp;pm and 12:03&nbsp;am landed in the same “today”.</p>
+      </div>
+      <span class="chip chip-bug">Bug</span>
+    </div>
+    <div class="issue-body">
+      <div>
+        <p class="section-label">The query is right</p>
+        <div class="finding ok">
+          <p>The public leaderboard derives its window from the <em>event's</em> timezone, exactly as it should:</p>
+          <pre><code><span class="cm">// app/Http/Controllers/Api/LeaderboardController.php:98-105</span>
+$tz = $event->timezone ?? 'UTC';
+
+return $scope === 'week'
+    ? [now($tz)->startOfWeek()->utc(), now($tz)->endOfWeek()->utc()]
+    : [now($tz)->startOfDay()->utc(),  now($tz)->endOfDay()->utc()];</code></pre>
+          <p>The booth display (<code>BoothDisplayController.php:34-35</code>) and the admin live leaderboard (<code>Livewire/Admin/Dashboard/LiveLeaderboard.php:22-23</code>) use the same pattern. No change needed to any of these three.</p>
+        </div>
+      </div>
+      <div>
+        <p class="section-label">The data behind it is not</p>
+        <div class="finding accent">
+          <p>Two defaults conspire. The events table defaults the column to UTC — <code>$t->string('timezone')->default('UTC')</code> (<code>create_events_table.php:18</code>) — and the application default is UTC as well (<code>config/app.php:71</code>). If the staging event was created without an explicit timezone, <code>$event->timezone</code> is <code>'UTC'</code> and the <code>?? 'UTC'</code> fallback never even gets a chance to matter.</p>
+          <p>With <code>$tz = 'UTC'</code>, the arithmetic produces precisely the reported behaviour:</p>
+        </div>
+        <div class="table-scroll" style="margin-top:0.7rem;">
+          <table class="clock">
+            <thead>
+              <tr><th>Event</th><th>Local (CDT)</th><th>UTC</th><th>Inside the UTC “today” window?</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>First game</td><td>5 Aug, 23:55</td><td>6 Aug, 04:55</td><td class="verdict-in">Yes — still counted</td></tr>
+              <tr><td>Second game</td><td>6 Aug, 00:03</td><td>6 Aug, 05:03</td><td class="verdict-in">Yes</td></tr>
+              <tr><td>Window opened at</td><td>5 Aug, 19:00</td><td>6 Aug, 00:00</td><td>—</td></tr>
+              <tr><td>Window closes at</td><td>6 Aug, 19:00</td><td>7 Aug, 00:00</td><td>—</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p style="margin-top:0.7rem;">Both games sit in the same UTC day, so the 11:55&nbsp;pm entry never dropped off. The client's expectation — that only the 12:03 score should remain — is the correct one. <em>(Chicago is on CDT, UTC−5, in August; the report's “CST” is the colloquial usage. The offset does not change the outcome — under either offset both games land in the same UTC day.)</em></p>
+      </div>
+      <div>
+        <p class="section-label">The worse consequence she has not seen yet</p>
+        <div class="callout warn">
+          <p>Under UTC, the daily leaderboard resets at <strong>19:00 local time — during show hours</strong>. The board would wipe itself in front of the booth at peak traffic, and the “one play per day” limit would silently reopen at the same moment. This is the part that makes cause A show-blocking rather than cosmetic.</p>
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <article class="issue">
+    <div class="issue-header">
+      <span class="owner owner-be">BE</span>
+      <div class="issue-title-group">
+        <h2 class="issue-title">Eight Other Queries Ignore the Event Timezone Entirely</h2>
+        <p class="issue-sub">Setting the event's timezone fixes the leaderboard. It does not fix these, because they never read it.</p>
+      </div>
+      <span class="chip chip-bug">Bug</span>
+    </div>
+    <div class="issue-body">
+      <div>
+        <p class="section-label">Sites using app-timezone or DB-timezone “today”</p>
+        <div class="table-scroll">
+          <table class="summary">
+            <thead>
+              <tr><th>Location</th><th>Expression</th><th>What it controls</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code>Services/Game/SessionFinalizer.php:30</code></td><td><code>whereDate('started_at', today())</code></td><td><code>rank_today</code> written onto every session</td></tr>
+              <tr><td><code>Api/SessionController.php:50, 57</code></td><td><code>whereDate('started_at', today())</code></td><td>Replay block and per-day play limit</td></tr>
+              <tr><td><code>Api/AuthController.php:81, 88</code></td><td><code>whereDate('started_at', today())</code></td><td>Same two checks, on the login path</td></tr>
+              <tr><td><code>Api/SessionController.php:210</code></td><td><code>whereDate('created_at', today())</code></td><td><code>totalPlayers</code> on the result screen</td></tr>
+              <tr><td><code>Admin/PlayerController.php:292, 299, 322</code></td><td><code>DATE(started_at) = CURDATE()</code></td><td>Daily best, daily streak, “Played today” tab</td></tr>
+              <tr><td><code>Admin/DashboardController.php:60</code></td><td><code>whereDate(…, now()->toDateString())</code></td><td>Dashboard's today figures</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p><code>today()</code> and <code>now()</code> resolve against <code>config('app.timezone')</code>, which is <code>'UTC'</code>. <code>CURDATE()</code> resolves against the database session timezone — a third, separate source of truth. So the admin panel and the public API do not currently agree on what “today” means, and neither reliably agrees with the show floor.</p>
+      </div>
+      <div>
+        <p class="section-label">The one that needs escalating</p>
+        <div class="finding accent">
+          <p>Winner notifications select on <code>rank_today</code>:</p>
+          <pre><code><span class="cm">// app/Console/Commands/DispatchNotifications.php:196</span>
+->whereBetween('rank_today', [1, 3])</code></pre>
+          <p><code>rank_today</code> is written by <code>SessionFinalizer</code> using the UTC day (line 30 above), and recomputed at <code>DispatchNotifications.php:158</code>. If the day boundary is wrong, the ranking pool is wrong, and <strong>the wrong players can receive “you won” messages</strong>. Prizes are involved, so this should not ship unresolved.</p>
+        </div>
+      </div>
+      <div>
+        <p class="section-label">Suggested fix</p>
+        <ol>
+          <li><strong>Immediate, no code:</strong> set <code>events.timezone = 'America/Chicago'</code> on staging and live. This alone corrects the public leaderboard, the booth display, and the admin live leaderboard — and moves the reset back to local midnight.</li>
+          <li><strong>Then centralise:</strong> one helper on <code>Event</code> (for example <code>dayRange()</code> / <code>weekRange()</code>, wrapping the existing <code>dateRange()</code> logic) and route every site in the table above through it. Replace the raw <code>CURDATE()</code> comparisons in <code>PlayerController</code> with bounded <code>whereBetween</code> on UTC instants so they stay index-friendly.</li>
+          <li><strong>Backfill:</strong> once the boundary changes, existing <code>rank_today</code> values were computed under the old rule. Recompute for any day still in the reporting window.</li>
+        </ol>
+      </div>
+      <div>
+        <p class="section-label">One decision to confirm with the client</p>
+        <div class="finding warn">
+          <p>The window filters on <code>started_at</code> (<code>LeaderboardController.php:58</code>), so a game begun at 23:58 and finished at 00:02 counts toward the <em>earlier</em> day. That is defensible and self-consistent, but it is a rule the client should be told rather than left to discover — it is the same class of surprise as the one she just reported.</p>
+          <p>Also worth stating explicitly: the board keeps <strong>one row per player</strong>, chosen by <code>leaderboard_score_mode</code> — <code>best_score</code> by default, or <code>latest_score</code> (<code>LeaderboardController.php:63-66</code>). Her two games were on two different accounts, so this did not affect what she saw, but under <code>best_score</code> a player's second game of the day will not replace a higher first game.</p>
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       CAUSE B
+  ═══════════════════════════════════════════════════════════════ -->
+  <h2 class="section-rule">Cause B — A Game Only Counts If the Player Taps a Button</h2>
+  <p class="section-intro">The score is committed by a client-initiated call that a player is free to never make. Nothing on the server compensates. This is the cause behind both the “14 days ago” anomaly and the delayed leaderboard entry. The frontend has since shipped a partial mitigation, below — the backend fix is what actually closes it.</p>
+
+  <article class="issue">
+    <div class="issue-header">
+      <span class="owner owner-both">BE + FE</span>
+      <div class="issue-title-group">
+        <h2 class="issue-title">Finalization Hangs Off the Outro CTA and Nothing Else</h2>
+        <p class="issue-sub">Confirmed on both sides of the wire.</p>
+      </div>
+      <span class="chip chip-bug">Bug</span>
+    </div>
+    <div class="issue-body">
+      <div>
+        <p class="section-label">Frontend — the only path that fired it, as found</p>
+        <div class="finding fe">
+          <p>When the session has a sponsor round, <code>game.page.ts</code> hands off to <code>/sponsor</code> and deliberately does <em>not</em> complete:</p>
+          <pre><code><span class="cm">// src/app/pages/game/game.page.ts:186-197</span>
+private endGame(): void {
+  if (this.hasEnded) return;
+  this.hasEnded = true;
+  this.clearTimer();
+  if (this.gameStore.hasSponsorRound()) {
+    this.router.navigate(['/sponsor']);
+    return;                               <span class="cm">// ← no completeSession()</span>
+  }
+  const sessionId = this.gameStore.sessionId();
+  this.gameStore.completeSession(undefined);
+  this.router.navigate(['/results', sessionId]);
+}</code></pre>
+          <p>From there the sole remaining trigger was the button:</p>
+          <pre><code><span class="cm">// src/app/pages/sponsor/sponsor.page.ts:169-171, 333-337 (before)</span>
+seeResults(): void { this.finish(); }
+
+private finish(): void {
+  const sessionId = this.gameStore.sessionId();
+  this.gameStore.completeSession(undefined);
+  this.router.navigate(['/results', sessionId]);
+}</code></pre>
+          <p>Reaching the outro screen (<code>goToOutro()</code>, <code>sponsor.page.ts:137-142</code>) fired nothing. There was no <code>beforeunload</code>, <code>pagehide</code>, or <code>sendBeacon</code> handler anywhere in the app, so an abandoned tab sent no final signal at all. <strong>This half is now fixed</strong> — see “Shipped — frontend” below.</p>
+        </div>
+      </div>
+      <div>
+        <p class="section-label">Backend — no compensating path</p>
+        <div class="finding be">
+          <p><code>SessionFinalizer::finalize()</code> has exactly two callers in the whole repository, both client-triggered:</p>
+          <pre><code><span class="cm">// app/Http/Controllers/Api/SessionController.php</span>
+:124   $session = $this->finalizer->finalize($session);   <span class="cm">// POST /sessions/{id}/complete</span>
+:140   $session = $this->finalizer->finalize($session);   <span class="cm">// GET  /sessions/{id}/result</span></code></pre>
+          <p><code>AnswerController</code> contains no finalization logic — recording the last answer of a session does not end it. And <code>app/Console/Commands/</code> holds only <code>DispatchNotifications</code>, <code>PurgeAnonymizedPlayersCommand</code>, and <code>RotateRegistrationTokens</code>: <strong>there is no sweeper for stale sessions.</strong> A session left in <code>started</code> stays there permanently.</p>
+        </div>
+      </div>
+      <div>
+        <p class="section-label">Everything a non-finalized session is missing from</p>
+        <div class="table-scroll">
+          <table class="summary">
+            <thead>
+              <tr><th>Surface</th><th>Filter</th><th>Effect</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Public leaderboard &amp; booth display</td><td><code>where('status', 'completed')</code> — <code>LeaderboardController.php:57</code></td><td>Player absent from the board</td></tr>
+              <tr><td>Admin → Players, <em>last played</em></td><td><code>$statuses = ['completed']</code> — <code>PlayerController.php:269, 278</code></td><td><strong>The reported “14 days ago”</strong></td></tr>
+              <tr><td>Lifetime score and play count</td><td>Incremented only inside <code>finalize()</code> — <code>SessionFinalizer.php:44-49</code></td><td>Totals understated</td></tr>
+              <tr><td>Prize / winner notifications</td><td><code>rank_today</code> never written — <code>SessionFinalizer.php:38</code></td><td>Player cannot win anything</td></tr>
+              <tr><td>Admin → Players, other tabs</td><td>Counted under <em>Abandoned</em> — <code>PlayerController.php:268-270</code></td><td>Completed games filed as abandoned</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>The “14 days ago” figure is therefore not a glitch: it is the timestamp of this account's last <em>completed</em> session, reported accurately. The game she had just played was still <code>started</code>.</p>
+      </div>
+      <div>
+        <p class="section-label">Suggested fix — backend leads</p>
+        <div class="finding be">
+          <p><strong>Primary.</strong> Finalize server-side the moment the game is actually over, rather than when a client says so: when the last answer is recorded (in <code>AnswerRecorder</code> / <code>AnswerController</code>, once no questions and no sponsor questions remain), and when the play window expires. <code>SessionFinalizer</code> is already safe to call repeatedly — it early-returns on <code>status === 'completed'</code> (<code>:13-15</code>) and takes <code>lockForUpdate()</code> (<code>:19-22</code>) — so this composes with the existing endpoints without a double-count risk.</p>
+          <p><strong>Safety net.</strong> A scheduled command to finalize sessions still in <code>started</code> past their play window, so genuinely abandoned games resolve to a real score instead of lingering forever. This also gives the admin <em>Abandoned</em> tab an honest meaning.</p>
+        </div>
+      </div>
+      <div>
+        <p class="section-label">Shipped — frontend, defense in depth</p>
+        <div class="finding ok">
+          <p><code>completeSession()</code> now fires as soon as the last sponsor question resolves, inside <code>goToOutro()</code>, instead of waiting on the button:</p>
+          <pre><code><span class="cm">// src/app/pages/sponsor/sponsor.page.ts (after)</span>
+private goToOutro(): void {
+  this.clearQuestionTimer();
+  this.videoRef()?.nativeElement.pause();
+  this.sponsorQuestion.set(null);
+  this.phase.set('outro');
+  this.gameStore.completeSession(undefined);   <span class="cm">// ← new</span>
+}</code></pre>
+          <p>The outro is now purely presentational — <em>“See my results”</em> only navigates, and its own <code>completeSession()</code> call stays as a harmless, idempotent repeat rather than the sole trigger. This closes the gap for a player who reaches the outro and then closes the tab, which was the client's exact scenario. It does <strong>not</strong> close the gap for a player who abandons mid-sponsor-question, before ever reaching the outro — that case still needs the backend fix above.</p>
+          <p><strong>Correction to the first pass of this report:</strong> the <code>endGame()</code> double-call race (logged as <strong>D2</strong> in <code>spec-conformance-audit.md</code>) turned out to already be guarded in the current code — both call sites check a <code>hasEnded</code> flag before proceeding (<code>game.page.ts:189-190, 202-203</code>). Listing it here as outstanding work was inaccurate; no change was needed.</p>
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       ADJACENT FE FINDING
+  ═══════════════════════════════════════════════════════════════ -->
+  <h2 class="section-rule">Adjacent Finding — The Reset Time Was Hard-Coded Copy</h2>
+  <p class="section-intro">Not a cause of anything she reported, but it is why cause A stayed invisible until a PM happened to play either side of midnight. Shipped the same day this was filed.</p>
+
+  <article class="issue">
+    <div class="issue-header">
+      <span class="owner owner-fe">FE</span>
+      <div class="issue-title-group">
+        <h2 class="issue-title">The API Sent the Real Reset Time; the UI Showed a Fixed String</h2>
+        <p class="issue-sub">Now renders a live countdown instead — turns a whole class of timezone bug into something a tester can see.</p>
+      </div>
+      <span class="chip chip-ok">Shipped</span>
+    </div>
+    <div class="issue-body">
+      <div>
+        <p class="section-label">What was wrong</p>
+        <div class="finding fe">
+          <p>The backend already returned the true end of the window — <code>'resetsAt' => $to->toIso8601String()</code> (<code>LeaderboardController.php:94</code>) — and the frontend stored it: <code>resetsAt</code> was in the API model, the store slice, and the updater. <strong>Nothing rendered it.</strong> Every surface printed static text instead:</p>
+          <pre><code><span class="cm">// src/app/pages/booth-display/booth-display.page.html:24 (before)</span>
+&lt;span class="lb-resets"&gt;RESETS AT MIDNIGHT&lt;/span&gt;
+
+<span class="cm">// src/assets/i18n/en.json (before)</span>
+"FOOTER":  "Daily leaderboard resets at midnight · Winners notified by SMS and email"
+"RESETS":  "resets at midnight"</code></pre>
+          <p>So the UI asserted “resets at midnight” while the API was reporting a 19:00 reset, and the two were never compared.</p>
+        </div>
+      </div>
+      <div>
+        <p class="section-label">What shipped</p>
+        <div class="finding ok">
+          <p>A new util, <code>formatCountdown()</code> (<code>src/app/shared/utils/format-countdown.util.ts</code>), turns the ISO instant into the coarsest two relevant units — a countdown rather than a clock time, so it needs no timezone conversion on either side:</p>
+          <pre><code><span class="cm">// src/app/shared/utils/format-countdown.util.ts</span>
+export function formatCountdown(iso, now = Date.now()) {
+  const diffMs = new Date(iso).getTime() - now;
+  if (diffMs &lt;= 0) return '';
+  const totalMinutes = Math.floor(diffMs / 60_000);
+  const days = Math.floor(totalMinutes / 1440);
+  const hours = Math.floor((totalMinutes % 1440) / 60);
+  const minutes = totalMinutes % 60;
+  if (days &gt; 0)    return hours &gt; 0 ? `${days}d ${hours}h` : `${days}d`;
+  if (hours &gt; 0)   return minutes &gt; 0 ? `${hours}h ${minutes}m` : `${hours}h`;
+  if (minutes &gt; 0) return `${minutes}m`;
+  return '&lt;1 min';
+}</code></pre>
+          <p>Wired into <code>leaderboard.page.ts</code> (hero subtext and footer, both now “resets in {{&nbsp;time&nbsp;}}”) and <code>booth-display.page.ts</code> (“RESETS IN 3H 12M”), each falling back to the old generic copy only until the first response arrives. Because the label is relative to <em>now</em> rather than an absolute clock face, it reads correctly regardless of which timezone the backend ends up sending — it doesn't need to know or guess one.</p>
+          <p><code>mock.interceptor.ts</code>'s <code>resetsAt</code> stubs were also switched from a fixed <code>+8h</code> offset to a real end-of-day instant, so testing against the mock exercises the same countdown path a tester would see against staging.</p>
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       WORK SPLIT
+  ═══════════════════════════════════════════════════════════════ -->
+  <h2 class="section-rule">Work Split by Owner</h2>
+  <p class="section-intro">Ordered so that the two items which can ship today sit at the top. Nothing in the frontend column blocks anything in the backend column. The three frontend rows below have already shipped.</p>
+
+  <div class="table-scroll">
+    <table class="summary">
+      <thead>
+        <tr><th>Owner</th><th>Change</th><th>Cause</th><th>Priority</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="owner-inline owner-be">BE</span></td>
+          <td>Set <code>events.timezone = 'America/Chicago'</code> on staging and live <em>(data only, no deploy)</em></td>
+          <td>A</td>
+          <td>Now</td>
+        </tr>
+        <tr>
+          <td><span class="owner-inline owner-be">BE</span></td>
+          <td>Finalize on last recorded answer and on play-window expiry</td>
+          <td>B</td>
+          <td>Now</td>
+        </tr>
+        <tr>
+          <td><span class="owner-inline owner-be">BE</span></td>
+          <td>Route all eight <code>today()</code> / <code>CURDATE()</code> sites through one event-timezone day helper</td>
+          <td>A</td>
+          <td>High</td>
+        </tr>
+        <tr>
+          <td><span class="owner-inline owner-be">BE</span></td>
+          <td>Recompute <code>rank_today</code> before notifications run under the new boundary</td>
+          <td>A</td>
+          <td>High</td>
+        </tr>
+        <tr>
+          <td><span class="owner-inline owner-be">BE</span></td>
+          <td>Scheduled sweeper for sessions stuck in <code>started</code></td>
+          <td>B</td>
+          <td>Medium</td>
+        </tr>
+        <tr>
+          <td><span class="owner-inline owner-fe">FE</span></td>
+          <td>Move <code>completeSession()</code> from <code>finish()</code> to <code>goToOutro()</code></td>
+          <td>B</td>
+          <td><strong>Shipped</strong></td>
+        </tr>
+        <tr>
+          <td><span class="owner-inline owner-fe">FE</span></td>
+          <td>Render <code>resetsAt</code> as a live countdown in place of the hard-coded midnight copy</td>
+          <td>A</td>
+          <td><strong>Shipped</strong></td>
+        </tr>
+        <tr>
+          <td><span class="owner-inline owner-fe">FE</span></td>
+          <td>Mock-backend parity: real end-of-day <code>resetsAt</code> stubs in <code>mock.interceptor.ts</code> in place of the fixed <code>+8h</code> offset</td>
+          <td>A</td>
+          <td><strong>Shipped</strong></td>
+        </tr>
+        <tr>
+          <td><span class="owner-inline owner-fe">FE</span></td>
+          <td>Retire the <code>endGame()</code> double-call race (audit item <strong>D2</strong>)</td>
+          <td>B</td>
+          <td>Resolved — was already guarded, no change needed</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       VERIFICATION
+  ═══════════════════════════════════════════════════════════════ -->
+  <h2 class="section-rule">How to Verify</h2>
+  <p class="section-intro">Written so the client can confirm both fixes herself, using the same route she used to find them.</p>
+
+  <article class="issue">
+    <div class="issue-header">
+      <span class="owner owner-both">BE + FE</span>
+      <div class="issue-title-group">
+        <h2 class="issue-title">Two Checks, Neither Requiring a Real Midnight</h2>
+        <p class="issue-sub">Waiting until 00:00 CST to test this is avoidable.</p>
+      </div>
+      <span class="chip chip-ok">Test plan</span>
+    </div>
+    <div class="issue-body">
+      <div>
+        <p class="section-label">Cause A — the day boundary</p>
+        <ol>
+          <li>Confirm <code>GET /events/{slug}/leaderboard</code> returns a <code>resetsAt</code> equal to the next <strong>00:00 America/Chicago</strong>, expressed in UTC (<code>05:00Z</code> under CDT).</li>
+          <li>Temporarily set the event timezone to one where local midnight is minutes away, complete a game, cross that boundary, and confirm the board empties. No overnight session needed.</li>
+          <li>Confirm the admin dashboard, the admin live leaderboard, the <em>Played today</em> tab, and the booth display all agree on the same day.</li>
+        </ol>
+      </div>
+      <div>
+        <p class="section-label">Cause B — finalization</p>
+        <ol>
+          <li><strong>Should now pass, frontend already shipped:</strong> play through to the sponsor outro and <strong>close the tab without tapping “See my results”</strong>. The score should already be on the leaderboard, and <em>last played</em> in Admin → Players should read today.</li>
+          <li><strong>Still expected to fail until the backend ships:</strong> abandon a game mid-sponsor-question — before ever reaching the outro — and let the play window lapse. The frontend fix doesn't reach this case; the session should resolve to a real score rather than sitting in <code>started</code>, which needs the backend sweeper.</li>
+          <li>Call <code>/complete</code> twice on one session and confirm <code>lifetime_score</code> and <code>lifetime_plays</code> increment once.</li>
+        </ol>
+      </div>
+      <div class="callout ok">
+        <p><strong>Answer to her direct question — “Any chance to immediately have it populate even if the user doesn't ask to see results?”</strong> Partially shipped already: the frontend now commits the score as soon as the sponsor round ends, so a player who stops at the outro — her exact scenario — is already covered. The remaining gap is a player who abandons mid-question, before ever reaching the outro; that needs the backend fix above. Once the server finalizes on the last answer, the score is committed no matter what the player's device does next, closing this completely.</p>
+      </div>
+    </div>
+  </article>
+
+  <footer class="doc-footer">
+    <p><strong>Backend</strong> (<code>pm-trivia-BE</code>): <code>app/Http/Controllers/Api/LeaderboardController.php</code>, <code>BoothDisplayController.php</code>, <code>SessionController.php</code>, <code>AuthController.php</code>, <code>AnswerController.php</code>, <code>app/Http/Controllers/Admin/PlayerController.php</code>, <code>DashboardController.php</code>, <code>app/Livewire/Admin/Dashboard/LiveLeaderboard.php</code>, <code>app/Services/Game/SessionFinalizer.php</code>, <code>app/Console/Commands/DispatchNotifications.php</code>, <code>config/app.php</code>, <code>database/migrations/2026_06_01_000010_create_events_table.php</code>.</p>
+    <p><strong>Frontend</strong> (<code>trivia-app</code>): <code>src/app/pages/game/game.page.ts</code>, <code>src/app/pages/sponsor/sponsor.page.ts</code>, <code>src/app/pages/leaderboard/leaderboard.page.ts</code>, <code>leaderboard.page.html</code>, <code>src/app/pages/booth-display/booth-display.page.ts</code>, <code>booth-display.page.html</code>, <code>src/app/shared/utils/format-countdown.util.ts</code>, <code>src/app/core/stores/game/game.store.ts</code>, <code>src/app/core/stores/leaderboard/</code>, <code>src/app/core/models/api.models.ts</code>, <code>src/app/core/interceptors/mock.interceptor.ts</code>, <code>src/assets/i18n/en.json</code>.</p>
+    <p>Cause&nbsp;A is confirmed by code reading plus the UTC arithmetic against the reported timestamps; the specific staging value of <code>events.timezone</code> should be checked against the database before the fix is called complete. Cause&nbsp;B is confirmed directly in code on both sides, and independently by the client's own observation that the entry appeared only after she tapped <em>See my results</em>.</p>
+    <p>The frontend items above have shipped in this working tree as of 6 August 2026; verify against a deployed build before marking them closed with the client.</p>
+  </footer>
+
+</div>
+
+<script>
+  (function () {
+    var root = document.documentElement;
+    var btn = document.getElementById('themeToggle');
+    var label = document.getElementById('themeLabel');
+
+    function systemPrefersDark() {
+      return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    }
+
+    function currentIsDark() {
+      var explicit = root.getAttribute('data-theme');
+      if (explicit === 'dark') return true;
+      if (explicit === 'light') return false;
+      return systemPrefersDark();
+    }
+
+    function render() {
+      var dark = currentIsDark();
+      label.textContent = dark ? 'Dark' : 'Light';
+      btn.setAttribute('aria-label', 'Switch to ' + (dark ? 'light' : 'dark') + ' theme');
+    }
+
+    btn.addEventListener('click', function () {
+      root.setAttribute('data-theme', currentIsDark() ? 'light' : 'dark');
+      render();
+    });
+
+    // Follow the OS while the reader has not chosen explicitly.
+    if (window.matchMedia) {
+      window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function () {
+        if (!root.hasAttribute('data-theme')) render();
+      });
+    }
+
+    render();
+  })();
+</script>

@@ -138,6 +138,13 @@ const MOCK_RESET_CODE = '123456';
 
 const SESSION_DURATION_SECONDS = 90;
 const SESSION_COUNTDOWN_SECONDS = 3;
+
+/** End of the local calendar day — mirrors the real leaderboard's daily reset boundary. */
+function endOfDayIso(): string {
+  const d = new Date();
+  d.setHours(23, 59, 59, 999);
+  return d.toISOString();
+}
 // Flat points per correct sponsor question (admin-configurable, spec §5.3) — replaces
 // the difficulty multiplier for the sponsor round. Every correct sponsor answer is worth this.
 const SPONSOR_POINTS_PER_CORRECT = 300;
@@ -481,7 +488,7 @@ export const mockInterceptor: HttpInterceptorFn = (
       scope: 'today',
       rows: [...MOCK_LEADERBOARD_ROWS, MOCK_CURRENT_PLAYER_ROW],
       totalPlayers: 47,
-      resetsAt: new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString(),
+      resetsAt: endOfDayIso(),
     });
   }
 
@@ -507,7 +514,7 @@ export const mockInterceptor: HttpInterceptorFn = (
       rows: top,
       totalPlayers: 11,
       eventName: 'IMTS 2026',
-      resetsAt: new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString(),
+      resetsAt: endOfDayIso(),
       avgScore,
       hotStreak: {
         displayName: 'Maria S.',

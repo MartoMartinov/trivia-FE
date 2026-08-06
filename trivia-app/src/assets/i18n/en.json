@@ -115,13 +115,14 @@
   "LEADERBOARD": {
     "TITLE": "Leaderboard",
     "PLAYERS_TODAY": "players today",
-    "RESETS": "resets at midnight",
+    "RESETS": "resets in {{ time }}",
     "TODAY": "Today",
     "THIS_WEEK": "This Week",
     "LOADING": "Loading leaderboard…",
     "YOU": "You",
     "BACK_TO_PLAY": "Back to start",
-    "FOOTER": "Resets at midnight · Top 3 win sponsor prizes"
+    "FOOTER": "Resets in {{ time }} · Top 3 win sponsor prizes",
+    "FOOTER_FALLBACK": "Resets daily · Top 3 win sponsor prizes"
   },
   "BOOTH": {
     "TITLE": "Live Leaderboard",

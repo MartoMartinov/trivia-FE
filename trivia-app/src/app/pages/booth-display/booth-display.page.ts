@@ -7,6 +7,7 @@ import { timer, switchMap } from 'rxjs';
 import { ApiService } from '../../core/services/api.service';
 import { AppConfigStore } from '../../core/stores/app-config/app-config.store';
 import type { BoothDisplayResponse } from '../../core/models/api.models';
+import { formatCountdown } from '../../shared/utils/format-countdown.util';
 
 const POLL_MS = 10_000;
 const QR_SIZE = 220;
@@ -37,6 +38,12 @@ export class BoothDisplayPage implements OnInit {
     if (!token) return '';
     const origin = typeof window !== 'undefined' ? window.location.origin : '';
     return `${origin}/register?token=${encodeURIComponent(token)}`;
+  });
+
+  /** Falls back to the generic "midnight" copy only until the first response arrives. */
+  readonly resetsInLabel = computed(() => {
+    const countdown = formatCountdown(this.data()?.resetsAt);
+    return countdown ? `RESETS IN ${countdown.toUpperCase()}` : 'RESETS AT MIDNIGHT';
   });
 
   ngOnInit(): void {

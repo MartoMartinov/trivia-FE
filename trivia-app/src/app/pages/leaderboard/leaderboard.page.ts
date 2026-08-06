@@ -6,6 +6,7 @@ import { TranslatePipe } from '@ngx-translate/core';
 import { BoothTokenStore } from '../../core/stores/booth-token/booth-token.store';
 import { LeaderboardStore } from '../../core/stores/leaderboard/leaderboard.store';
 import { PmHeaderComponent } from '../../shared/components/pm-header/pm-header.component';
+import { formatCountdown } from '../../shared/utils/format-countdown.util';
 
 @Component({
   selector: 'app-leaderboard',
@@ -24,6 +25,8 @@ export class LeaderboardPage implements OnInit {
   readonly isCurrentPlayerInTopRows = computed(() =>
     this.topRows().some((r) => r.isCurrentPlayer),
   );
+  /** Empty until the first response arrives — the "resets in" copy is hidden rather than guessed. */
+  readonly resetsInLabel = computed(() => formatCountdown(this.store.resetsAt()));
 
   ngOnInit(): void {
     this.store.setScope(this.store.activeScope());
