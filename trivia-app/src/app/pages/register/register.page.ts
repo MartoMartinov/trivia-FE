@@ -129,17 +129,49 @@ export class RegisterPage implements OnInit, OnDestroy, ViewWillEnter {
   });
 
   async ngOnInit(): Promise<void> {
-    try {
-      const saved = await SecureStorage.get(STORAGE_KEYS.REGISTRATION);
-      if (typeof saved === 'string') {
-        const data = JSON.parse(saved);
-        this.form.patchValue(data);
-        // Pre-fill the returning player's email on the login form too.
-        if (data?.email) this.loginForm.patchValue({ email: data.email });
-      }
-    } catch {}
+    // Booth-token restore also runs on store init, but that's a fire-and-forget async call with
+    // no guaranteed ordering against this component's ngOnInit — await it explicitly (it's a
+    // no-op if it already resolved) so isBoothDevice() below sees an up-to-date value.
+    await this.boothTokenStore.restore();
+    this.dropStaleBoothTokenIfPlayerQrScanned();
+
+    // Shared kiosk tablets (booth token present) are reused by many players back-to-back — never
+    // pre-fill one player's details into the next player's form from device storage.
+    if (!this.isBoothDevice()) {
+      try {
+        const saved = await SecureStorage.get(STORAGE_KEYS.REGISTRATION);
+        if (typeof saved === 'string') {
+          const data = JSON.parse(saved);
+          this.form.patchValue(data);
+          // Pre-fill the returning player's email on the login form too.
+          if (data?.email) this.loginForm.patchValue({ email: data.email });
+        }
+      } catch {}
+    } else {
+      // Wipe any registration saved before this device became a kiosk (e.g. it was someone's
+      // personal phone first) so it can never leak into a later player's form on this tablet.
+      SecureStorage.remove(STORAGE_KEYS.REGISTRATION).catch(() => {});
+    }
 
     await this.checkRegistrationToken();
+  }
+
+  /** True on a shared kiosk tablet (booth token present, either freshly scanned or previously stored on this device). */
+  private isBoothDevice(): boolean {
+    return !!this.route.snapshot.queryParamMap.get('boothToken') || !!this.boothTokenStore.boothToken();
+  }
+
+  /**
+   * Scanning the regular per-player QR (`token`, without `boothToken`) means this device is being
+   * used personally right now, not as a kiosk — drop any booth token left on it from an earlier
+   * booth session before isBoothDevice() is consulted below, otherwise the stale stored token
+   * would keep this load (and the fallback in tryBoothToken) treated as a booth session.
+   */
+  private dropStaleBoothTokenIfPlayerQrScanned(): void {
+    const params = this.route.snapshot.queryParamMap;
+    if (params.has('token') && !params.has('boothToken')) {
+      this.boothTokenStore.clear();
+    }
   }
 
   /**
@@ -149,6 +181,13 @@ export class RegisterPage implements OnInit, OnDestroy, ViewWillEnter {
    * abandoned session and let the player know, rather than leaving it to silently expire later.
    */
   ionViewWillEnter(): void {
+    // On a kiosk tablet the register page's own component instance (and its forms) survive
+    // between players — wipe out whatever the previous player typed before the next one starts.
+    if (this.isBoothDevice()) {
+      this.form.reset({ firstName: '', lastName: '', email: '', company: '', phone: '', password: '', consent: false });
+      this.loginForm.reset({ email: '', password: '' });
+    }
+
     if (this.gameStore.status() !== 'active') return;
     this.gameStore.reset('abandoned');
     this.showGameResetToast();
@@ -310,8 +349,11 @@ export class RegisterPage implements OnInit, OnDestroy, ViewWillEnter {
 
     const { firstName, lastName, email, company, phone, password, consent } = this.form.getRawValue();
 
-    // Persist the profile (minus password) so a returning player's registration is pre-filled next time.
-    SecureStorage.set(STORAGE_KEYS.REGISTRATION, JSON.stringify({ firstName, lastName, email, company, phone })).catch(() => {});
+    // Persist the profile (minus password) so a returning player's registration is pre-filled next
+    // time — but never on a shared kiosk tablet, where "returning" means a different player.
+    if (!this.isBoothDevice()) {
+      SecureStorage.set(STORAGE_KEYS.REGISTRATION, JSON.stringify({ firstName, lastName, email, company, phone })).catch(() => {});
+    }
 
     await this.dropStaleSession();
 
