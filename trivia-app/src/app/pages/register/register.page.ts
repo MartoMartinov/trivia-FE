@@ -121,6 +121,8 @@ export class RegisterPage implements OnInit, OnDestroy, ViewWillEnter {
     phone: new FormControl('', [Validators.required, Validators.pattern(/^[+]?[\d\s()-]{7,}$/)]),
     password: new FormControl('', [Validators.required, Validators.minLength(6)]),
     consent: new FormControl(false, [Validators.requiredTrue]),
+    // SMS opt-in is optional (TCPA: consent to receive texts must never be required to play).
+    smsConsent: new FormControl(false),
   });
 
   readonly loginForm = new FormGroup({
@@ -184,7 +186,7 @@ export class RegisterPage implements OnInit, OnDestroy, ViewWillEnter {
     // On a kiosk tablet the register page's own component instance (and its forms) survive
     // between players — wipe out whatever the previous player typed before the next one starts.
     if (this.isBoothDevice()) {
-      this.form.reset({ firstName: '', lastName: '', email: '', company: '', phone: '', password: '', consent: false });
+      this.form.reset({ firstName: '', lastName: '', email: '', company: '', phone: '', password: '', consent: false, smsConsent: false });
       this.loginForm.reset({ email: '', password: '' });
     }
 
@@ -347,7 +349,7 @@ export class RegisterPage implements OnInit, OnDestroy, ViewWillEnter {
     this.verifyingToken = false;
     if (!stillValid) return;
 
-    const { firstName, lastName, email, company, phone, password, consent } = this.form.getRawValue();
+    const { firstName, lastName, email, company, phone, password, consent, smsConsent } = this.form.getRawValue();
 
     // Persist the profile (minus password) so a returning player's registration is pre-filled next
     // time — but never on a shared kiosk tablet, where "returning" means a different player.
@@ -365,6 +367,7 @@ export class RegisterPage implements OnInit, OnDestroy, ViewWillEnter {
       phone: phone ?? '',
       password: password!,
       consent: consent!,
+      smsConsent: smsConsent ?? false,
       // Sent so the server is the one enforcing the QR gate — the pre-flight check above only
       // keeps the UI honest. Guaranteed non-null here: verifyTokenIsStillValid bails without it.
       authPlayToken: this.activeToken ?? undefined,

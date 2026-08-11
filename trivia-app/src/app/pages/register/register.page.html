@@ -164,6 +164,21 @@
             </label>
           </div>
 
+          <!-- SMS opt-in — optional and unchecked by default (TCPA: never required to play). -->
+          <div class="mb-4">
+            <label class="pm-checkbox-row">
+              <input type="checkbox"
+                     class="pm-checkbox"
+                     formControlName="smsConsent" />
+              <span class="pm-checkbox-label">{{ 'REGISTER.SMS_CONSENT' | translate }}</span>
+            </label>
+            <div class="mt-2 pl-7 text-[11px] leading-[1.5] text-muted/70 space-y-1">
+              <p>{{ 'REGISTER.SMS_FREQUENCY' | translate }}</p>
+              <p>{{ 'REGISTER.SMS_RATES' | translate }}</p>
+              <p>{{ 'REGISTER.SMS_HELP' | translate }}</p>
+            </div>
+          </div>
+
           <button type="submit"
                   class="pm-cta mt-[22px]"
                   [disabled]="form.invalid || isPending() || tokenBlocked()">

@@ -46,6 +46,8 @@ export interface RegisterRequest {
   phone: string;
   password: string;
   consent: boolean;
+  /** SMS/text opt-in (TCPA-compliant, separate from `consent`) — optional, unchecked by default. */
+  smsConsent: boolean;
   authPlayToken?: string;
 }
 
