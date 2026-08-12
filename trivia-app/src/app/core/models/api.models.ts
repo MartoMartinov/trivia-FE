@@ -46,6 +46,8 @@ export interface RegisterRequest {
   phone: string;
   password: string;
   consent: boolean;
+  /** Email opt-in — required and pre-checked (players must be reachable to be notified of prizes). */
+  emailConsent: boolean;
   /** SMS/text opt-in (TCPA-compliant, separate from `consent`) — optional, unchecked by default. */
   smsConsent: boolean;
   authPlayToken?: string;

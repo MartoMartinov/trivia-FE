@@ -164,6 +164,18 @@
             </label>
           </div>
 
+          <!-- Email opt-in — required and pre-checked (players must be reachable to be notified of prizes). -->
+          <div class="mb-4">
+            <label class="pm-checkbox-row">
+              <input type="checkbox"
+                     class="pm-checkbox"
+                     formControlName="emailConsent" />
+              <span class="pm-checkbox-label">{{ 'REGISTER.EMAIL_CONSENT' | translate }}
+                <span class="text-orange"> *</span>
+              </span>
+            </label>
+          </div>
+
           <!-- SMS opt-in — optional and unchecked by default (TCPA: never required to play). -->
           <div class="mb-4">
             <label class="pm-checkbox-row">
