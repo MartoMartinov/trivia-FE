@@ -120,7 +120,8 @@ export class RegisterPage implements OnInit, OnDestroy, ViewWillEnter {
     // Phone is required (spec §3.2). Pattern allows digits, spaces, and common separators.
     phone: new FormControl('', [Validators.required, Validators.pattern(/^[+]?[\d\s()-]{7,}$/)]),
     password: new FormControl('', [Validators.required, Validators.minLength(6)]),
-    consent: new FormControl(false, [Validators.requiredTrue]),
+    // Terms & Conditions is pre-checked per client request; still required to submit.
+    consent: new FormControl(true, [Validators.requiredTrue]),
     // Email opt-in is required and pre-checked — players must be reachable to be notified of prizes.
     emailConsent: new FormControl(true, [Validators.requiredTrue]),
     // SMS opt-in is optional (TCPA: consent to receive texts must never be required to play).
@@ -188,7 +189,7 @@ export class RegisterPage implements OnInit, OnDestroy, ViewWillEnter {
     // On a kiosk tablet the register page's own component instance (and its forms) survive
     // between players — wipe out whatever the previous player typed before the next one starts.
     if (this.isBoothDevice()) {
-      this.form.reset({ firstName: '', lastName: '', email: '', company: '', phone: '', password: '', consent: false, emailConsent: true, smsConsent: false });
+      this.form.reset({ firstName: '', lastName: '', email: '', company: '', phone: '', password: '', consent: true, emailConsent: true, smsConsent: false });
       this.loginForm.reset({ email: '', password: '' });
     }
 
