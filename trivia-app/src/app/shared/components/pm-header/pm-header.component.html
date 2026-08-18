@@ -1,7 +1,10 @@
 <header class="pm-bar">
   <div class="flex flex-col items-center  xs:flex-row xs:gap-3">
     <img class="pm-bar-logo cursor-pointer"
-         src="assets/pm-logo.png"
+         src="assets/pm-logo.webp"
+         srcset="assets/pm-logo.webp 1x, assets/pm-logo@2x.webp 2x"
+         fetchpriority="high"
+         decoding="async"
          alt="Practical Machinist"
          routerLink="/register"
          [queryParams]="registerQueryParams()" />
@@ -10,6 +13,8 @@
   </div>
   @if (tvLogoUrl()) {
   <img [src]="tvLogoUrl()"
+       fetchpriority="high"
+       decoding="async"
        alt="Event"
        class="h-[60%]  w-auto object-contain" />
   } @else {

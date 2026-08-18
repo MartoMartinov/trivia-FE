@@ -1,105 +1,118 @@
 <ion-content [scrollY]="false">
   @if (data(); as d) {
-    <div class="booth">
-      <div class="glow"></div>
+  <div class="booth">
+    <div class="glow"></div>
 
-      <header class="booth-header">
-        <div class="header-left">
-          <!-- <p class="trivia-label">TRIVIA GAME</p> -->
-          <h1 class="live-title">Machinist Trivia Leaderboard</h1>
+    <header class="booth-header">
+      <div class="header-left">
+        <!-- <p class="trivia-label">TRIVIA GAME</p> -->
+        <h1 class="live-title">Machinist Trivia Leaderboard</h1>
+      </div>
+      <div class="header-logos">
+        @if (appConfig.tvLogoUrl()) {
+        <img [src]="appConfig.tvLogoUrl()!"
+             fetchpriority="high"
+             decoding="async"
+             alt="event logo"
+             class="tv-logo" />
+        }
+      </div>
+    </header>
+
+    <div class="booth-body">
+
+      <!-- Left: leaderboard card -->
+      <div class="lb-card">
+        <div class="lb-top">
+          <span class="lb-title">Top players of the day</span>
+          <span class="lb-resets">{{ resetsInLabel() }}</span>
         </div>
-        <div class="header-logos">
-          @if (appConfig.tvLogoUrl()) {
-            <img [src]="appConfig.tvLogoUrl()!" alt="" class="tv-logo" />
-          }
+        <div class="lb-col-headers">
+          <span class="ch ch-rank">RANK</span>
+          <span class="ch ch-player">PLAYER</span>
+          <span class="ch ch-company">COMPANY</span>
+          <span class="ch ch-score">SCORE</span>
         </div>
-      </header>
-
-      <div class="booth-body">
-
-        <!-- Left: leaderboard card -->
-        <div class="lb-card">
-          <div class="lb-top">
-            <span class="lb-title">Top players of the day</span>
-            <span class="lb-resets">{{ resetsInLabel() }}</span>
-          </div>
-          <div class="lb-col-headers">
-            <span class="ch ch-rank">RANK</span>
-            <span class="ch ch-player">PLAYER</span>
-            <span class="ch ch-company">COMPANY</span>
-            <span class="ch ch-score">SCORE</span>
-          </div>
-          <div class="lb-divider"></div>
-          <div class="lb-rows">
-            @for (row of d.rows; track row.rank) {
-              <div class="lb-row" [attr.data-rank]="row.rank <= 3 ? row.rank : 4">
-                <div class="rank-badge" [attr.data-rank]="row.rank <= 3 ? row.rank : 4">{{ row.rank }}</div>
-                <div class="avatar">{{ initials(row.displayName) }}</div>
-                <span class="player-name">{{ row.displayName }}</span>
-                <span class="company-name">{{ row.company }}</span>
-                <div class="score-cell">
-                  <span class="score-num">{{ row.score }}</span>
-                  <span class="score-pts">PTS</span>
-                </div>
-              </div>
-            }
-          </div>
-        </div>
-
-        <!-- Right sidebar -->
-        <div class="sidebar">
-
-          <!-- QR + Stats card -->
-          <div class="qr-card">
-            <div class="qr-img-wrap " (click)="onQrClick()">
-              @if (qrData(); as qr) {
-                <qrcode [qrdata]="qr" [width]="qrSize" elementType="svg" errorCorrectionLevel="M" [margin]="0"></qrcode>
-              }
-            </div>
-            <div class="qr-info">
-              <h2 class="scan-title">Scan to play</h2>
-              <p class="scan-sub">Point your phone camera at the bar code</p>
-              <div class="stats-row">
-                <div class="stat-box">
-                  <span class="stat-label">PLAYED</span>
-                  <span class="stat-val">{{ d.totalPlayers }}</span>
-                  <span class="stat-unit">today</span>
-                </div>
-                <div class="stat-box">
-                  <span class="stat-label">AVG SCORE</span>
-                  <span class="stat-val orange">{{ d.avgScore }}</span>
-                  <span class="stat-unit">pts</span>
-                </div>
-              </div>
+        <div class="lb-divider"></div>
+        <div class="lb-rows">
+          @for (row of d.rows; track row.rank) {
+          <div class="lb-row"
+               [attr.data-rank]="row.rank <= 3 ? row.rank : 4">
+            <div class="rank-badge"
+                 [attr.data-rank]="row.rank <= 3 ? row.rank : 4">{{ row.rank }}</div>
+            <div class="avatar">{{ initials(row.displayName) }}</div>
+            <span class="player-name">{{ row.displayName }}</span>
+            <span class="company-name">{{ row.company }}</span>
+            <div class="score-cell">
+              <span class="score-num">{{ row.score }}</span>
+              <span class="score-pts">PTS</span>
             </div>
           </div>
-
-          <!-- Sponsors -->
-          @if (d.sponsorCards.length) {
-            <p class="sponsor-heading">TODAY'S GAME IS SPONSORED BY</p>
-            @for (s of d.sponsorCards; track s.id) {
-              <div class="sponsor-card">
-                <div class="sponsor-stripe" [style.background-color]="s.primaryColor"></div>
-                <div class="sponsor-badge-pill">
-                  <span class="dot"></span>SPONSOR
-                </div>
-                <div class="sponsor-logo-wrap">
-                  @if (s.logoUrl) {
-                    <img [src]="s.logoUrl" [alt]="s.name" />
-                  } @else {
-                    <span class="sponsor-initial">{{ s.name.charAt(0) }}</span>
-                  }
-                </div>
-                <div class="sponsor-info">
-                  <span class="sponsor-name">{{ s.name }}</span>
-                  <span class="sponsor-tagline">{{ s.tagline }}</span>
-                </div>
-              </div>
-            }
           }
-
         </div>
       </div>
+
+      <!-- Right sidebar -->
+      <div class="sidebar">
+
+        <!-- QR + Stats card -->
+        <div class="qr-card">
+          <div class="qr-img-wrap "
+               (click)="onQrClick()">
+            @if (qrData(); as qr) {
+            <qrcode [qrdata]="qr"
+                    [width]="qrSize"
+                    elementType="svg"
+                    errorCorrectionLevel="M"
+                    [margin]="0"></qrcode>
+            }
+          </div>
+          <div class="qr-info">
+            <h2 class="scan-title">Scan to play</h2>
+            <p class="scan-sub">Point your phone camera at the bar code</p>
+            <div class="stats-row">
+              <div class="stat-box">
+                <span class="stat-label">PLAYED</span>
+                <span class="stat-val">{{ d.totalPlayers }}</span>
+                <span class="stat-unit">today</span>
+              </div>
+              <div class="stat-box">
+                <span class="stat-label">AVG SCORE</span>
+                <span class="stat-val orange">{{ d.avgScore }}</span>
+                <span class="stat-unit">pts</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sponsors -->
+        @if (d.sponsorCards.length) {
+        <p class="sponsor-heading">TODAY'S GAME IS SPONSORED BY</p>
+        @for (s of d.sponsorCards; track s.id) {
+        <div class="sponsor-card">
+          <div class="sponsor-stripe"
+               [style.background-color]="s.primaryColor"></div>
+          <div class="sponsor-badge-pill">
+            <span class="dot"></span>SPONSOR
+          </div>
+          <div class="sponsor-logo-wrap">
+            @if (s.logoUrl) {
+            <img [src]="s.logoUrl"
+                 [alt]="s.name" />
+            } @else {
+            <span class="sponsor-initial">{{ s.name.charAt(0) }}</span>
+            }
+          </div>
+          <div class="sponsor-info">
+            <span class="sponsor-name">{{ s.name }}</span>
+            <span class="sponsor-tagline">{{ s.tagline }}</span>
+          </div>
+        </div>
+        }
+        }
+
+      </div>
     </div>
+  </div>
   }
 </ion-content>

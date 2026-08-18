@@ -1,0 +1,1031 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>PM Trivia Security Audit</title>
+</head>
+<body><style>
+  /* ── Tokens: light is the base set ─────────────────────────────────── */
+  :root {
+    --ground:   #F4F6F8;
+    --panel:    #FFFFFF;
+    --sunk:     #EDF1F4;
+    --ink:      #141A21;
+    --ink2:     #4A5563;
+    --ink3:     #5F6A78;
+    --rule:     #DDE3E9;
+    --rule2:    #C9D2DA;
+    --accent:   #0F6E78;
+    --accent-w: #E2F1F2;
+
+    --blocker:  #B3261E;
+    --serious:  #8A5300;
+    --moderate: #2F5D8A;
+    --advisory: #5A6472;
+    --good:     #1A6B42;
+
+    --blocker-w:  #FBEAE8;
+    --serious-w:  #F8EEDC;
+    --moderate-w: #E8EFF7;
+    --advisory-w: #EAEDF1;
+
+    --shadow: 0 1px 2px rgba(20,26,33,.05);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground:   #14181E;
+      --panel:    #1B2027;
+      --sunk:     #222831;
+      --ink:      #E8EDF3;
+      --ink2:     #A8B3C0;
+      --ink3:     #7F8B99;
+      --rule:     #2C333C;
+      --rule2:    #3A424D;
+      --accent:   #5CC8D4;
+      --accent-w: #14343A;
+
+      --blocker:  #FF9086;
+      --serious:  #EDB65C;
+      --moderate: #8CBCE8;
+      --advisory: #9AA5B3;
+      --good:     #74D3A0;
+
+      --blocker-w:  #3A1D1B;
+      --serious-w:  #35291180;
+      --moderate-w: #1B2C3D;
+      --advisory-w: #262C34;
+
+      --shadow: none;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground:   #14181E;
+    --panel:    #1B2027;
+    --sunk:     #222831;
+    --ink:      #E8EDF3;
+    --ink2:     #A8B3C0;
+    --ink3:     #7F8B99;
+    --rule:     #2C333C;
+    --rule2:    #3A424D;
+    --accent:   #5CC8D4;
+    --accent-w: #14343A;
+
+    --blocker:  #FF9086;
+    --serious:  #EDB65C;
+    --moderate: #8CBCE8;
+    --advisory: #9AA5B3;
+    --good:     #74D3A0;
+
+    --blocker-w:  #3A1D1B;
+    --serious-w:  #352911;
+    --moderate-w: #1B2C3D;
+    --advisory-w: #262C34;
+
+    --shadow: none;
+  }
+
+  /* ── Base ──────────────────────────────────────────────────────────── */
+  * { box-sizing: border-box; }
+
+  html { -webkit-text-size-adjust: 100%; }
+
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    margin: 0;
+    padding: 0 20px 96px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap { max-width: 1000px; margin: 0 auto; }
+
+  .mono {
+    font-family: ui-monospace, "Cascadia Code", "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+    font-variant-ligatures: none;
+  }
+
+  code, .path {
+    font-family: ui-monospace, "Cascadia Code", "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+    font-size: .855em;
+    background: var(--sunk);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    padding: .1em .34em;
+    color: var(--ink);
+    word-break: break-word;
+  }
+
+  a { color: var(--accent); }
+  a:focus-visible, button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  /* ── Masthead ──────────────────────────────────────────────────────── */
+  .masthead {
+    border-bottom: 2px solid var(--ink);
+    padding: 56px 0 26px;
+    margin-bottom: 34px;
+  }
+
+  .kicker {
+    font-family: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
+    font-size: 11px;
+    letter-spacing: .13em;
+    text-transform: uppercase;
+    color: var(--ink3);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 18px;
+    margin-bottom: 20px;
+  }
+  .kicker b { color: var(--ink2); font-weight: 600; }
+
+  h1 {
+    font-family: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
+    font-size: clamp(30px, 5.4vw, 46px);
+    line-height: 1.06;
+    letter-spacing: -.028em;
+    font-weight: 700;
+    margin: 0 0 18px;
+    text-wrap: balance;
+  }
+
+  .standfirst {
+    font-size: clamp(16px, 2.1vw, 18.5px);
+    line-height: 1.55;
+    color: var(--ink2);
+    max-width: 63ch;
+    margin: 0;
+  }
+  .standfirst strong { color: var(--ink); font-weight: 600; }
+
+  /* ── Severity tiles ────────────────────────────────────────────────── */
+  .tiles {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(158px, 1fr));
+    gap: 2px;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+    margin-bottom: 14px;
+  }
+  .tile {
+    background: var(--panel);
+    padding: 16px 18px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .tile-n {
+    font-family: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
+    font-size: 38px;
+    line-height: 1;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -.03em;
+  }
+  .tile-lab {
+    font-family: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
+    font-size: 11px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  .tile-sub { font-size: 12.5px; color: var(--ink3); line-height: 1.4; }
+
+  .t-blocker  .tile-n, .t-blocker  .tile-lab { color: var(--blocker); }
+  .t-serious  .tile-n, .t-serious  .tile-lab { color: var(--serious); }
+  .t-moderate .tile-n, .t-moderate .tile-lab { color: var(--moderate); }
+  .t-advisory .tile-n, .t-advisory .tile-lab { color: var(--advisory); }
+
+  .tiles-note {
+    font-size: 13px;
+    color: var(--ink3);
+    margin: 0 0 46px;
+  }
+
+  /* ── Sections ──────────────────────────────────────────────────────── */
+  section { margin-bottom: 54px; }
+
+  h2 {
+    font-family: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
+    font-size: 13px;
+    letter-spacing: .15em;
+    text-transform: uppercase;
+    font-weight: 700;
+    margin: 0 0 4px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--ink);
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 16px;
+  }
+  h2 .count {
+    color: var(--ink3);
+    font-weight: 500;
+    letter-spacing: .08em;
+    font-variant-numeric: tabular-nums;
+  }
+  .sec-intro {
+    font-size: 14.5px;
+    color: var(--ink2);
+    margin: 14px 0 26px;
+    max-width: 70ch;
+  }
+
+  /* ── Finding rows ──────────────────────────────────────────────────── */
+  .finding {
+    border-bottom: 1px solid var(--rule);
+    padding: 24px 0 26px;
+  }
+  .finding:first-of-type { border-top: 1px solid var(--rule); }
+
+  .f-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 8px 12px;
+    margin-bottom: 10px;
+  }
+  .f-id {
+    font-family: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .07em;
+    padding: 3px 7px;
+    border-radius: 3px;
+  }
+  .sev-blocker  .f-id { color: var(--blocker);  background: var(--blocker-w); }
+  .sev-serious  .f-id { color: var(--serious);  background: var(--serious-w); }
+  .sev-moderate .f-id { color: var(--moderate); background: var(--moderate-w); }
+  .sev-advisory .f-id { color: var(--advisory); background: var(--advisory-w); }
+
+  .f-title {
+    font-size: clamp(17px, 2.3vw, 20px);
+    font-weight: 650;
+    line-height: 1.3;
+    margin: 0;
+    flex: 1 1 320px;
+    letter-spacing: -.012em;
+  }
+  .f-sc {
+    font-family: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
+    font-size: 11px;
+    color: var(--ink3);
+    letter-spacing: .04em;
+    white-space: nowrap;
+    padding-top: 2px;
+  }
+
+  .f-body {
+    display: grid;
+    gap: 18px 40px;
+    margin-top: 14px;
+  }
+  @media (min-width: 860px) {
+    .f-body { grid-template-columns: 1fr 1fr; }
+  }
+  .f-body.single { grid-template-columns: 1fr; }
+  .f-body h4 {
+    font-family: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
+    font-size: 10.5px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--ink3);
+    font-weight: 600;
+    margin: 0 0 7px;
+  }
+  .f-body p { margin: 0 0 9px; font-size: 14.6px; line-height: 1.58; color: var(--ink2); }
+  .f-body p:last-child { margin-bottom: 0; }
+  .f-body strong { color: var(--ink); font-weight: 600; }
+
+  .locs {
+    list-style: none;
+    margin: 0 0 11px;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .locs li {
+    font-family: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
+    font-size: 12px;
+    color: var(--ink3);
+    line-height: 1.45;
+    word-break: break-word;
+  }
+  .locs li b { color: var(--ink2); font-weight: 600; }
+
+  pre {
+    background: var(--sunk);
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    padding: 11px 13px;
+    margin: 0 0 10px;
+    overflow-x: auto;
+    font-family: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
+    font-size: 12.2px;
+    line-height: 1.55;
+    color: var(--ink);
+  }
+  pre .del { color: var(--blocker); }
+  pre .add { color: var(--good); }
+  pre .cm  { color: var(--ink3); }
+
+  /* ── Fix order ─────────────────────────────────────────────────────── */
+  ol.plan { list-style: none; counter-reset: step; margin: 0; padding: 0; }
+  ol.plan li {
+    counter-increment: step;
+    display: grid;
+    grid-template-columns: 40px 1fr;
+    gap: 0 16px;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--rule);
+  }
+  ol.plan li:first-child { border-top: 1px solid var(--rule); }
+  ol.plan li::before {
+    content: counter(step, decimal-leading-zero);
+    font-family: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--accent);
+    padding-top: 2px;
+  }
+  ol.plan h4 { margin: 0 0 4px; font-size: 15.5px; font-weight: 650; color: var(--ink); }
+  ol.plan p { margin: 0; font-size: 14px; color: var(--ink2); line-height: 1.55; }
+  ol.plan .refs {
+    font-family: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
+    font-size: 11.5px;
+    color: var(--ink3);
+    margin-top: 5px;
+    display: block;
+  }
+
+  /* ── Method / footer ───────────────────────────────────────────────── */
+  .method {
+    background: var(--panel);
+    border: 1px solid var(--rule);
+    padding: 20px 22px;
+    display: grid;
+    gap: 18px 36px;
+  }
+  @media (min-width: 780px) { .method { grid-template-columns: 1fr 1fr; } }
+  .method h4 {
+    font-family: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
+    font-size: 10.5px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--ink3);
+    font-weight: 600;
+    margin: 0 0 8px;
+  }
+  .method ul { margin: 0; padding-left: 17px; }
+  .method li { font-size: 14px; color: var(--ink2); line-height: 1.55; margin-bottom: 5px; }
+
+  footer {
+    margin-top: 54px;
+    padding-top: 20px;
+    border-top: 1px solid var(--rule);
+    font-family: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
+    font-size: 11.5px;
+    color: var(--ink3);
+    line-height: 1.7;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+  }
+</style>
+<div class="wrap">
+
+  <header class="masthead">
+    <div class="kicker">
+      <span>Target <b>trivia-app (frontend) + pm-trivia-BE (backend)</b></span>
+      <span>Branch <b>dev-marto @ 88c443d</b></span>
+      <span>Method <b>Static code review</b></span>
+      <span>Date <b>2026-08-14</b></span>
+    </div>
+    <h1>Security audit</h1>
+    <p class="standfirst">
+      Nineteen findings across the registration flow, the game-session API and the admin panel.
+      The two that matter most: <strong>re-registering with someone else's email overwrites their
+      password and hands back a valid session for their account</strong>, and the answer-recording
+      endpoints skip the session-ownership check every other route already has, so any registered
+      player can write into — and prematurely finalize — any other player's live game.
+    </p>
+  </header>
+
+  <div class="tiles">
+    <div class="tile t-blocker">
+      <span class="tile-n">2</span>
+      <span class="tile-lab">Critical</span>
+      <span class="tile-sub">Account or environment compromise</span>
+    </div>
+    <div class="tile t-serious">
+      <span class="tile-n">4</span>
+      <span class="tile-lab">High</span>
+      <span class="tile-sub">Cross-player impact or credential exposure</span>
+    </div>
+    <div class="tile t-moderate">
+      <span class="tile-n">7</span>
+      <span class="tile-lab">Medium</span>
+      <span class="tile-sub">Real exposure, bounded blast radius</span>
+    </div>
+    <div class="tile t-advisory">
+      <span class="tile-n">6</span>
+      <span class="tile-lab">Low / hardening</span>
+      <span class="tile-sub">Worth fixing, nothing urgent forces it</span>
+    </div>
+  </div>
+  <p class="tiles-note">
+    Severity is exploit impact, not effort. Both criticals are single-endpoint fixes; the hardening
+    backlog is mostly configuration.
+  </p>
+
+  <!-- ══ CRITICAL ══════════════════════════════════════════════════════ -->
+  <section>
+    <h2>Critical <span class="count">2 findings</span></h2>
+    <p class="sec-intro">
+      Either of these compromises an account or the whole staging environment, with no special
+      access required beyond a scanned booth QR token.
+    </p>
+
+    <article class="finding sev-blocker">
+      <div class="f-head">
+        <span class="f-id">SEC-01</span>
+        <h3 class="f-title">Account takeover via re-registration</h3>
+        <span class="f-sc">Auth · every registered email</span>
+      </div>
+      <div class="f-body">
+        <div>
+          <h4>What happens</h4>
+          <ul class="locs">
+            <li><b>pm-trivia-BE/app/Http/Controllers/Api/AuthController.php</b>:54</li>
+          </ul>
+<pre>$player = Player::updateOrCreate(['email' => $data['email']], [
+  … 'password' => $data['password'] …
+]);</pre>
+          <p>
+            <code>POST /auth/register</code> with an already-registered email <strong>overwrites
+            that player's password, name, phone and company</strong>, then returns a valid session
+            for them. There is no ownership proof — no email verification, no existing-password
+            check. The phone guard above it only fires if the attacker reuses the victim's phone;
+            supplying their own phone sails through.
+          </p>
+          <p>
+            Anyone at the booth with a scanned QR token can take over any account whose email they
+            know, and simultaneously destroy that player's PII record.
+          </p>
+        </div>
+        <div>
+          <h4>What to change</h4>
+          <p>
+            If the email already exists, require the password to match — i.e. treat the request as
+            a login — or reject with <code>409</code>.
+          </p>
+        </div>
+      </div>
+    </article>
+
+    <article class="finding sev-blocker">
+      <div class="f-head">
+        <span class="f-id">SEC-02</span>
+        <h3 class="f-title">Debug mode on the staging deployment</h3>
+        <span class="f-sc">Configuration · full environment exposure</span>
+      </div>
+      <div class="f-body">
+        <div>
+          <h4>What happens</h4>
+          <ul class="locs">
+            <li><b>pm-trivia-BE/.env</b></li>
+          </ul>
+          <p>
+            <code>APP_ENV=local</code>, <code>APP_DEBUG=true</code>, <code>LOG_LEVEL=debug</code>,
+            with <code>APP_URL=https://backend.pm.trivia.kipo.work</code>. If that env is what the
+            staging host actually runs, every unhandled error returns a Laravel debug page exposing
+            stack traces, SQL, config and environment variables — including <code>APP_KEY</code> and
+            the MySQL credentials that are also in this file.
+          </p>
+        </div>
+        <div>
+          <h4>What to change</h4>
+          <p>
+            Confirm what's deployed. If it matches, set <code>APP_ENV=production</code> /
+            <code>APP_DEBUG=false</code> and rotate <code>APP_KEY</code> and the DB password —
+            anything printed by a debug page while it was live should be treated as burned.
+          </p>
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <!-- ══ HIGH ══════════════════════════════════════════════════════════ -->
+  <section>
+    <h2>High <span class="count">4 findings</span></h2>
+    <p class="sec-intro">
+      Each of these lets one player affect another's account, session or score, or leaves a
+      credential-bearing surface unprotected.
+    </p>
+
+    <article class="finding sev-serious">
+      <div class="f-head">
+        <span class="f-id">SEC-03</span>
+        <h3 class="f-title">Missing session ownership check on answer writes</h3>
+        <span class="f-sc">Authorization · cross-player</span>
+      </div>
+      <div class="f-body">
+        <div>
+          <h4>What happens</h4>
+          <ul class="locs">
+            <li><b>pm-trivia-BE/app/Http/Controllers/Api/AnswerController.php</b>:22, 43, 68</li>
+            <li><b>SessionController.php</b>:131 — the <code>authorizeSession()</code> guard other routes use</li>
+            <li><b>AppServiceProvider.php</b>:71 — sessions bind on <code>seq_id</code>, a small sequential integer</li>
+          </ul>
+          <p>
+            <code>SessionController</code> guards every session route with
+            <code>authorizeSession()</code>, but <code>AnswerController::store</code>,
+            <code>sponsorAnswer</code> and <code>sponsorTrack</code> never call it, and
+            <code>AnswerRecorder</code> doesn't check either. Because sessions bind on a small
+            sequential integer, any registered player can POST answers into any other player's live
+            session — and <code>finalizeIfComplete()</code> (<b>AnswerController.php</b>:105) will
+            then finalize the victim's session early, locking in a partial score and breaking their
+            game.
+          </p>
+        </div>
+        <div>
+          <h4>What to change</h4>
+          <p>
+            Add the same <code>authorizeSession()</code> check used elsewhere to all three
+            <code>AnswerController</code> methods.
+          </p>
+        </div>
+      </div>
+    </article>
+
+    <article class="finding sev-serious">
+      <div class="f-head">
+        <span class="f-id">SEC-04</span>
+        <h3 class="f-title">Score inflation — answers unbounded by session</h3>
+        <span class="f-sc">Business logic · leaderboard integrity</span>
+      </div>
+      <div class="f-body">
+        <div>
+          <h4>What happens</h4>
+          <ul class="locs">
+            <li><b>pm-trivia-BE/app/Services/Game/AnswerRecorder.php</b>:23</li>
+          </ul>
+          <p>
+            The only guard is "this question wasn't already answered in this session." There is no
+            check that the question belongs to the session's snapshot, that the session is still
+            <code>started</code>, or that its time window hasn't expired. A player can walk the
+            question-id space and submit an answer to every question in the bank — including
+            sponsor questions at the 3&times; bonus — long after their session finalized, and
+            <code>final_score</code>, which drives the leaderboard and prize selection, keeps
+            incrementing.
+          </p>
+        </div>
+        <div>
+          <h4>What to change</h4>
+          <p>
+            Validate <code>questionId</code> against the <code>settings_snapshot</code>'s
+            question-id lists and the session's <code>status</code>/time window before recording.
+          </p>
+        </div>
+      </div>
+    </article>
+
+    <article class="finding sev-serious">
+      <div class="f-head">
+        <span class="f-id">SEC-05</span>
+        <h3 class="f-title">Admin login and password reset are unthrottled</h3>
+        <span class="f-sc">Auth · brute force</span>
+      </div>
+      <div class="f-body">
+        <div>
+          <h4>What happens</h4>
+          <ul class="locs">
+            <li><b>pm-trivia-BE/routes/auth.php</b></li>
+            <li><b>bootstrap/app.php</b> — no default throttle on the <code>web</code> group</li>
+            <li><b>AppServiceProvider.php</b>:26–64 — the player API's own rate limits, for contrast</li>
+          </ul>
+          <p>
+            No <code>throttle</code> middleware on <code>POST /admin/login</code> or
+            <code>POST /admin/forgot-password</code>. Unlimited password guessing against the admin
+            panel, and unlimited reset-mail sending. The player API is carefully rate-limited — the
+            admin panel just got missed.
+          </p>
+        </div>
+        <div>
+          <h4>What to change</h4>
+          <p>
+            Apply <code>throttle:login</code> or a dedicated admin limiter to both routes.
+          </p>
+        </div>
+      </div>
+    </article>
+
+    <article class="finding sev-serious">
+      <div class="f-head">
+        <span class="f-id">SEC-06</span>
+        <h3 class="f-title">Stored XSS in static pages</h3>
+        <span class="f-sc">Sanitization gap · access-token exposure</span>
+      </div>
+      <div class="f-body">
+        <div>
+          <h4>What happens</h4>
+          <ul class="locs">
+            <li><b>pm-trivia-BE/app/Http/Controllers/Admin/SettingsController.php</b>:207</li>
+            <li><b>trivia-app/src/app/pages/static-page/static-page.page.ts</b>:49</li>
+          </ul>
+          <p>
+            Backend "sanitizes" with <code>strip_tags($content, '&lt;p&gt;&lt;br&gt;…&lt;a&gt;')</code>.
+            <code>strip_tags</code> removes <em>tags</em>, not <em>attributes</em> —
+            <code>&lt;a href="javascript:…"&gt;</code> and <code>&lt;p onclick="…"&gt;</code> both
+            survive. The frontend then calls <code>bypassSecurityTrustHtml(page.content)</code> with
+            no DOMPurify pass. The register page does this correctly via
+            <code>sanitizeAdminHtml</code>; the static page was missed. Script running on the FE
+            origin can read the in-memory access token and drive the API with the credentialed
+            refresh cookie.
+          </p>
+        </div>
+        <div>
+          <h4>What to change</h4>
+          <p>
+            HTML Purifier (or a similar attribute-aware sanitizer) server-side; run
+            <code>sanitizeAdminHtml()</code> client-side on <b>static-page.page.ts</b>, same as the
+            register page.
+          </p>
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <!-- ══ MEDIUM ════════════════════════════════════════════════════════ -->
+  <section>
+    <h2>Medium <span class="count">7 findings</span></h2>
+    <p class="sec-intro">
+      Real exposure with a more bounded blast radius, or findings that amplify the criticals/highs
+      above rather than standing alone.
+    </p>
+
+    <article class="finding sev-moderate">
+      <div class="f-head">
+        <span class="f-id">SEC-07</span>
+        <h3 class="f-title">Game endpoints have no rate limit</h3>
+        <span class="f-sc">Amplifies SEC-03 / SEC-04</span>
+      </div>
+      <div class="f-body single">
+        <div>
+          <p>
+            <b>pm-trivia-BE/routes/api.php</b>:63–68 — <code>questions/next</code>,
+            <code>answers</code>, <code>sponsor-answer</code>, <code>sponsor-track</code>,
+            <code>complete</code> and <code>result</code> carry no throttle at all. This amplifies
+            SEC-03 and SEC-04, and lets the whole question bank be scraped with answers, since every
+            answer response returns <code>correctIndex</code>.
+          </p>
+        </div>
+      </div>
+    </article>
+
+    <article class="finding sev-moderate">
+      <div class="f-head">
+        <span class="f-id">SEC-08</span>
+        <h3 class="f-title">Authorization policies are stubs and never invoked</h3>
+        <span class="f-sc">Admin panel · any role</span>
+      </div>
+      <div class="f-body single">
+        <div>
+          <p>
+            <b>pm-trivia-BE/app/Policies/*.php</b> all <code>return true</code>, and no controller
+            calls <code>authorize()</code>. Only the global routes are gated by
+            <code>role:admin</code>; the per-event group in <b>routes/web.php</b> requires nothing
+            beyond <code>auth:admin</code>. Any admin-guard user of any role can export the full
+            player PII CSV, delete players, and edit sponsors and game settings for every event.
+          </p>
+        </div>
+      </div>
+    </article>
+
+    <article class="finding sev-moderate">
+      <div class="f-head">
+        <span class="f-id">SEC-09</span>
+        <h3 class="f-title">The registration QR gate is effectively public</h3>
+        <span class="f-sc">Feeds SEC-01</span>
+      </div>
+      <div class="f-body single">
+        <div>
+          <p>
+            <b>pm-trivia-BE/app/Http/Controllers/Api/BoothDisplayController.php</b>:98 returns the
+            live <code>registrationToken</code> from an unauthenticated endpoint. Booth display is
+            intentionally token-free, so anyone who has the (publicly displayed) booth URL can mint
+            <code>authPlayToken</code> values without being at the booth. Combined with SEC-01, that
+            is the remote path to account takeover.
+          </p>
+        </div>
+      </div>
+    </article>
+
+    <article class="finding sev-moderate">
+      <div class="f-head">
+        <span class="f-id">SEC-10</span>
+        <h3 class="f-title">Admin session cookie not marked Secure</h3>
+        <span class="f-sc">Transport · admin session</span>
+      </div>
+      <div class="f-body single">
+        <div>
+          <p>
+            <code>SESSION_SECURE_COOKIE</code> is unset, so <b>config/session.php</b>'s
+            <code>'secure' => env('SESSION_SECURE_COOKIE')</code> resolves to <code>null</code>.
+            <code>CORS_ALLOWED_ORIGINS</code> also lists an <code>http://</code> origin.
+          </p>
+        </div>
+      </div>
+    </article>
+
+    <article class="finding sev-moderate">
+      <div class="f-head">
+        <span class="f-id">SEC-11</span>
+        <h3 class="f-title">CSV formula injection in admin exports</h3>
+        <span class="f-sc">Export · Excel/Sheets execution</span>
+      </div>
+      <div class="f-body single">
+        <div>
+          <p>
+            <b>PlayerController.php</b>:207, 238, 245; <b>DashboardController.php</b>:43;
+            <b>ReportController.php</b>:53. Player-supplied <code>first_name</code>/
+            <code>last_name</code>/<code>company</code> go straight into <code>fputcsv</code>; a
+            name starting with <code>=</code>, <code>+</code>, <code>-</code> or <code>@</code>
+            executes when the export is opened in Excel.
+          </p>
+        </div>
+      </div>
+    </article>
+
+    <article class="finding sev-moderate">
+      <div class="f-head">
+        <span class="f-id">SEC-12</span>
+        <h3 class="f-title">SVG upload allowed for sponsor logos</h3>
+        <span class="f-sc">Stored XSS · media origin</span>
+      </div>
+      <div class="f-body single">
+        <div>
+          <p>
+            <b>StoreQuestionRequest.php</b>:63 (<code>mimes:svg,png</code>); event logos use the
+            <code>image</code> rule, which may also accept SVG. Media is served from the API origin
+            at <code>/storage/media</code>, so an SVG opened directly is stored XSS on the origin
+            that holds the refresh cookie.
+          </p>
+        </div>
+      </div>
+    </article>
+
+    <article class="finding sev-moderate">
+      <div class="f-head">
+        <span class="f-id">SEC-13</span>
+        <h3 class="f-title">Redux DevTools enabled in production builds</h3>
+        <span class="f-sc">Frontend · state exposure</span>
+      </div>
+      <div class="f-body single">
+        <div>
+          <p>
+            <b>trivia-app/src/app/app.config.ts</b> calls <code>provideStoreDevtools</code>
+            unconditionally, exposing store state — including the access token — to any installed
+            browser extension.
+          </p>
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <!-- ══ LOW / HARDENING ═══════════════════════════════════════════════ -->
+  <section>
+    <h2>Low / hardening <span class="count">6 findings</span></h2>
+    <p class="sec-intro">
+      Worth fixing, but nothing here is under active exploit pressure the way the sections above
+      are.
+    </p>
+
+    <article class="finding sev-advisory">
+      <div class="f-head">
+        <span class="f-id">SEC-14</span>
+        <h3 class="f-title">Resubscribe restores both consents regardless of original opt-in</h3>
+        <span class="f-sc">Consent, not security</span>
+      </div>
+      <div class="f-body single">
+        <div>
+          <p>
+            <b>UnsubscribeController.php</b>:34 — <code>resubscribe()</code> sets both
+            <code>email_opt_in</code> and <code>sms_opt_in</code> to true regardless of what the
+            player originally consented to.
+          </p>
+        </div>
+      </div>
+    </article>
+
+    <article class="finding sev-advisory">
+      <div class="f-head">
+        <span class="f-id">SEC-15</span>
+        <h3 class="f-title">Debug env var makes every answer correct if ever set live</h3>
+        <span class="f-sc">Config guard</span>
+      </div>
+      <div class="f-body single">
+        <div>
+          <p>
+            <b>AnswerRecorder.php</b>:40 — <code>game.debug_all_correct</code> makes every answer
+            correct if the env var is ever set on a live host.
+          </p>
+        </div>
+      </div>
+    </article>
+
+    <article class="finding sev-advisory">
+      <div class="f-head">
+        <span class="f-id">SEC-16</span>
+        <h3 class="f-title">Fortify auto-discovered on the admin guard, unverified reachability</h3>
+        <span class="f-sc">Needs confirmation</span>
+      </div>
+      <div class="f-body single">
+        <div>
+          <p>
+            Fortify is installed and auto-discovered with <code>Features::registration()</code> and
+            <code>views => true</code> on the <code>admin</code> guard, but there's no app-level
+            Fortify provider or <code>app/Actions</code> — verify <code>/register</code>,
+            <code>/login</code> and <code>/user/*</code> aren't reachable on the admin host.
+          </p>
+        </div>
+      </div>
+    </article>
+
+    <article class="finding sev-advisory">
+      <div class="f-head">
+        <span class="f-id">SEC-17</span>
+        <h3 class="f-title">No CSP or security headers on the frontend</h3>
+        <span class="f-sc">Defense in depth</span>
+      </div>
+      <div class="f-body single">
+        <div>
+          <p>
+            <b>.htaccess</b> only rewrites; <b>index.html</b> sets none. A CSP would have
+            substantially blunted SEC-06 and SEC-12 even with the sanitizer gaps in place.
+          </p>
+        </div>
+      </div>
+    </article>
+
+    <article class="finding sev-advisory">
+      <div class="f-head">
+        <span class="f-id">SEC-18</span>
+        <h3 class="f-title">Player passwords require only 6 characters</h3>
+        <span class="f-sc">Auth policy</span>
+      </div>
+      <div class="f-body single">
+        <div>
+          <p>
+            <b>AuthController.php</b>:36 — the minimum-length rule on player passwords is 6.
+          </p>
+        </div>
+      </div>
+    </article>
+
+    <article class="finding sev-advisory">
+      <div class="f-head">
+        <span class="f-id">SEC-19</span>
+        <h3 class="f-title">Static pages return any page id with no published/status check</h3>
+        <span class="f-sc">Content gating</span>
+      </div>
+      <div class="f-body single">
+        <div>
+          <p>
+            <code>StaticPageController</code> returns any page id with no published/status check —
+            draft or unpublished content is served the same as live content if its id is known.
+          </p>
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <!-- ══ PLAN ══════════════════════════════════════════════════════════ -->
+  <section>
+    <h2>Suggested order of work <span class="count">Sequenced</span></h2>
+    <p class="sec-intro">
+      Ordered by exploit impact. The first two steps close every path to account or session
+      takeover found in this pass.
+    </p>
+
+    <ol class="plan">
+      <li>
+        <div>
+          <h4>Close the account-takeover and cross-session write holes</h4>
+          <p>
+            Make re-registration on an existing email require the current password or reject with
+            <code>409</code>, and add <code>authorizeSession()</code> to the three
+            <code>AnswerController</code> methods that skip it. Together these are the only paths
+            that let one player compromise another's account or game.
+          </p>
+          <span class="refs">SEC-01 · SEC-03 — do first</span>
+        </div>
+      </li>
+      <li>
+        <div>
+          <h4>Lock down the staging environment</h4>
+          <p>
+            Confirm whether <code>APP_DEBUG=true</code> is live; if so, flip it, set
+            <code>APP_ENV=production</code>, and rotate <code>APP_KEY</code> and the DB password —
+            anything a debug page could have printed while exposed should be treated as burned.
+          </p>
+          <span class="refs">SEC-02 — immediate, ops</span>
+        </div>
+      </li>
+      <li>
+        <div>
+          <h4>Bound score writes and throttle the API</h4>
+          <p>
+            Validate <code>questionId</code> against the session's snapshot and status/time window
+            before recording an answer, then add throttling to the admin login/reset routes and the
+            unthrottled game endpoints.
+          </p>
+          <span class="refs">SEC-04 · SEC-05 · SEC-07</span>
+        </div>
+      </li>
+      <li>
+        <div>
+          <h4>Sanitize HTML at the source</h4>
+          <p>
+            Swap <code>strip_tags</code> for an attribute-aware sanitizer server-side, run
+            <code>sanitizeAdminHtml()</code> on the static page like the register page already does,
+            and stop accepting SVG for sponsor/event logo uploads.
+          </p>
+          <span class="refs">SEC-06 · SEC-12</span>
+        </div>
+      </li>
+      <li>
+        <div>
+          <h4>Wire up authorization and close the remaining medium findings</h4>
+          <p>
+            Implement the policy classes and call <code>authorize()</code> from the admin
+            controllers, mark the admin session cookie <code>Secure</code> and drop the
+            <code>http://</code> CORS origin, prefix formula-injection-sensitive CSV cells, and
+            strip <code>provideStoreDevtools</code> from production builds.
+          </p>
+          <span class="refs">SEC-08 · SEC-10 · SEC-11 · SEC-13</span>
+        </div>
+      </li>
+      <li>
+        <div>
+          <h4>Hardening backlog</h4>
+          <p>
+            Decide whether the booth QR gate needs to stop handing out live registration tokens
+            unauthenticated, add a CSP to the frontend, raise the player password minimum, gate
+            static pages on published status, fix the resubscribe consent bug, and confirm Fortify
+            isn't reachable on the admin host.
+          </p>
+          <span class="refs">SEC-09 · SEC-14 – SEC-19 — as capacity allows</span>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <!-- ══ METHOD ════════════════════════════════════════════════════════ -->
+  <section>
+    <h2>Scope and method <span class="count">Read this before quoting the result</span></h2>
+    <div class="method">
+      <h4>What was done</h4>
+      <p>
+        A static read of the frontend (<code>trivia-app/</code>, this repo) and the backend
+        (<code>pm-trivia-BE</code>) — auth flows, session/answer controllers, admin routes and
+        policies, CSV export paths, upload validation rules, and the frontend's HTML-sanitization
+        and state-management setup. Findings are anchored to file:line references throughout.
+      </p>
+
+      <h4>What was not done</h4>
+      <p>
+        <strong>No dynamic testing.</strong> Nothing here comes from running requests against a
+        live deployment, fuzzing, or an authenticated pentest session. SEC-02's claim about the
+        staging <code>.env</code> and SEC-16's Fortify reachability both need a live check against
+        the actual deployed host before being treated as confirmed incidents rather than
+        configuration risk. Dependency/CVE scanning of installed packages was also out of scope.
+      </p>
+
+      <h4>What's solid</h4>
+      <p>
+        Refresh tokens are rotated and stored hashed; the password-reset flow uses
+        <code>hash_equals</code> and a two-step code&rarr;token exchange with per-email+IP limits;
+        unsubscribe links are HMAC capability tokens with a per-player signing key; integration
+        settings are <code>encrypted:json</code>; the refresh cookie is httpOnly/Secure with a
+        correct deletion counterpart; session finalization is row-locked; no SQL injection or
+        unescaped Blade output was found; landing-page copy goes through DOMPurify. The structure
+        is sound — the findings above are concentrated in a handful of places where a check that
+        exists elsewhere in the codebase wasn't applied consistently.
+      </p>
+    </div>
+  </section>
+
+</div>
+
+</body>
+</html>

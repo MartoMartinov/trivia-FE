@@ -1,0 +1,1770 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>PM Trivia Accessibility Audit</title>
+</head>
+<body><style>
+  /* ── Tokens: light is the base set ─────────────────────────────────── */
+  :root {
+    --ground:   #F4F6F8;
+    --panel:    #FFFFFF;
+    --sunk:     #EDF1F4;
+    --ink:      #141A21;
+    --ink2:     #4A5563;
+    --ink3:     #5F6A78;
+    --rule:     #DDE3E9;
+    --rule2:    #C9D2DA;
+    --accent:   #0F6E78;
+    --accent-w: #E2F1F2;
+
+    --blocker:  #B3261E;
+    --serious:  #8A5300;
+    --moderate: #2F5D8A;
+    --advisory: #5A6472;
+    --good:     #1A6B42;
+
+    --blocker-w:  #FBEAE8;
+    --serious-w:  #F8EEDC;
+    --moderate-w: #E8EFF7;
+    --advisory-w: #EAEDF1;
+
+    --shadow: 0 1px 2px rgba(20,26,33,.05);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground:   #14181E;
+      --panel:    #1B2027;
+      --sunk:     #222831;
+      --ink:      #E8EDF3;
+      --ink2:     #A8B3C0;
+      --ink3:     #7F8B99;
+      --rule:     #2C333C;
+      --rule2:    #3A424D;
+      --accent:   #5CC8D4;
+      --accent-w: #14343A;
+
+      --blocker:  #FF9086;
+      --serious:  #EDB65C;
+      --moderate: #8CBCE8;
+      --advisory: #9AA5B3;
+      --good:     #74D3A0;
+
+      --blocker-w:  #3A1D1B;
+      --serious-w:  #35291180;
+      --moderate-w: #1B2C3D;
+      --advisory-w: #262C34;
+
+      --shadow: none;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground:   #14181E;
+    --panel:    #1B2027;
+    --sunk:     #222831;
+    --ink:      #E8EDF3;
+    --ink2:     #A8B3C0;
+    --ink3:     #7F8B99;
+    --rule:     #2C333C;
+    --rule2:    #3A424D;
+    --accent:   #5CC8D4;
+    --accent-w: #14343A;
+
+    --blocker:  #FF9086;
+    --serious:  #EDB65C;
+    --moderate: #8CBCE8;
+    --advisory: #9AA5B3;
+    --good:     #74D3A0;
+
+    --blocker-w:  #3A1D1B;
+    --serious-w:  #352911;
+    --moderate-w: #1B2C3D;
+    --advisory-w: #262C34;
+
+    --shadow: none;
+  }
+
+  /* ── Base ──────────────────────────────────────────────────────────── */
+  * { box-sizing: border-box; }
+
+  html { -webkit-text-size-adjust: 100%; }
+
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    margin: 0;
+    padding: 0 20px 96px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap { max-width: 1000px; margin: 0 auto; }
+
+  .mono {
+    font-family: ui-monospace, "Cascadia Code", "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+    font-variant-ligatures: none;
+  }
+
+  code, .path {
+    font-family: ui-monospace, "Cascadia Code", "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+    font-size: .855em;
+    background: var(--sunk);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    padding: .1em .34em;
+    color: var(--ink);
+    word-break: break-word;
+  }
+
+  a { color: var(--accent); }
+  a:focus-visible, button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  /* ── Masthead ──────────────────────────────────────────────────────── */
+  .masthead {
+    border-bottom: 2px solid var(--ink);
+    padding: 56px 0 26px;
+    margin-bottom: 34px;
+  }
+
+  .kicker {
+    font-family: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
+    font-size: 11px;
+    letter-spacing: .13em;
+    text-transform: uppercase;
+    color: var(--ink3);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 18px;
+    margin-bottom: 20px;
+  }
+  .kicker b { color: var(--ink2); font-weight: 600; }
+
+  h1 {
+    font-family: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
+    font-size: clamp(30px, 5.4vw, 46px);
+    line-height: 1.06;
+    letter-spacing: -.028em;
+    font-weight: 700;
+    margin: 0 0 18px;
+    text-wrap: balance;
+  }
+
+  .standfirst {
+    font-size: clamp(16px, 2.1vw, 18.5px);
+    line-height: 1.55;
+    color: var(--ink2);
+    max-width: 63ch;
+    margin: 0;
+  }
+  .standfirst strong { color: var(--ink); font-weight: 600; }
+
+  /* ── Severity tiles ────────────────────────────────────────────────── */
+  .tiles {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(158px, 1fr));
+    gap: 2px;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+    margin-bottom: 14px;
+  }
+  .tile {
+    background: var(--panel);
+    padding: 16px 18px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .tile-n {
+    font-family: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
+    font-size: 38px;
+    line-height: 1;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -.03em;
+  }
+  .tile-lab {
+    font-family: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
+    font-size: 11px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  .tile-sub { font-size: 12.5px; color: var(--ink3); line-height: 1.4; }
+
+  .t-blocker  .tile-n, .t-blocker  .tile-lab { color: var(--blocker); }
+  .t-serious  .tile-n, .t-serious  .tile-lab { color: var(--serious); }
+  .t-moderate .tile-n, .t-moderate .tile-lab { color: var(--moderate); }
+  .t-advisory .tile-n, .t-advisory .tile-lab { color: var(--advisory); }
+
+  .tiles-note {
+    font-size: 13px;
+    color: var(--ink3);
+    margin: 0 0 46px;
+  }
+
+  /* ── Sections ──────────────────────────────────────────────────────── */
+  section { margin-bottom: 54px; }
+
+  h2 {
+    font-family: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
+    font-size: 13px;
+    letter-spacing: .15em;
+    text-transform: uppercase;
+    font-weight: 700;
+    margin: 0 0 4px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--ink);
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 16px;
+  }
+  h2 .count {
+    color: var(--ink3);
+    font-weight: 500;
+    letter-spacing: .08em;
+    font-variant-numeric: tabular-nums;
+  }
+  .sec-intro {
+    font-size: 14.5px;
+    color: var(--ink2);
+    margin: 14px 0 26px;
+    max-width: 70ch;
+  }
+
+  /* ── Finding rows ──────────────────────────────────────────────────── */
+  .finding {
+    border-bottom: 1px solid var(--rule);
+    padding: 24px 0 26px;
+  }
+  .finding:first-of-type { border-top: 1px solid var(--rule); }
+
+  .f-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 8px 12px;
+    margin-bottom: 10px;
+  }
+  .f-id {
+    font-family: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .07em;
+    padding: 3px 7px;
+    border-radius: 3px;
+  }
+  .sev-blocker  .f-id { color: var(--blocker);  background: var(--blocker-w); }
+  .sev-serious  .f-id { color: var(--serious);  background: var(--serious-w); }
+  .sev-moderate .f-id { color: var(--moderate); background: var(--moderate-w); }
+  .sev-advisory .f-id { color: var(--advisory); background: var(--advisory-w); }
+
+  .f-title {
+    font-size: clamp(17px, 2.3vw, 20px);
+    font-weight: 650;
+    line-height: 1.3;
+    margin: 0;
+    flex: 1 1 320px;
+    letter-spacing: -.012em;
+  }
+  .f-sc {
+    font-family: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
+    font-size: 11px;
+    color: var(--ink3);
+    letter-spacing: .04em;
+    white-space: nowrap;
+    padding-top: 2px;
+  }
+
+  .f-body {
+    display: grid;
+    gap: 18px 40px;
+    margin-top: 14px;
+  }
+  @media (min-width: 860px) {
+    .f-body { grid-template-columns: 1fr 1fr; }
+  }
+  .f-body h4 {
+    font-family: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
+    font-size: 10.5px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--ink3);
+    font-weight: 600;
+    margin: 0 0 7px;
+  }
+  .f-body p { margin: 0 0 9px; font-size: 14.6px; line-height: 1.58; color: var(--ink2); }
+  .f-body p:last-child { margin-bottom: 0; }
+  .f-body strong { color: var(--ink); font-weight: 600; }
+
+  .locs {
+    list-style: none;
+    margin: 0 0 11px;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .locs li {
+    font-family: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
+    font-size: 12px;
+    color: var(--ink3);
+    line-height: 1.45;
+    word-break: break-word;
+  }
+  .locs li b { color: var(--ink2); font-weight: 600; }
+
+  pre {
+    background: var(--sunk);
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    padding: 11px 13px;
+    margin: 0 0 10px;
+    overflow-x: auto;
+    font-family: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
+    font-size: 12.2px;
+    line-height: 1.55;
+    color: var(--ink);
+  }
+  pre .del { color: var(--blocker); }
+  pre .add { color: var(--good); }
+  pre .cm  { color: var(--ink3); }
+
+  /* ── Contrast specimen table ───────────────────────────────────────── */
+  .tblwrap {
+    overflow-x: auto;
+    border: 1px solid var(--rule);
+    background: var(--panel);
+  }
+  table { border-collapse: collapse; width: 100%; min-width: 660px; }
+  thead th {
+    font-family: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
+    font-size: 10.5px;
+    letter-spacing: .11em;
+    text-transform: uppercase;
+    color: var(--ink3);
+    font-weight: 600;
+    text-align: left;
+    padding: 11px 14px;
+    border-bottom: 1px solid var(--rule2);
+    white-space: nowrap;
+  }
+  tbody td {
+    padding: 11px 14px;
+    border-bottom: 1px solid var(--rule);
+    font-size: 13.6px;
+    color: var(--ink2);
+    vertical-align: middle;
+  }
+  tbody tr:last-child td { border-bottom: 0; }
+  td.ratio {
+    font-family: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    color: var(--ink);
+    white-space: nowrap;
+  }
+  td.usage { color: var(--ink3); font-size: 12.8px; }
+
+  /* Specimens quote the app's real light-mode colours, so they carry
+     their own fixed ground and never follow this report's theme. */
+  .spec {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 84px;
+    padding: 5px 10px;
+    border-radius: 3px;
+    font-size: 13px;
+    font-weight: 700;
+    border: 1px solid rgba(0,0,0,.14);
+    white-space: nowrap;
+  }
+
+  .meter {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    min-width: 152px;
+  }
+  .track {
+    position: relative;
+    flex: 1;
+    height: 7px;
+    background: var(--sunk);
+    border-radius: 3.5px;
+    overflow: hidden;
+  }
+  .fill { height: 100%; border-radius: 3.5px; }
+  .thresh {
+    position: absolute;
+    top: -3px;
+    bottom: -3px;
+    width: 1.5px;
+    background: var(--ink3);
+  }
+  .verdict {
+    font-family: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    white-space: nowrap;
+  }
+  .v-fail { color: var(--blocker); }
+  .v-pass { color: var(--good); }
+
+  .legend {
+    font-size: 12.5px;
+    color: var(--ink3);
+    margin: 12px 0 0;
+    line-height: 1.5;
+  }
+
+  /* ── Fix order ─────────────────────────────────────────────────────── */
+  ol.plan { list-style: none; counter-reset: step; margin: 0; padding: 0; }
+  ol.plan li {
+    counter-increment: step;
+    display: grid;
+    grid-template-columns: 40px 1fr;
+    gap: 0 16px;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--rule);
+  }
+  ol.plan li:first-child { border-top: 1px solid var(--rule); }
+  ol.plan li::before {
+    content: counter(step, decimal-leading-zero);
+    font-family: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--accent);
+    padding-top: 2px;
+  }
+  ol.plan h4 { margin: 0 0 4px; font-size: 15.5px; font-weight: 650; color: var(--ink); }
+  ol.plan p { margin: 0; font-size: 14px; color: var(--ink2); line-height: 1.55; }
+  ol.plan .refs {
+    font-family: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
+    font-size: 11.5px;
+    color: var(--ink3);
+    margin-top: 5px;
+    display: block;
+  }
+
+  /* ── Method / footer ───────────────────────────────────────────────── */
+  .method {
+    background: var(--panel);
+    border: 1px solid var(--rule);
+    padding: 20px 22px;
+    display: grid;
+    gap: 18px 36px;
+  }
+  @media (min-width: 780px) { .method { grid-template-columns: 1fr 1fr; } }
+  .method h4 {
+    font-family: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
+    font-size: 10.5px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--ink3);
+    font-weight: 600;
+    margin: 0 0 8px;
+  }
+  .method ul { margin: 0; padding-left: 17px; }
+  .method li { font-size: 14px; color: var(--ink2); line-height: 1.55; margin-bottom: 5px; }
+
+  footer {
+    margin-top: 54px;
+    padding-top: 20px;
+    border-top: 1px solid var(--rule);
+    font-family: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
+    font-size: 11.5px;
+    color: var(--ink3);
+    line-height: 1.7;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+  }
+</style>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <div class="kicker">
+      <span>Target <b>trivia-app / Angular 20 + Ionic</b></span>
+      <span>Branch <b>dev-marto @ 88c443d</b></span>
+      <span>Standard <b>WCAG 2.2 AA</b></span>
+      <span>Method <b>Static source review</b></span>
+    </div>
+    <h1>Accessibility audit</h1>
+    <p class="standfirst">
+      Twenty-three findings across the player app, booth display and shared theme layer.
+      The headline result: <strong>the game itself cannot be played without a pointing device</strong> —
+      every answer choice is a <code>&lt;div&gt;</code> with a click handler. Alongside that,
+      the registration form's labels are not attached to their inputs, pinch-zoom is disabled
+      document-wide, and the brand orange fails contrast at every size it is currently used as text.
+      All four are small, contained fixes.
+    </p>
+  </header>
+
+  <div class="tiles">
+    <div class="tile t-blocker">
+      <span class="tile-n">4</span>
+      <span class="tile-lab">Blocker</span>
+      <span class="tile-sub">Excludes a whole group of users outright</span>
+    </div>
+    <div class="tile t-serious">
+      <span class="tile-n">7</span>
+      <span class="tile-lab">Serious</span>
+      <span class="tile-sub">Clear AA failure; usable but degraded</span>
+    </div>
+    <div class="tile t-moderate">
+      <span class="tile-n">8</span>
+      <span class="tile-lab">Moderate</span>
+      <span class="tile-sub">Conformance gap, low user friction</span>
+    </div>
+    <div class="tile t-advisory">
+      <span class="tile-n">4</span>
+      <span class="tile-lab">Advisory</span>
+      <span class="tile-sub">Best practice or accepted risk to record</span>
+    </div>
+  </div>
+  <p class="tiles-note">
+    Severity is user impact, not effort. Most blockers here are one-line or one-element changes.
+  </p>
+
+  <!-- ══ BLOCKERS ══════════════════════════════════════════════════════ -->
+  <section>
+    <h2>Blockers <span class="count">4 findings</span></h2>
+    <p class="sec-intro">
+      Each of these makes some part of the product unusable rather than awkward. They are the
+      set worth fixing before the app is presented as accessible to anyone.
+    </p>
+
+    <article class="finding sev-blocker">
+      <div class="f-head">
+        <span class="f-id">A11Y-01</span>
+        <h3 class="f-title">Answer choices are clickable <code>&lt;div&gt;</code>s, so the game is keyboard-inaccessible</h3>
+        <span class="f-sc">2.1.1 · 4.1.2 (A)</span>
+      </div>
+      <div class="f-body">
+        <div>
+          <h4>What happens</h4>
+          <ul class="locs">
+            <li><b>game.page.html</b>:100–111</li>
+            <li><b>sponsor.page.html</b>:237–248</li>
+          </ul>
+          <p>
+            The answer cards are <code>&lt;div class="pm-answer" (click)="…"&gt;</code>. A div is not
+            focusable, exposes no role, has no accessible name, and does not fire on
+            <kbd>Enter</kbd> or <kbd>Space</kbd>. There is no <code>tabindex</code> or
+            <code>keydown</code> handler anywhere in the codebase to compensate.
+          </p>
+          <p>
+            The consequence is total: a keyboard-only player, a switch user, or a screen-reader
+            user can reach the game screen, hear the question read out, and then have
+            <strong>no way to answer it</strong> before the 90-second timer expires. The same
+            pattern repeats in the sponsor bonus round.
+          </p>
+        </div>
+        <div>
+          <h4>What to change</h4>
+          <p>
+            Swap the element for a real button. <code>.pm-answer</code> already styles by class,
+            so the visual result is unchanged once you reset the button defaults.
+          </p>
+<pre><span class="del">- &lt;div class="pm-answer" (click)="selectAnswer(choice.index)"&gt;</span>
+<span class="add">+ &lt;button type="button" class="pm-answer"</span>
+<span class="add">+         [disabled]="selectedIndex() !== null"</span>
+<span class="add">+         [attr.aria-pressed]="selectedIndex() === choice.index"</span>
+<span class="add">+         (click)="selectAnswer(choice.index)"&gt;</span></pre>
+          <p>
+            Add <code>width:100%; text-align:left; font:inherit;</code> to <code>.pm-answer</code>,
+            and replace the <code>.is-disabled { pointer-events:none }</code> lock-out with the
+            native <code>:disabled</code> state. The sponsor round's
+            <code>pointer-events-none</code> gate should become <code>[disabled]="!unlocked()"</code>
+            on the same buttons.
+          </p>
+        </div>
+      </div>
+    </article>
+
+    <article class="finding sev-blocker">
+      <div class="f-head">
+        <span class="f-id">A11Y-02</span>
+        <h3 class="f-title">Registration and login labels are not associated with their inputs</h3>
+        <span class="f-sc">1.3.1 · 3.3.2 · 4.1.2 (A)</span>
+      </div>
+      <div class="f-body">
+        <div>
+          <h4>What happens</h4>
+          <ul class="locs">
+            <li><b>register.page.html</b>:83–154 — first name, last name, email, company, phone, password</li>
+            <li><b>register.page.html</b>:245–272 — login email, password</li>
+          </ul>
+          <p>
+            Every field follows the shape <code>&lt;label class="pm-label"&gt;…&lt;/label&gt;</code>
+            followed by a sibling <code>&lt;div class="pm-input-wrap"&gt;</code> containing the input.
+            The label neither wraps the input nor carries a <code>for</code> attribute, so there is
+            no programmatic association.
+          </p>
+          <p>
+            A screen reader announces each of the eight fields as an unnamed
+            <strong>"edit text, blank"</strong>. Registration — the only door into the product — is
+            effectively unfillable, and tapping the visible label does not focus the field either.
+          </p>
+        </div>
+        <div>
+          <h4>What to change</h4>
+          <p>
+            The correct pattern already exists in this codebase:
+            <code>forgotten-password.page.html</code>:48 and :53 use matched
+            <code>for</code>/<code>id</code>. Apply the same to all eight fields.
+          </p>
+<pre><span class="del">- &lt;label class="pm-label"&gt;First name …&lt;/label&gt;</span>
+<span class="add">+ &lt;label class="pm-label" for="reg-first-name"&gt;First name …&lt;/label&gt;</span>
+  &lt;div class="pm-input-wrap"&gt;
+<span class="del">-   &lt;input class="pm-input" formControlName="firstName" /&gt;</span>
+<span class="add">+   &lt;input id="reg-first-name" class="pm-input" required</span>
+<span class="add">+          formControlName="firstName" /&gt;</span></pre>
+          <p>
+            While in there: the required marker is a bare orange <code>*</code> conveyed by colour
+            and symbol only. Add the native <code>required</code> attribute so it is exposed to
+            assistive tech, and mark the decorative asterisk <code>aria-hidden="true"</code>.
+          </p>
+        </div>
+      </div>
+    </article>
+
+    <article class="finding sev-blocker">
+      <div class="f-head">
+        <span class="f-id">A11Y-03</span>
+        <h3 class="f-title">Pinch-zoom is disabled for the entire application</h3>
+        <span class="f-sc">1.4.4 · 1.4.10 (AA)</span>
+      </div>
+      <div class="f-body">
+        <div>
+          <h4>What happens</h4>
+          <ul class="locs"><li><b>index.html</b>:11</li></ul>
+<pre>&lt;meta name="viewport" content="viewport-fit=cover, width=device-width,
+      initial-scale=1.0, <span class="del">minimum-scale=1.0, maximum-scale=1.0,
+      user-scalable=no</span>" /&gt;</pre>
+          <p>
+            This is a booth app played on personal phones by an audience that skews older, in
+            variable trade-show lighting, on a screen carrying <strong>11px body text</strong>
+            (the SMS consent block). Locking zoom removes the one adaptation those users would
+            reach for first.
+          </p>
+          <p>
+            iOS Safari has ignored <code>user-scalable=no</code> since iOS 10, so this mainly
+            penalises Android and desktop Chrome users — inconsistently, which is worse.
+          </p>
+        </div>
+        <div>
+          <h4>What to change</h4>
+          <p>Delete the three scale locks. Keep <code>viewport-fit=cover</code>.</p>
+<pre><span class="add">&lt;meta name="viewport" content="viewport-fit=cover,
+      width=device-width, initial-scale=1.0" /&gt;</span></pre>
+          <p>
+            The layout is already fluid down to the 360px minimum from <code>CLAUDE.md</code>, so
+            nothing else should need to move. Re-check the register card and the game HUD at 200%
+            zoom after the change.
+          </p>
+        </div>
+      </div>
+    </article>
+
+    <article class="finding sev-blocker">
+      <div class="f-head">
+        <span class="f-id">A11Y-04</span>
+        <h3 class="f-title">Registration and login report no validation errors at all</h3>
+        <span class="f-sc">3.3.1 (A) · 3.3.3 (AA)</span>
+      </div>
+      <div class="f-body">
+        <div>
+          <h4>What happens</h4>
+          <ul class="locs">
+            <li><b>register.page.html</b>:196 — <code>[disabled]="form.invalid || …"</code></li>
+            <li><b>register.page.html</b>:283 — same on the login form</li>
+          </ul>
+          <p>
+            Neither form renders a single field-level message. The only signal that something is
+            wrong is that the submit button stays greyed out at 45% opacity, with no explanation
+            of which field or why.
+          </p>
+          <p>
+            A sighted user mistypes an email and sees a dead button. A screen-reader user hears
+            "Start playing, dimmed" and has no route at all to discovering the cause. The
+            "disabled until valid" pattern hides the error rather than reporting it — which is
+            precisely what 3.3.1 exists to prevent.
+          </p>
+        </div>
+        <div>
+          <h4>What to change</h4>
+          <p>
+            Keep the button enabled, validate on submit, and render messages tied to their fields.
+            <code>forgotten-password.page.html</code>:193–197 already does this for the
+            password-mismatch case and is the pattern to copy.
+          </p>
+<pre>&lt;input id="reg-email" …
+       [attr.aria-invalid]="showError('email')"
+       [attr.aria-describedby]="showError('email')
+                                ? 'reg-email-err' : null" /&gt;
+@if (showError('email')) {
+  &lt;p id="reg-email-err" class="pm-field-error"&gt;
+    {{ 'REGISTER.EMAIL_INVALID' | translate }}
+  &lt;/p&gt;
+}</pre>
+          <p>
+            Also add a form-level summary in a <code>role="alert"</code> container listing the
+            invalid fields, and move focus to the first one on failed submit.
+          </p>
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <!-- ══ SERIOUS ═══════════════════════════════════════════════════════ -->
+  <section>
+    <h2>Serious <span class="count">7 findings</span></h2>
+    <p class="sec-intro">
+      Clear Level AA failures. The product still functions, but low-vision, colour-blind and
+      screen-reader users get a materially worse version of it.
+    </p>
+
+    <article class="finding sev-serious">
+      <div class="f-head">
+        <span class="f-id">A11Y-05</span>
+        <h3 class="f-title">The brand orange fails contrast everywhere it is used as text</h3>
+        <span class="f-sc">1.4.3 (AA)</span>
+      </div>
+      <div class="f-body">
+        <div>
+          <h4>What happens</h4>
+          <ul class="locs">
+            <li><b>variables.scss</b>:27 / <b>tailwind.css</b>:9 — <code>--color-orange: #F34D23</code></li>
+            <li><b>_global.scss</b>:219–248 — <code>.pm-cta</code>, white on orange</li>
+          </ul>
+          <p>
+            <code>#F34D23</code> gives <strong>3.56:1</strong> against white — below the 4.5:1
+            floor for anything under 24px (or 18.7px bold). It is the colour of the primary CTA
+            label, every inline link, the required-field asterisks, the token-expired banner text
+            and the live score.
+          </p>
+          <p>
+            The CTA is the sharpest case: 16px at weight 800 (17px on desktop) is not "large text"
+            under WCAG, so the app's single most important control fails.
+          </p>
+        </div>
+        <div>
+          <h4>What to change</h4>
+          <p>
+            The remedy is already in the token file. <code>--color-orange-shade: #C7421B</code>
+            measures <strong>4.97:1</strong> on white — a barely perceptible shift that clears AA.
+          </p>
+          <p>
+            Use <code>orange-shade</code> for orange-on-white text, for white-on-orange button
+            fills, and for the error banner. Keep <code>#F34D23</code> for display type at 24px+,
+            for glows, dots, bars and other non-text fills, where no minimum applies. On navy the
+            orange is fine at 5.12:1 and needs no change.
+          </p>
+          <p>
+            Measured pairs for the whole palette are tabulated
+            <a href="#contrast">below</a>.
+          </p>
+        </div>
+      </div>
+    </article>
+
+    <article class="finding sev-serious">
+      <div class="f-head">
+        <span class="f-id">A11Y-06</span>
+        <h3 class="f-title">The correct-answer green fails contrast in its own success state</h3>
+        <span class="f-sc">1.4.3 (AA)</span>
+      </div>
+      <div class="f-body">
+        <div>
+          <h4>What happens</h4>
+          <ul class="locs">
+            <li><b>variables.scss</b>:37 — <code>--color-correct: #16A34A</code></li>
+            <li><b>_global.scss</b>:300–306 — <code>.pm-answer.is-correct</code> on <code>#F0FDF4</code></li>
+          </ul>
+          <p>
+            <code>#16A34A</code> is <strong>3.30:1</strong> on white and drops to
+            <strong>3.15:1</strong> on the mint background the correct answer is painted with —
+            so the reveal moment, the one frame the player is actually looking at, is the
+            least readable state in the app.
+          </p>
+        </div>
+        <div>
+          <h4>What to change</h4>
+          <p>
+            Darken the token to <code>#15803D</code>, which measures <strong>5.02:1</strong> on
+            white and comfortably clears the mint tint too. The hue is unchanged; only the
+            luminance moves.
+          </p>
+          <p>
+            The same applies to the <code>easy</code> difficulty dot in
+            <code>game.page.ts</code>:256, which reuses this green.
+          </p>
+        </div>
+      </div>
+    </article>
+
+    <article class="finding sev-serious">
+      <div class="f-head">
+        <span class="f-id">A11Y-07</span>
+        <h3 class="f-title">Muted text at reduced opacity — including the SMS consent copy — fails badly</h3>
+        <span class="f-sc">1.4.3 (AA)</span>
+      </div>
+      <div class="f-body">
+        <div>
+          <h4>What happens</h4>
+          <ul class="locs">
+            <li><b>register.page.html</b>:187–191 — <code>text-muted/70</code> at 11px</li>
+            <li><b>register.page.html</b>:301 — consent footnote, same treatment</li>
+            <li><b>leaderboard.page.html</b>:77 — <code>rgba(107,114,128,0.5)</code></li>
+            <li><b>tailwind.css</b>:27 — <code>--color-muted-light: #9CA3AF</code></li>
+          </ul>
+          <p>
+            The base <code>--color-muted #6B7280</code> passes at 4.83:1. Every reduced-opacity
+            derivative of it does not: <code>muted/70</code> lands at
+            <strong>2.74:1</strong>, <code>muted-light</code> at <strong>2.54:1</strong>, and the
+            leaderboard's separator at <strong>1.93:1</strong>.
+          </p>
+          <p>
+            The most consequential instance is the SMS frequency / rates / HELP-and-STOP block —
+            11px at 2.74:1. That is the exact disclosure a carrier reviewer expects to be
+            legible at the point of collection, so this one carries compliance weight as well as
+            accessibility weight.
+          </p>
+        </div>
+        <div>
+          <h4>What to change</h4>
+          <p>
+            Drop the opacity modifiers and use solid <code>--color-muted</code> for all of this
+            copy. Raise the SMS disclosure from 11px to at least 12px while you are there —
+            nothing in the layout depends on it staying at 11.
+          </p>
+          <p>
+            Retire <code>--color-muted-light</code> for text use, or redefine it to a value that
+            passes; today it is a token that cannot legally carry body copy.
+          </p>
+        </div>
+      </div>
+    </article>
+
+    <article class="finding sev-serious">
+      <div class="f-head">
+        <span class="f-id">A11Y-08</span>
+        <h3 class="f-title">Answer feedback is colour-only, and nothing in the app is ever announced</h3>
+        <span class="f-sc">1.4.1 (A) · 4.1.3 (AA)</span>
+      </div>
+      <div class="f-body">
+        <div>
+          <h4>What happens</h4>
+          <ul class="locs">
+            <li><b>game.page.html</b>:100–111 — right/wrong via border + background colour</li>
+            <li><b>game.page.html</b>:109 — a bare <code>✓</code> text node</li>
+            <li><b>game.page.html</b>:49–56 — timer and score, no live region</li>
+          </ul>
+          <p>
+            Correct and wrong are distinguished by a green or red border and tint. The only
+            non-colour cue is a <code>✓</code> glyph on the correct row, which most screen readers
+            voice as "check mark" with no context.
+          </p>
+          <p>
+            More broadly: the codebase contains three ARIA roles in total — two
+            <code>alert</code>s and one <code>status</code>, all in auth screens. Nothing in the
+            game announces anything. Score changes, streak multipliers, the ten-second timer
+            warning and the round result are all silent.
+          </p>
+        </div>
+        <div>
+          <h4>What to change</h4>
+          <p>
+            Add a visually hidden live region on the game page and write the result into it when
+            <code>lastResult()</code> resolves:
+          </p>
+<pre>&lt;p class="sr-only" aria-live="assertive" role="status"&gt;
+  {{ resultAnnouncement() }}
+&lt;/p&gt;
+<span class="cm">// "Correct. 240 points. Score 1,180."</span>
+<span class="cm">// "Not quite — the answer was C, Tungsten carbide."</span></pre>
+          <p>
+            Mark the <code>✓</code> <code>aria-hidden="true"</code> once the text carries the
+            meaning, and give the correct/wrong states a shape difference (icon or weight) as well
+            as a colour difference.
+          </p>
+          <p>
+            The timer needs <code>aria-live="off"</code> plus a single polite announcement at the
+            30s and 10s marks — announcing every tick would be unusable.
+          </p>
+        </div>
+      </div>
+    </article>
+
+    <article class="finding sev-serious">
+      <div class="f-head">
+        <span class="f-id">A11Y-09</span>
+        <h3 class="f-title">Focus indicators are removed on inputs and absent on most controls</h3>
+        <span class="f-sc">2.4.7 (AA)</span>
+      </div>
+      <div class="f-body">
+        <div>
+          <h4>What happens</h4>
+          <ul class="locs">
+            <li><b>_global.scss</b>:64–67 — <code>.pm-input:focus { outline: none }</code></li>
+            <li><b>_global.scss</b>:219, 251 — <code>.pm-cta</code>, <code>.pm-cta-outline</code>: no focus rule</li>
+            <li><b>sponsor.page.html</b>:290 — <code>focus:outline-none</code> on the QR link, no replacement</li>
+            <li><b>leaderboard.page.html</b>:18–27 — scope toggles, no focus rule</li>
+          </ul>
+          <p>
+            Inputs trade the browser's focus ring for a 1.5px orange border at 3.56:1 — a change
+            that is easy to miss and fails the adjacent-contrast expectation. The primary CTA,
+            the outline CTA, the leaderboard toggles and the header logo have no focus styling of
+            any kind. The sponsor QR link explicitly removes its ring and puts nothing back.
+          </p>
+        </div>
+        <div>
+          <h4>What to change</h4>
+          <p>
+            The right pattern is again already present —
+            <code>.pm-input-affix</code> (:133) and <code>.pm-checkbox</code> (:190) both do it
+            correctly. Promote it to a shared rule:
+          </p>
+<pre>%pm-focus, .pm-cta, .pm-cta-outline, .pm-answer,
+.pm-input, .pm-bar-logo-link {
+  &amp;:focus-visible {
+    outline: 2px solid var(--color-orange-shade);
+    outline-offset: 2px;
+    border-radius: 8px;
+  }
+}</pre>
+          <p>Delete the <code>focus:outline-none</code> on the sponsor QR anchor outright.</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="finding sev-serious">
+      <div class="f-head">
+        <span class="f-id">A11Y-10</span>
+        <h3 class="f-title">The sponsor video has no captions and no accessible controls</h3>
+        <span class="f-sc">1.2.2 (A) · 2.1.1 (A) · 4.1.2 (A)</span>
+      </div>
+      <div class="f-body">
+        <div>
+          <h4>What happens</h4>
+          <ul class="locs">
+            <li><b>sponsor.page.html</b>:136–147 — <code>&lt;video&gt;</code>, no <code>controls</code>, no <code>&lt;track&gt;</code></li>
+            <li><b>sponsor.page.html</b>:136 — play surface is <code>&lt;div (click)="startVideo()"&gt;</code></li>
+            <li><b>sponsor.page.html</b>:191 — play affordance is <code>&lt;div&gt;▶&lt;/div&gt;</code></li>
+            <li><b>sponsor.page.html</b>:149–185 — mute button contains only an unlabelled SVG</li>
+          </ul>
+          <p>
+            The video is sponsor-supplied, carries audio, and <strong>gates the bonus question</strong> —
+            answers stay locked until it finishes. A Deaf or hard-of-hearing player gets no access
+            to its content; a keyboard user cannot start it at all, because both the wrapper and the
+            play button are non-focusable divs. The mute toggle is a real button but announces as
+            just "button".
+          </p>
+        </div>
+        <div>
+          <h4>What to change</h4>
+          <p>
+            Add <code>controls</code> to the video element and make the play overlay a
+            <code>&lt;button&gt;</code> with a translated <code>aria-label</code>. Give the mute
+            toggle an <code>aria-label</code> that reflects state, and
+            <code>aria-hidden="true"</code> on its SVG.
+          </p>
+          <p>
+            Captions need a content decision, not just a code change: the admin panel currently
+            accepts a <code>videoUrl</code> only. Add an optional <strong>captions VTT URL</strong>
+            beside it and render <code>&lt;track kind="captions" default&gt;</code> when present.
+            Failing that, a sponsor-supplied transcript rendered under the player satisfies 1.2.2
+            for prerecorded content.
+          </p>
+        </div>
+      </div>
+    </article>
+
+    <article class="finding sev-serious">
+      <div class="f-head">
+        <span class="f-id">A11Y-11</span>
+        <h3 class="f-title">Loading states are invisible to assistive technology</h3>
+        <span class="f-sc">4.1.3 (AA)</span>
+      </div>
+      <div class="f-body">
+        <div>
+          <h4>What happens</h4>
+          <ul class="locs">
+            <li><b>game.page.html</b>:6–15, 29–37</li>
+            <li><b>sponsor.page.html</b>:41–51</li>
+            <li><b>results.page.html</b>:6–15 · <b>leaderboard.page.html</b>:31–42</li>
+          </ul>
+          <p>
+            The three-dot loader and its caption sit in plain <code>&lt;div&gt;</code>s. When a
+            screen-reader user navigates to the game, the page goes quiet — with no indication of
+            whether it is loading, broken, or finished — and then content silently replaces it.
+          </p>
+        </div>
+        <div>
+          <h4>What to change</h4>
+          <p>
+            Wrap each loader in <code>role="status" aria-live="polite"</code>, mark the animated
+            dots <code>aria-hidden="true"</code>, and keep the existing caption text as the thing
+            that gets announced. The countdown before the game starts (<code>game.page.html</code>:18–27)
+            wants the same treatment.
+          </p>
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <!-- ══ MODERATE ══════════════════════════════════════════════════════ -->
+  <section>
+    <h2>Moderate <span class="count">8 findings</span></h2>
+    <p class="sec-intro">
+      Real conformance gaps that degrade the experience without blocking it. Most are quick.
+    </p>
+
+    <article class="finding sev-moderate">
+      <div class="f-head">
+        <span class="f-id">A11Y-12</span>
+        <h3 class="f-title">Every route shares one page title</h3>
+        <span class="f-sc">2.4.2 (A)</span>
+      </div>
+      <div class="f-body">
+        <div>
+          <h4>What happens</h4>
+          <ul class="locs">
+            <li><b>index.html</b>:6 — static <code>&lt;title&gt;</code></li>
+            <li><b>app.routes.ts</b> — no route declares <code>title</code></li>
+          </ul>
+          <p>
+            All twelve routes report "Practical Machinist Trivia". Browser history, tab switching
+            and the screen-reader page-change announcement all carry no information about where
+            the user is.
+          </p>
+        </div>
+        <div>
+          <h4>What to change</h4>
+          <p>
+            Add <code>title</code> to each route definition. Angular's Router sets it
+            automatically, and a <code>TitleStrategy</code> can append the app name.
+          </p>
+<pre>{ path: 'game',        title: 'Play · PM Trivia',        … }
+{ path: 'leaderboard', title: 'Leaderboard · PM Trivia', … }</pre>
+        </div>
+      </div>
+    </article>
+
+    <article class="finding sev-moderate">
+      <div class="f-head">
+        <span class="f-id">A11Y-13</span>
+        <h3 class="f-title">No landmarks and no way to skip the header</h3>
+        <span class="f-sc">1.3.1 (A) · 2.4.1 (A)</span>
+      </div>
+      <div class="f-body">
+        <div>
+          <h4>What happens</h4>
+          <p>
+            There is no <code>&lt;main&gt;</code> element anywhere in the application. Page content
+            sits in unlabelled <code>&lt;div&gt;</code>s inside <code>ion-content</code>, and
+            <code>&lt;header&gt;</code> is repeated per page rather than living in a shell.
+          </p>
+          <p>
+            Screen-reader users lose landmark navigation entirely and must tab through the header
+            on every route.
+          </p>
+        </div>
+        <div>
+          <h4>What to change</h4>
+          <p>
+            Wrap each page's content region in <code>&lt;main id="main"&gt;</code> and add a skip
+            link as the first focusable element in <code>app.component.html</code>. A
+            <code>.sr-only</code> utility that becomes visible on focus is the standard shape,
+            and the app currently has no such utility — worth adding to
+            <code>_global.scss</code> since findings 08 and 11 need it too.
+          </p>
+        </div>
+      </div>
+    </article>
+
+    <article class="finding sev-moderate">
+      <div class="f-head">
+        <span class="f-id">A11Y-14</span>
+        <h3 class="f-title">The header logo is a clickable image, and the sponsor logo is unlabelled</h3>
+        <span class="f-sc">2.1.1 (A) · 2.4.4 (A) · 1.1.1 (A)</span>
+      </div>
+      <div class="f-body">
+        <div>
+          <h4>What happens</h4>
+          <ul class="locs">
+            <li><b>pm-header.component.html</b>:3–7 — <code>routerLink</code> on an <code>&lt;img&gt;</code></li>
+            <li><b>pm-header.component.html</b>:13, 17 — <code>alt="Event"</code></li>
+          </ul>
+          <p>
+            Putting <code>routerLink</code> on an image produces a click target that is not
+            focusable and is not exposed as a link. Its <code>alt</code> describes the picture
+            ("Practical Machinist") rather than the destination.
+          </p>
+          <p>
+            The sponsor logo beside it is labelled <code>alt="Event"</code> on both branches —
+            uninformative, and it discards the sponsor name the backend already supplies.
+          </p>
+        </div>
+        <div>
+          <h4>What to change</h4>
+<pre><span class="add">&lt;a routerLink="/register" [queryParams]="registerQueryParams()"</span>
+<span class="add">   aria-label="Practical Machinist Trivia — home"&gt;</span>
+  &lt;img class="pm-bar-logo" src="assets/pm-logo.png" alt="" /&gt;
+<span class="add">&lt;/a&gt;</span></pre>
+          <p>
+            For the event logo, bind the sponsor or event name into <code>alt</code>. If it is
+            purely decorative next to adjacent text, use <code>alt=""</code> deliberately — but
+            "Event" is neither.
+          </p>
+        </div>
+      </div>
+    </article>
+
+    <article class="finding sev-moderate">
+      <div class="f-head">
+        <span class="f-id">A11Y-15</span>
+        <h3 class="f-title">Heading structure is invalid on register and missing on two other pages</h3>
+        <span class="f-sc">1.3.1 (A)</span>
+      </div>
+      <div class="f-body">
+        <div>
+          <h4>What happens</h4>
+          <ul class="locs">
+            <li><b>register.page.html</b>:31–42 — a <code>&lt;div&gt;</code> and <code>&lt;p&gt;</code> nested inside <code>&lt;h1&gt;</code>, styled <code>text-transparent</code></li>
+            <li><b>sponsor.page.html</b>:229 — question phase starts at <code>h2</code>, no <code>h1</code></li>
+            <li><b>results.page.html</b> — no heading element at all</li>
+          </ul>
+          <p>
+            The register fallback headline is both invalid markup (block content inside a heading)
+            and invisible — <code>text-transparent</code> hides it from sighted users while screen
+            readers still read it as the page's <code>h1</code>. The sponsor question and the
+            results page have no top-level heading to orient by.
+          </p>
+        </div>
+        <div>
+          <h4>What to change</h4>
+          <p>
+            Flatten the register fallback to inline content inside the <code>h1</code>, and give it
+            a real colour or remove it. Promote the sponsor question prompt to <code>h1</code> for
+            that phase, and add an <code>h1</code> to results — the "Final score" block is the
+            natural candidate.
+          </p>
+        </div>
+      </div>
+    </article>
+
+    <article class="finding sev-moderate">
+      <div class="f-head">
+        <span class="f-id">A11Y-16</span>
+        <h3 class="f-title">Admin-supplied sponsor colours ship with no contrast constraint</h3>
+        <span class="f-sc">1.4.3 (AA)</span>
+      </div>
+      <div class="f-body">
+        <div>
+          <h4>What happens</h4>
+          <ul class="locs">
+            <li><b>sponsor.page.html</b>:107 — <code>[style.background-color]="sq.sponsor.primaryColor"</code></li>
+            <li><b>sponsor.page.html</b>:119–122 — <code>[style.color]="sq.sponsor.textColor"</code></li>
+            <li><b>booth-display.page.html</b>:82 — same binding on the sponsor stripe</li>
+          </ul>
+          <p>
+            Brand colour and text colour come straight from the admin panel and are applied
+            unmodified. Whatever an admin picks ships to every player — including combinations
+            like pale yellow text on white, which no amount of frontend care can rescue.
+          </p>
+          <p>
+            This is the one finding that cannot be fully closed in the frontend, and it recurs
+            every time a new sponsor is onboarded.
+          </p>
+        </div>
+        <div>
+          <h4>What to change</h4>
+          <p>
+            Put the check where the value is entered: in the admin colour pickers, compute the
+            ratio between <code>textColor</code> and <code>primaryColor</code> live and block or
+            warn below 4.5:1.
+          </p>
+          <p>
+            As a frontend backstop, derive the text colour from the chosen background
+            (pick black or white by luminance) rather than trusting the stored pair, so a bad
+            admin entry degrades to legible instead of invisible.
+          </p>
+        </div>
+      </div>
+    </article>
+
+    <article class="finding sev-moderate">
+      <div class="f-head">
+        <span class="f-id">A11Y-17</span>
+        <h3 class="f-title">Links inside admin rich-text content fail contrast</h3>
+        <span class="f-sc">1.4.3 (AA)</span>
+      </div>
+      <div class="f-body">
+        <div>
+          <h4>What happens</h4>
+          <ul class="locs"><li><b>tailwind.css</b>:58 — <code>.editor a { @apply text-blue-500 underline }</code></li></ul>
+          <p>
+            Tailwind's <code>blue-500</code> (<code>#3B82F6</code>) is <strong>3.68:1</strong> on
+            white. The <code>.editor</code> class carries the terms and privacy pages
+            (<code>/page/:id</code>) and the admin-authored landing copy — the consent link a
+            player is asked to read before agreeing.
+          </p>
+        </div>
+        <div>
+          <h4>What to change</h4>
+          <p>
+            Use <code>blue-700</code> (<code>#1D4ED8</code>, 7.0:1) or the brand
+            <code>orange-shade</code> for consistency with the rest of the app. The underline is
+            already there, so colour is not the only link cue — but it still has to be readable.
+          </p>
+        </div>
+      </div>
+    </article>
+
+    <article class="finding sev-moderate">
+      <div class="f-head">
+        <span class="f-id">A11Y-18</span>
+        <h3 class="f-title">Decorative glyphs and initials are read aloud verbatim</h3>
+        <span class="f-sc">1.1.1 (A)</span>
+      </div>
+      <div class="f-body">
+        <div>
+          <h4>What happens</h4>
+          <ul class="locs">
+            <li><b>results.page.html</b>:55, 65, 72 — 🏆 📅 in content divs</li>
+            <li><b>sponsor.page.html</b>:13, 191, 253 — ★ ▶ 🔒</li>
+            <li><b>leaderboard.page.html</b>:61, 77 — initials avatar, <code>· · ·</code> separator</li>
+            <li><b>game.page.html</b>:109 — <code>✓</code></li>
+          </ul>
+          <p>
+            Every one of these is announced. "Trophy, view leaderboard" and "black star, bonus
+            round" are merely noisy; the leaderboard's initials badge is worse, spelling out
+            letters immediately before the full name is read, and the <code>· · ·</code> rank-gap
+            separator reads as "middle dot middle dot middle dot".
+          </p>
+        </div>
+        <div>
+          <h4>What to change</h4>
+          <p>
+            Add <code>aria-hidden="true"</code> to each. The initials badge is purely a visual
+            restatement of the adjacent name, so it hides cleanly. Where a glyph carries meaning
+            no text repeats — the 🔒 lock hint — keep the sentence and hide only the emoji.
+          </p>
+        </div>
+      </div>
+    </article>
+
+    <article class="finding sev-moderate">
+      <div class="f-head">
+        <span class="f-id">A11Y-19</span>
+        <h3 class="f-title">The leaderboard scope toggle exposes no selected state</h3>
+        <span class="f-sc">1.4.1 (A) · 4.1.2 (A)</span>
+      </div>
+      <div class="f-body">
+        <div>
+          <h4>What happens</h4>
+          <ul class="locs"><li><b>leaderboard.page.html</b>:18–27</li></ul>
+          <p>
+            "Today" and "This week" are two buttons whose selection is communicated purely by a
+            white pill background. Nothing in the accessibility tree distinguishes the active one,
+            and the same is true for the current player's row, which is marked only by orange text.
+          </p>
+        </div>
+        <div>
+          <h4>What to change</h4>
+          <p>
+            Add <code>[attr.aria-pressed]="store.activeScope() === 'today'"</code> to each button —
+            the app already uses <code>aria-pressed</code> correctly on the password toggles, so the
+            pattern is established. For the current player's row, add a visually hidden "you" marker
+            rather than relying on the orange.
+          </p>
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <!-- ══ ADVISORY ══════════════════════════════════════════════════════ -->
+  <section>
+    <h2>Advisory <span class="count">4 findings</span></h2>
+    <p class="sec-intro">
+      Best practice, or judgement calls worth recording as accepted risk rather than silently
+      leaving open.
+    </p>
+
+    <article class="finding sev-advisory">
+      <div class="f-head">
+        <span class="f-id">A11Y-20</span>
+        <h3 class="f-title">No <code>prefers-reduced-motion</code> support anywhere</h3>
+        <span class="f-sc">2.3.3 (AAA)</span>
+      </div>
+      <div class="f-body">
+        <div>
+          <h4>What happens</h4>
+          <p>
+            <code>animate-rise</code>, <code>animate-pop</code>, <code>dot-bounce</code>, the
+            countdown digit and the 60fps timer bar all run unconditionally.
+            <code>prefers-reduced-motion</code> appears nowhere in the codebase.
+          </p>
+          <p>
+            None of it is large-area parallax, so the vestibular risk is modest — but the pop and
+            bounce animations fire on every question transition, which is a lot of motion across a
+            90-second session.
+          </p>
+        </div>
+        <div>
+          <h4>What to change</h4>
+<pre>@media (prefers-reduced-motion: reduce) {
+  .animate-rise, .animate-pop, .loading-dot,
+  .countdown-digit { animation: none; }
+}</pre>
+          <p>Keep the timer bar — it conveys state, not decoration — but drop it to discrete steps.</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="finding sev-advisory">
+      <div class="f-head">
+        <span class="f-id">A11Y-21</span>
+        <h3 class="f-title">Invalid <code>autocomplete</code> token on the registration password</h3>
+        <span class="f-sc">1.3.5 (AA)</span>
+      </div>
+      <div class="f-body">
+        <div>
+          <h4>What happens</h4>
+          <ul class="locs"><li><b>register.page.html</b>:145 — <code>autocomplete="password"</code></li></ul>
+          <p>
+            <code>password</code> is not a valid autocomplete token, so browsers and password
+            managers ignore it. Every other field on the form is correct, and the reset flow uses
+            <code>new-password</code> properly.
+          </p>
+        </div>
+        <div>
+          <h4>What to change</h4>
+          <p>Change to <code>autocomplete="new-password"</code>.</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="finding sev-advisory">
+      <div class="f-head">
+        <span class="f-id">A11Y-22</span>
+        <h3 class="f-title">The 90-second session timer cannot be paused or extended</h3>
+        <span class="f-sc">2.2.1 (A) — exception claimed</span>
+      </div>
+      <div class="f-body">
+        <div>
+          <h4>What happens</h4>
+          <ul class="locs">
+            <li><b>game.page.ts</b>:20, 157–177 — fixed session countdown</li>
+            <li><b>sponsor.page.html</b>:62–68 — a second timer, gated behind the video</li>
+          </ul>
+          <p>
+            2.2.1 exempts limits that are essential to a real-time or competitive activity, and a
+            timed trivia game with a shared leaderboard is a reasonable fit. The sponsor round is
+            less clear-cut: its answer timer only starts after a video the player cannot skip, so
+            two timing constraints stack.
+          </p>
+        </div>
+        <div>
+          <h4>What to change</h4>
+          <p>
+            Nothing structural. Record the exception explicitly in the accessibility statement so
+            it reads as a decision rather than an oversight, and consider a configurable session
+            length in the admin panel — an accessible-session mode at 180 seconds costs little and
+            answers the objection directly.
+          </p>
+        </div>
+      </div>
+    </article>
+
+    <article class="finding sev-advisory">
+      <div class="f-head">
+        <span class="f-id">A11Y-23</span>
+        <h3 class="f-title">Booth display type is sized entirely in <code>vw</code></h3>
+        <span class="f-sc">1.4.4 (AA) — low exposure</span>
+      </div>
+      <div class="f-body">
+        <div>
+          <h4>What happens</h4>
+          <ul class="locs"><li><b>booth-display.page.scss</b> — every font-size in <code>vw</code> (e.g. 4.55vw, 0.83vw)</li></ul>
+          <p>
+            Viewport-relative type does not respond to browser zoom or OS text-size settings. On a
+            normal page this fails 1.4.4 outright.
+          </p>
+        </div>
+        <div>
+          <h4>What to change</h4>
+          <p>
+            Low priority in practice: the booth display is an unattended TV view at a fixed
+            distance with no user agent to zoom, which is exactly the case <code>vw</code> exists
+            for. Leave it, but keep the pattern quarantined to this one page — it should not spread
+            into the player app.
+          </p>
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <!-- ══ CONTRAST TABLE ════════════════════════════════════════════════ -->
+  <section id="contrast">
+    <h2>Measured contrast <span class="count">Design tokens</span></h2>
+    <p class="sec-intro">
+      Every colour pair the app actually renders, computed against the WCAG 2.x relative-luminance
+      formula. Swatches show the real pairing at its real weight; they keep their own fixed ground
+      and do not follow this report's theme.
+    </p>
+
+    <div class="tblwrap">
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">Specimen</th>
+            <th scope="col">Pair</th>
+            <th scope="col">Where it appears</th>
+            <th scope="col">Ratio</th>
+            <th scope="col">vs 4.5:1</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="spec" style="background:#F34D23;color:#FFFFFF;">Start playing</span></td>
+            <td class="mono" style="font-size:12px;">#FFFFFF on #F34D23</td>
+            <td class="usage">Primary CTA, 16–17px / 800</td>
+            <td class="ratio">3.56</td>
+            <td>
+              <div class="meter">
+                <div class="track"><div class="fill" style="width:50.9%;background:#B3261E;"></div><div class="thresh" style="left:64.3%;"></div></div>
+                <span class="verdict v-fail">FAIL</span>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td><span class="spec" style="background:#FFFFFF;color:#F34D23;">Log in</span></td>
+            <td class="mono" style="font-size:12px;">#F34D23 on #FFFFFF</td>
+            <td class="usage">Links, asterisks, score</td>
+            <td class="ratio">3.56</td>
+            <td>
+              <div class="meter">
+                <div class="track"><div class="fill" style="width:50.9%;background:#B3261E;"></div><div class="thresh" style="left:64.3%;"></div></div>
+                <span class="verdict v-fail">FAIL</span>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td><span class="spec" style="background:#FFF5F0;color:#F34D23;">QR expired</span></td>
+            <td class="mono" style="font-size:12px;">#F34D23 on #FFF5F0</td>
+            <td class="usage">Token-expired banner, 13px</td>
+            <td class="ratio">3.32</td>
+            <td>
+              <div class="meter">
+                <div class="track"><div class="fill" style="width:47.4%;background:#B3261E;"></div><div class="thresh" style="left:64.3%;"></div></div>
+                <span class="verdict v-fail">FAIL</span>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td><span class="spec" style="background:#F0FDF4;color:#16A34A;">✓ Correct</span></td>
+            <td class="mono" style="font-size:12px;">#16A34A on #F0FDF4</td>
+            <td class="usage">Correct-answer reveal</td>
+            <td class="ratio">3.15</td>
+            <td>
+              <div class="meter">
+                <div class="track"><div class="fill" style="width:45.0%;background:#B3261E;"></div><div class="thresh" style="left:64.3%;"></div></div>
+                <span class="verdict v-fail">FAIL</span>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td><span class="spec" style="background:#FFFFFF;color:#979CA6;">Msg &amp; data rates</span></td>
+            <td class="mono" style="font-size:12px;">muted/70 on #FFFFFF</td>
+            <td class="usage">SMS consent fine print, 11px</td>
+            <td class="ratio">2.74</td>
+            <td>
+              <div class="meter">
+                <div class="track"><div class="fill" style="width:39.1%;background:#B3261E;"></div><div class="thresh" style="left:64.3%;"></div></div>
+                <span class="verdict v-fail">FAIL</span>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td><span class="spec" style="background:#FFFFFF;color:#9CA3AF;">Secondary</span></td>
+            <td class="mono" style="font-size:12px;">#9CA3AF on #FFFFFF</td>
+            <td class="usage"><code style="font-size:11px;">--color-muted-light</code></td>
+            <td class="ratio">2.54</td>
+            <td>
+              <div class="meter">
+                <div class="track"><div class="fill" style="width:36.3%;background:#B3261E;"></div><div class="thresh" style="left:64.3%;"></div></div>
+                <span class="verdict v-fail">FAIL</span>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td><span class="spec" style="background:#F7F8FA;color:#B1B5BD;">· · ·</span></td>
+            <td class="mono" style="font-size:12px;">muted/50 on #F7F8FA</td>
+            <td class="usage">Leaderboard rank-gap divider</td>
+            <td class="ratio">1.93</td>
+            <td>
+              <div class="meter">
+                <div class="track"><div class="fill" style="width:27.6%;background:#B3261E;"></div><div class="thresh" style="left:64.3%;"></div></div>
+                <span class="verdict v-fail">FAIL</span>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td><span class="spec" style="background:#FFFFFF;color:#3B82F6;">Privacy policy</span></td>
+            <td class="mono" style="font-size:12px;">#3B82F6 on #FFFFFF</td>
+            <td class="usage">Admin rich-text links</td>
+            <td class="ratio">3.68</td>
+            <td>
+              <div class="meter">
+                <div class="track"><div class="fill" style="width:52.6%;background:#B3261E;"></div><div class="thresh" style="left:64.3%;"></div></div>
+                <span class="verdict v-fail">FAIL</span>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td><span class="spec" style="background:#FFF8E8;color:#9A7B1F;">Notified by email</span></td>
+            <td class="mono" style="font-size:12px;">#9A7B1F on #FFF8E8</td>
+            <td class="usage">Prize card body, 12px</td>
+            <td class="ratio">3.80</td>
+            <td>
+              <div class="meter">
+                <div class="track"><div class="fill" style="width:54.3%;background:#B3261E;"></div><div class="thresh" style="left:64.3%;"></div></div>
+                <span class="verdict v-fail">FAIL</span>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td><span class="spec" style="background:#FFFFFF;color:#C7421B;">Start playing</span></td>
+            <td class="mono" style="font-size:12px;">#C7421B on #FFFFFF</td>
+            <td class="usage"><b>Proposed</b> — <code style="font-size:11px;">orange-shade</code></td>
+            <td class="ratio">4.97</td>
+            <td>
+              <div class="meter">
+                <div class="track"><div class="fill" style="width:71.0%;background:#1A6B42;"></div><div class="thresh" style="left:64.3%;"></div></div>
+                <span class="verdict v-pass">PASS</span>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td><span class="spec" style="background:#FFFFFF;color:#15803D;">✓ Correct</span></td>
+            <td class="mono" style="font-size:12px;">#15803D on #FFFFFF</td>
+            <td class="usage"><b>Proposed</b> — correct state</td>
+            <td class="ratio">5.02</td>
+            <td>
+              <div class="meter">
+                <div class="track"><div class="fill" style="width:71.7%;background:#1A6B42;"></div><div class="thresh" style="left:64.3%;"></div></div>
+                <span class="verdict v-pass">PASS</span>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td><span class="spec" style="background:#FFFFFF;color:#6B7280;">Already have an account?</span></td>
+            <td class="mono" style="font-size:12px;">#6B7280 on #FFFFFF</td>
+            <td class="usage"><code style="font-size:11px;">--color-muted</code>, base</td>
+            <td class="ratio">4.83</td>
+            <td>
+              <div class="meter">
+                <div class="track"><div class="fill" style="width:69.0%;background:#1A6B42;"></div><div class="thresh" style="left:64.3%;"></div></div>
+                <span class="verdict v-pass">PASS</span>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td><span class="spec" style="background:#0E1524;color:#F5B400;">★ Bonus round</span></td>
+            <td class="mono" style="font-size:12px;">#F5B400 on #0E1524</td>
+            <td class="usage">Sponsor round accents</td>
+            <td class="ratio">9.91</td>
+            <td>
+              <div class="meter">
+                <div class="track"><div class="fill" style="width:100%;background:#1A6B42;"></div><div class="thresh" style="left:64.3%;"></div></div>
+                <span class="verdict v-pass">PASS</span>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td><span class="spec" style="background:#0E1524;color:#B7B9BD;">Time left</span></td>
+            <td class="mono" style="font-size:12px;">white/70 on #0E1524</td>
+            <td class="usage">Game HUD labels</td>
+            <td class="ratio">9.26</td>
+            <td>
+              <div class="meter">
+                <div class="track"><div class="fill" style="width:100%;background:#1A6B42;"></div><div class="thresh" style="left:64.3%;"></div></div>
+                <span class="verdict v-pass">PASS</span>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td><span class="spec" style="background:#FFFFFF;color:#0E1524;">Which alloy…</span></td>
+            <td class="mono" style="font-size:12px;">#0E1524 on #FFFFFF</td>
+            <td class="usage">Question prompt, answer text</td>
+            <td class="ratio">18.24</td>
+            <td>
+              <div class="meter">
+                <div class="track"><div class="fill" style="width:100%;background:#1A6B42;"></div><div class="thresh" style="left:64.3%;"></div></div>
+                <span class="verdict v-pass">PASS</span>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="legend">
+      Meter runs 0–7:1; the tick marks the 4.5:1 minimum for normal-size text. Verdicts are
+      stated in text as well as colour. The navy ground and the gold-on-navy sponsor palette come
+      out well — the failures cluster entirely in the orange, the greens, and the reduced-opacity
+      greys.
+    </p>
+  </section>
+
+  <!-- ══ ORDER OF WORK ═════════════════════════════════════════════════ -->
+  <section>
+    <h2>Suggested order of work <span class="count">Sequenced</span></h2>
+    <p class="sec-intro">
+      Ordered by impact per hour, and because some steps unlock others — the shared
+      <code>.sr-only</code> utility from step 3 is a prerequisite for several later fixes.
+    </p>
+
+    <ol class="plan">
+      <li>
+        <div>
+          <h4>Make the game playable by keyboard</h4>
+          <p>
+            Convert both answer grids to buttons and give every interactive element a
+            <code>:focus-visible</code> ring. This is the single change that moves the product
+            from "inaccessible" to "usable".
+          </p>
+          <span class="refs">A11Y-01 · A11Y-09 — ~half a day</span>
+        </div>
+      </li>
+      <li>
+        <div>
+          <h4>Fix the registration form</h4>
+          <p>
+            Associate all eight labels, add <code>required</code>, correct the autocomplete token,
+            and render validation errors with a form-level summary. Registration is the only entry
+            point, so a defect here excludes users from everything downstream.
+          </p>
+          <span class="refs">A11Y-02 · A11Y-04 · A11Y-21 — ~half a day</span>
+        </div>
+      </li>
+      <li>
+        <div>
+          <h4>Re-tune the colour tokens and unlock zoom</h4>
+          <p>
+            Point orange text at <code>orange-shade</code>, darken the correct-state green, drop
+            the opacity modifiers on muted copy, fix the editor link colour, and delete the
+            viewport scale locks. All token-level; no component rewrites.
+          </p>
+          <span class="refs">A11Y-03 · 05 · 06 · 07 · 17 — ~2 hours plus a visual pass</span>
+        </div>
+      </li>
+      <li>
+        <div>
+          <h4>Add the announcement layer</h4>
+          <p>
+            Introduce <code>.sr-only</code>, wire live regions for answer results, loading states
+            and the countdown, and hide the decorative glyphs. This is where a screen-reader
+            session stops being silent.
+          </p>
+          <span class="refs">A11Y-08 · 11 · 18 · 13 — ~half a day</span>
+        </div>
+      </li>
+      <li>
+        <div>
+          <h4>Structure and semantics</h4>
+          <p>
+            Route titles, <code>&lt;main&gt;</code> landmarks and a skip link, the header logo
+            link, heading hierarchy, and the leaderboard toggle state.
+          </p>
+          <span class="refs">A11Y-12 · 13 · 14 · 15 · 19 — ~3 hours</span>
+        </div>
+      </li>
+      <li>
+        <div>
+          <h4>Sponsor media and admin-side constraints</h4>
+          <p>
+            Video controls and labelled buttons are frontend work; captions and a contrast guard
+            on the sponsor colour pickers need backend and admin-panel changes, so start that
+            conversation early even though the fix lands last.
+          </p>
+          <span class="refs">A11Y-10 · A11Y-16 — frontend ~3 hours, plus admin/BE work</span>
+        </div>
+      </li>
+      <li>
+        <div>
+          <h4>Reduced motion and the accessibility statement</h4>
+          <p>
+            Add the media query, then write down the timer exception (A11Y-22) and the booth
+            display's <code>vw</code> sizing (A11Y-23) as recorded decisions rather than open gaps.
+          </p>
+          <span class="refs">A11Y-20 · 22 · 23 — ~1 hour</span>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <!-- ══ METHOD ════════════════════════════════════════════════════════ -->
+  <section>
+    <h2>Scope and method <span class="count">Read this before quoting the result</span></h2>
+    <div class="method">
+      <div>
+        <h4>What was examined</h4>
+        <ul>
+          <li>All 13 page templates and the shared header component</li>
+          <li><code>_global.scss</code>, <code>variables.scss</code>, <code>tailwind.css</code>, <code>index.html</code></li>
+          <li>Route configuration and the game / sponsor page controllers</li>
+          <li>Every design-token colour pair, computed against the WCAG relative-luminance formula</li>
+        </ul>
+      </div>
+      <div>
+        <h4>What was not</h4>
+        <ul>
+          <li><strong>No runtime testing.</strong> No axe or Lighthouse pass, and no screen-reader session on a running build</li>
+          <li>No testing with NVDA, JAWS, VoiceOver or TalkBack — the behaviours described are inferred from markup</li>
+          <li>Ionic's own component internals (<code>ion-content</code>, <code>ion-toast</code>) were taken as given</li>
+          <li>The Laravel admin panel was inspected only where it feeds colours and media into the player app</li>
+        </ul>
+      </div>
+      <div>
+        <h4>How severity was assigned</h4>
+        <ul>
+          <li><strong>Blocker</strong> — excludes a group of users from completing a core task</li>
+          <li><strong>Serious</strong> — clear AA failure; the task is possible but materially degraded</li>
+          <li><strong>Moderate</strong> — conformance gap with limited practical friction</li>
+          <li><strong>Advisory</strong> — best practice, or a judgement call to record deliberately</li>
+        </ul>
+      </div>
+      <div>
+        <h4>Recommended next step</h4>
+        <ul>
+          <li>Run axe DevTools against a built app once items 1–3 land — it will catch anything static review missed</li>
+          <li>Do one keyboard-only pass through register → game → sponsor → results, and one with a screen reader</li>
+          <li>A static audit reliably finds absent semantics; it cannot confirm how a real screen reader narrates them</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    Practical Machinist Trivia · accessibility audit · WCAG 2.2 Level AA<br />
+    Source reviewed at <span class="mono">dev-marto @ 88c443d</span> · 23 findings ·
+    contrast ratios computed, not estimated
+  </footer>
+
+</div>
+</body>
+</html>

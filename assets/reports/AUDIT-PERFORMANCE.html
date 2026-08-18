@@ -1,0 +1,1793 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>PM Trivia Performance Audit</title>
+</head>
+<body><style>
+  /* ── Tokens: light is the base set ─────────────────────────────────── */
+  :root {
+    --ground:   #F4F6F8;
+    --panel:    #FFFFFF;
+    --sunk:     #EDF1F4;
+    --ink:      #141A21;
+    --ink2:     #4A5563;
+    --ink3:     #5F6A78;
+    --rule:     #DDE3E9;
+    --rule2:    #C9D2DA;
+    --accent:   #0F6E78;
+    --accent-w: #E2F1F2;
+
+    --blocker:  #B3261E;
+    --serious:  #8A5300;
+    --moderate: #2F5D8A;
+    --advisory: #5A6472;
+    --good:     #1A6B42;
+
+    --blocker-w:  #FBEAE8;
+    --serious-w:  #F8EEDC;
+    --moderate-w: #E8EFF7;
+    --advisory-w: #EAEDF1;
+
+    --shadow: 0 1px 2px rgba(20,26,33,.05);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground:   #14181E;
+      --panel:    #1B2027;
+      --sunk:     #222831;
+      --ink:      #E8EDF3;
+      --ink2:     #A8B3C0;
+      --ink3:     #7F8B99;
+      --rule:     #2C333C;
+      --rule2:    #3A424D;
+      --accent:   #5CC8D4;
+      --accent-w: #14343A;
+
+      --blocker:  #FF9086;
+      --serious:  #EDB65C;
+      --moderate: #8CBCE8;
+      --advisory: #9AA5B3;
+      --good:     #74D3A0;
+
+      --blocker-w:  #3A1D1B;
+      --serious-w:  #35291180;
+      --moderate-w: #1B2C3D;
+      --advisory-w: #262C34;
+
+      --shadow: none;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground:   #14181E;
+    --panel:    #1B2027;
+    --sunk:     #222831;
+    --ink:      #E8EDF3;
+    --ink2:     #A8B3C0;
+    --ink3:     #7F8B99;
+    --rule:     #2C333C;
+    --rule2:    #3A424D;
+    --accent:   #5CC8D4;
+    --accent-w: #14343A;
+
+    --blocker:  #FF9086;
+    --serious:  #EDB65C;
+    --moderate: #8CBCE8;
+    --advisory: #9AA5B3;
+    --good:     #74D3A0;
+
+    --blocker-w:  #3A1D1B;
+    --serious-w:  #352911;
+    --moderate-w: #1B2C3D;
+    --advisory-w: #262C34;
+
+    --shadow: none;
+  }
+
+  /* ── Base ──────────────────────────────────────────────────────────── */
+  * { box-sizing: border-box; }
+
+  html { -webkit-text-size-adjust: 100%; }
+
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    margin: 0;
+    padding: 0 20px 96px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap { max-width: 1000px; margin: 0 auto; }
+
+  .mono {
+    font-family: ui-monospace, "Cascadia Code", "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+    font-variant-ligatures: none;
+  }
+
+  code, .path {
+    font-family: ui-monospace, "Cascadia Code", "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+    font-size: .855em;
+    background: var(--sunk);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    padding: .1em .34em;
+    color: var(--ink);
+    word-break: break-word;
+  }
+
+  a { color: var(--accent); }
+  a:focus-visible, button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  /* ── Masthead ──────────────────────────────────────────────────────── */
+  .masthead {
+    border-bottom: 2px solid var(--ink);
+    padding: 56px 0 26px;
+    margin-bottom: 34px;
+  }
+
+  .kicker {
+    font-family: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
+    font-size: 11px;
+    letter-spacing: .13em;
+    text-transform: uppercase;
+    color: var(--ink3);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 18px;
+    margin-bottom: 20px;
+  }
+  .kicker b { color: var(--ink2); font-weight: 600; }
+
+  h1 {
+    font-family: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
+    font-size: clamp(30px, 5.4vw, 46px);
+    line-height: 1.06;
+    letter-spacing: -.028em;
+    font-weight: 700;
+    margin: 0 0 18px;
+    text-wrap: balance;
+  }
+
+  .standfirst {
+    font-size: clamp(16px, 2.1vw, 18.5px);
+    line-height: 1.55;
+    color: var(--ink2);
+    max-width: 63ch;
+    margin: 0;
+  }
+  .standfirst strong { color: var(--ink); font-weight: 600; }
+
+  /* ── Severity tiles ────────────────────────────────────────────────── */
+  .tiles {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(158px, 1fr));
+    gap: 2px;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+    margin-bottom: 14px;
+  }
+  .tile {
+    background: var(--panel);
+    padding: 16px 18px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .tile-n {
+    font-family: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
+    font-size: 38px;
+    line-height: 1;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -.03em;
+  }
+  .tile-lab {
+    font-family: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
+    font-size: 11px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  .tile-sub { font-size: 12.5px; color: var(--ink3); line-height: 1.4; }
+
+  .t-blocker  .tile-n, .t-blocker  .tile-lab { color: var(--blocker); }
+  .t-serious  .tile-n, .t-serious  .tile-lab { color: var(--serious); }
+  .t-moderate .tile-n, .t-moderate .tile-lab { color: var(--moderate); }
+  .t-advisory .tile-n, .t-advisory .tile-lab { color: var(--advisory); }
+
+  .tiles-note {
+    font-size: 13px;
+    color: var(--ink3);
+    margin: 0 0 46px;
+  }
+
+  /* ── Sections ──────────────────────────────────────────────────────── */
+  section { margin-bottom: 54px; }
+
+  h2 {
+    font-family: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
+    font-size: 13px;
+    letter-spacing: .15em;
+    text-transform: uppercase;
+    font-weight: 700;
+    margin: 0 0 4px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--ink);
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 16px;
+  }
+  h2 .count {
+    color: var(--ink3);
+    font-weight: 500;
+    letter-spacing: .08em;
+    font-variant-numeric: tabular-nums;
+  }
+  .sec-intro {
+    font-size: 14.5px;
+    color: var(--ink2);
+    margin: 14px 0 26px;
+    max-width: 70ch;
+  }
+
+  /* ── Finding rows ──────────────────────────────────────────────────── */
+  .finding {
+    border-bottom: 1px solid var(--rule);
+    padding: 24px 0 26px;
+  }
+  .finding:first-of-type { border-top: 1px solid var(--rule); }
+
+  .f-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 8px 12px;
+    margin-bottom: 10px;
+  }
+  .f-id {
+    font-family: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .07em;
+    padding: 3px 7px;
+    border-radius: 3px;
+  }
+  .sev-blocker  .f-id { color: var(--blocker);  background: var(--blocker-w); }
+  .sev-serious  .f-id { color: var(--serious);  background: var(--serious-w); }
+  .sev-moderate .f-id { color: var(--moderate); background: var(--moderate-w); }
+  .sev-advisory .f-id { color: var(--advisory); background: var(--advisory-w); }
+
+  .f-title {
+    font-size: clamp(17px, 2.3vw, 20px);
+    font-weight: 650;
+    line-height: 1.3;
+    margin: 0;
+    flex: 1 1 320px;
+    letter-spacing: -.012em;
+  }
+  .f-sc {
+    font-family: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
+    font-size: 11px;
+    color: var(--ink3);
+    letter-spacing: .04em;
+    white-space: nowrap;
+    padding-top: 2px;
+  }
+
+  .f-body {
+    display: grid;
+    gap: 18px 40px;
+    margin-top: 14px;
+  }
+  @media (min-width: 860px) {
+    .f-body { grid-template-columns: 1fr 1fr; }
+  }
+  .f-body h4 {
+    font-family: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
+    font-size: 10.5px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--ink3);
+    font-weight: 600;
+    margin: 0 0 7px;
+  }
+  .f-body p { margin: 0 0 9px; font-size: 14.6px; line-height: 1.58; color: var(--ink2); }
+  .f-body p:last-child { margin-bottom: 0; }
+  .f-body strong { color: var(--ink); font-weight: 600; }
+
+  .locs {
+    list-style: none;
+    margin: 0 0 11px;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .locs li {
+    font-family: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
+    font-size: 12px;
+    color: var(--ink3);
+    line-height: 1.45;
+    word-break: break-word;
+  }
+  .locs li b { color: var(--ink2); font-weight: 600; }
+
+  pre {
+    background: var(--sunk);
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    padding: 11px 13px;
+    margin: 0 0 10px;
+    overflow-x: auto;
+    font-family: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
+    font-size: 12.2px;
+    line-height: 1.55;
+    color: var(--ink);
+  }
+  pre .del { color: var(--blocker); }
+  pre .add { color: var(--good); }
+  pre .cm  { color: var(--ink3); }
+
+  /* ── Contrast specimen table ───────────────────────────────────────── */
+  .tblwrap {
+    overflow-x: auto;
+    border: 1px solid var(--rule);
+    background: var(--panel);
+  }
+  table { border-collapse: collapse; width: 100%; min-width: 660px; }
+  thead th {
+    font-family: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
+    font-size: 10.5px;
+    letter-spacing: .11em;
+    text-transform: uppercase;
+    color: var(--ink3);
+    font-weight: 600;
+    text-align: left;
+    padding: 11px 14px;
+    border-bottom: 1px solid var(--rule2);
+    white-space: nowrap;
+  }
+  tbody td {
+    padding: 11px 14px;
+    border-bottom: 1px solid var(--rule);
+    font-size: 13.6px;
+    color: var(--ink2);
+    vertical-align: middle;
+  }
+  tbody tr:last-child td { border-bottom: 0; }
+  td.ratio {
+    font-family: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    color: var(--ink);
+    white-space: nowrap;
+  }
+  td.usage { color: var(--ink3); font-size: 12.8px; }
+
+  /* Specimens quote the app's real light-mode colours, so they carry
+     their own fixed ground and never follow this report's theme. */
+  .spec {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 84px;
+    padding: 5px 10px;
+    border-radius: 3px;
+    font-size: 13px;
+    font-weight: 700;
+    border: 1px solid rgba(0,0,0,.14);
+    white-space: nowrap;
+  }
+
+  .meter {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    min-width: 152px;
+  }
+  .track {
+    position: relative;
+    flex: 1;
+    height: 7px;
+    background: var(--sunk);
+    border-radius: 3.5px;
+    overflow: hidden;
+  }
+  .fill { height: 100%; border-radius: 3.5px; }
+  .thresh {
+    position: absolute;
+    top: -3px;
+    bottom: -3px;
+    width: 1.5px;
+    background: var(--ink3);
+  }
+  .verdict {
+    font-family: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    white-space: nowrap;
+  }
+  .v-fail { color: var(--blocker); }
+  .v-pass { color: var(--good); }
+
+  .legend {
+    font-size: 12.5px;
+    color: var(--ink3);
+    margin: 12px 0 0;
+    line-height: 1.5;
+  }
+
+  /* ── Fix order ─────────────────────────────────────────────────────── */
+  ol.plan { list-style: none; counter-reset: step; margin: 0; padding: 0; }
+  ol.plan li {
+    counter-increment: step;
+    display: grid;
+    grid-template-columns: 40px 1fr;
+    gap: 0 16px;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--rule);
+  }
+  ol.plan li:first-child { border-top: 1px solid var(--rule); }
+  ol.plan li::before {
+    content: counter(step, decimal-leading-zero);
+    font-family: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--accent);
+    padding-top: 2px;
+  }
+  ol.plan h4 { margin: 0 0 4px; font-size: 15.5px; font-weight: 650; color: var(--ink); }
+  ol.plan p { margin: 0; font-size: 14px; color: var(--ink2); line-height: 1.55; }
+  ol.plan .refs {
+    font-family: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
+    font-size: 11.5px;
+    color: var(--ink3);
+    margin-top: 5px;
+    display: block;
+  }
+
+  /* ── Method / footer ───────────────────────────────────────────────── */
+  .method {
+    background: var(--panel);
+    border: 1px solid var(--rule);
+    padding: 20px 22px;
+    display: grid;
+    gap: 18px 36px;
+  }
+  @media (min-width: 780px) { .method { grid-template-columns: 1fr 1fr; } }
+  .method h4 {
+    font-family: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
+    font-size: 10.5px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--ink3);
+    font-weight: 600;
+    margin: 0 0 8px;
+  }
+  .method ul { margin: 0; padding-left: 17px; }
+  .method li { font-size: 14px; color: var(--ink2); line-height: 1.55; margin-bottom: 5px; }
+
+  footer {
+    margin-top: 54px;
+    padding-top: 20px;
+    border-top: 1px solid var(--rule);
+    font-family: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
+    font-size: 11.5px;
+    color: var(--ink3);
+    line-height: 1.7;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+  }
+</style>
+<div class="wrap">
+
+  <header class="masthead">
+    <div class="kicker">
+      <span>Target <b>trivia-app / Angular 21.2 + Ionic 8</b></span>
+      <span>Branch <b>dev-marto @ 88c443d</b></span>
+      <span>Method <b>Static review + production build measurement</b></span>
+      <span>Build <b>ng build --configuration production</b></span>
+    </div>
+    <h1>Performance audit</h1>
+    <p class="standfirst">
+      Twenty findings across the bundle, the render path and the two timed screens.
+      The headline result: <strong>the header logo is a 4944&nbsp;&times;&nbsp;1980 PNG rendered at 28&nbsp;pixels tall</strong>,
+      decoded on every page of the app. Behind it, the Inter webfont is very likely never loading at all
+      because its <code>@import</code> lands 46&nbsp;KB into the compiled stylesheet, and the game timer runs a
+      60&nbsp;fps signal write through zone.js for the full 90-second round. Three contained fixes, each
+      measured below.
+    </p>
+  </header>
+
+  <div class="tiles">
+    <div class="tile t-blocker">
+      <span class="tile-n">4</span>
+      <span class="tile-lab">Critical</span>
+      <span class="tile-sub">Measurable cost on every session, every device</span>
+    </div>
+    <div class="tile t-serious">
+      <span class="tile-n">6</span>
+      <span class="tile-lab">Serious</span>
+      <span class="tile-sub">Dead weight shipped, or work that never stops</span>
+    </div>
+    <div class="tile t-moderate">
+      <span class="tile-n">6</span>
+      <span class="tile-lab">Moderate</span>
+      <span class="tile-sub">Real but bounded; worth a sprint slot</span>
+    </div>
+    <div class="tile t-advisory">
+      <span class="tile-n">4</span>
+      <span class="tile-lab">Advisory</span>
+      <span class="tile-sub">Record it; act when the constraint bites</span>
+    </div>
+  </div>
+  <p class="tiles-note">
+    Severity is measured user cost, not effort. The two largest wins here are an image export and a
+    one-line stylesheet move.
+  </p>
+
+  <!-- ══ BASELINE ══════════════════════════════════════════════════════ -->
+  <section id="baseline">
+    <h2>Measured baseline <span class="count">Production build</span></h2>
+    <p class="sec-intro">
+      Everything the browser must fetch and execute before the register page can paint, taken from
+      an <code>ng build --configuration production</code> of the current tree. Gzip figures are
+      <code>gzip -9</code>; your server's actual encoding may differ slightly.
+    </p>
+
+    <div class="tblwrap">
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">Artefact</th>
+            <th scope="col">What it is</th>
+            <th scope="col">Raw</th>
+            <th scope="col">Gzip</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="mono" style="font-size:12px;">chunk-RNHR4H35.js</td>
+            <td class="usage">Angular core, router, forms, rxjs, Ionic runtime</td>
+            <td class="ratio">474.6 KB</td>
+            <td class="ratio">139.7 KB</td>
+          </tr>
+          <tr>
+            <td class="mono" style="font-size:12px;">main-OGTL2PWG.js</td>
+            <td class="usage">App bootstrap, config, <b>+ the entire mock interceptor</b></td>
+            <td class="ratio">35.6 KB</td>
+            <td class="ratio">12.8 KB</td>
+          </tr>
+          <tr>
+            <td class="mono" style="font-size:12px;">polyfills-5CFQRCPP.js</td>
+            <td class="usage">zone.js — nothing else</td>
+            <td class="ratio">34.6 KB</td>
+            <td class="ratio">12.4 KB</td>
+          </tr>
+          <tr>
+            <td class="mono" style="font-size:12px;">styles-UBSWK2RB.css</td>
+            <td class="usage">Tailwind + Ionic core + theme layer</td>
+            <td class="ratio">53.3 KB</td>
+            <td class="ratio">10.9 KB</td>
+          </tr>
+          <tr>
+            <td class="mono" style="font-size:12px;">8 further preloaded chunks</td>
+            <td class="usage">Ionic components, translate, guards, stores</td>
+            <td class="ratio">40.1 KB</td>
+            <td class="ratio">13.7 KB</td>
+          </tr>
+          <tr style="font-weight:700;">
+            <td>Total initial payload</td>
+            <td class="usage">Before any route component loads</td>
+            <td class="ratio">638.2 KB</td>
+            <td class="ratio">190.0 KB</td>
+          </tr>
+          <tr>
+            <td class="mono" style="font-size:12px;">assets/pm-logo.png</td>
+            <td class="usage">Header logo — fetched on <b>every</b> page</td>
+            <td class="ratio">131.0 KB</td>
+            <td class="ratio">—</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="sec-intro" style="margin-top:18px;">
+      Note the shape of that table: <strong>the header logo alone is 69% the weight of the entire
+      Angular framework chunk after compression</strong>, and it is a decorative bitmap. The
+      structural work below matters, but the asset pipeline is where the first-load time actually is.
+    </p>
+  </section>
+
+  <!-- ══ CRITICAL ══════════════════════════════════════════════════════ -->
+  <section>
+    <h2>Critical <span class="count">4 findings</span></h2>
+    <p class="sec-intro">
+      Each of these costs measurable time or frames on every session, on every device, and none of
+      them is doing anything for the product in exchange.
+    </p>
+
+    <article class="finding sev-blocker">
+      <div class="f-head">
+        <span class="f-id">PERF-01</span>
+        <h3 class="f-title">The header logo is a 4944&nbsp;&times;&nbsp;1980 PNG displayed at 28&nbsp;pixels tall</h3>
+        <span class="f-sc">Asset · every page</span>
+      </div>
+      <div class="f-body">
+        <div>
+          <h4>What happens</h4>
+          <ul class="locs">
+            <li><b>src/assets/pm-logo.png</b> — 4944&times;1980, 131&nbsp;KB</li>
+            <li><b>pm-header.component.html</b>:3 — <code>src="assets/pm-logo.png"</code></li>
+            <li><b>_global.scss</b>:19–25 — <code>.pm-bar-logo { height: 28px }</code>, 44px &ge;1024px</li>
+          </ul>
+          <p>
+            The logo renders at roughly 70&times;28 CSS pixels. The file behind it is
+            <strong>9.8 megapixels</strong> — about a 176&times; linear over-provision, or 12,000&times;
+            by area. <code>&lt;pm-header /&gt;</code> is on the register, game, sponsor, results and
+            leaderboard pages, so this is the shared cost of every screen in the app.
+          </p>
+          <p>
+            The transfer cost (131&nbsp;KB) is the smaller half. The real cost is decode: the browser
+            must allocate and fill a 4944&times;1980&times;4-byte bitmap — <strong>roughly 39&nbsp;MB of
+            RAM</strong> — and downsample it, on the main thread, before first paint. On a mid-range
+            Android phone at a trade-show booth that is a visible stall, and on a memory-constrained
+            device it is a plausible cause of tab eviction.
+          </p>
+          <p>
+            The same defect repeats at smaller scale: <code>public/tv-logo.png</code> is
+            2757&times;660 (83&nbsp;KB) for the booth display, and
+            <code>assets/icon/web-app-manifest-512x512.png</code> is 130&nbsp;KB for a 512&times;512
+            icon that should compress to well under 20&nbsp;KB.
+          </p>
+        </div>
+        <div>
+          <h4>What to change</h4>
+          <p>
+            Export the logo at the size it is actually used, at 2&times; for retina, and serve WebP
+            with a PNG fallback. A 140&times;56 WebP of this mark will land around 3–4&nbsp;KB.
+          </p>
+<pre><span class="del">- &lt;img class="pm-bar-logo" src="assets/pm-logo.png" …&gt;</span>
+<span class="add">+ &lt;img class="pm-bar-logo" width="70" height="28"</span>
+<span class="add">+      src="assets/pm-logo.webp"</span>
+<span class="add">+      srcset="assets/pm-logo.webp 1x, assets/pm-logo@2x.webp 2x"</span>
+<span class="add">+      fetchpriority="high" decoding="async" …&gt;</span></pre>
+          <p>
+            Better still for a wordmark: if the source artwork is vector, ship it as SVG and the
+            resolution question disappears entirely. Add <code>width</code>/<code>height</code>
+            regardless — see PERF-15 for the layout-shift half of this.
+          </p>
+          <p>
+            Then do the same pass over <code>tv-logo.png</code> (needed at ~180px on the booth TV)
+            and re-encode the manifest icon. Total saving across the three:
+            <strong>roughly 330&nbsp;KB of transfer and essentially all of the decode cost.</strong>
+          </p>
+        </div>
+      </div>
+    </article>
+
+    <article class="finding sev-blocker">
+      <div class="f-head">
+        <span class="f-id">PERF-02</span>
+        <h3 class="f-title">The Inter <code>@import</code> is at byte 46,133 of the stylesheet, so browsers discard it</h3>
+        <span class="f-sc">Render-blocking · CSS validity</span>
+      </div>
+      <div class="f-body">
+        <div>
+          <h4>What happens</h4>
+          <ul class="locs">
+            <li><b>theme/custom/base/_fonts.scss</b>:1 — the <code>@import url(…)</code></li>
+            <li><b>global.scss</b>:13 — pulled in <em>after</em> <code>@ionic/angular/css/core.css</code></li>
+            <li><b>www/styles-UBSWK2RB.css</b> — the <code>@import</code> resolves to offset 46,133</li>
+          </ul>
+          <p>
+            CSS requires <code>@import</code> to precede every other rule in a stylesheet. Because
+            <code>_fonts.scss</code> is imported at position 3 of <code>global.scss</code> — after
+            Ionic's core CSS and after Tailwind's <code>@layer theme { … }</code> block — the
+            compiled output has ~46&nbsp;KB of rules ahead of it. <strong>The build flags this
+            itself:</strong>
+          </p>
+<pre>▲ [WARNING] All "@import" rules must come first [invalid-@import]
+    src/global.scss:298:0:
+      298 │ @import url("https://fonts.googleapis.com/css2?family=Inter:wght@…
+  This rule cannot come before an "@import" rule</pre>
+          <p>
+            A non-leading <code>@import</code> is dropped, not deferred. The practical consequence is
+            that <strong>Inter is likely never fetched in production</strong> and every screen falls
+            back to the platform sans-serif — which is fast, but is not the design, and means the
+            typography has never actually been seen as specified.
+          </p>
+          <p>
+            Worth fixing even if a given browser is lenient: <code>@import</code> inside a stylesheet
+            is the slowest possible way to load a font. It serialises three round trips — HTML &rarr;
+            <code>styles.css</code> &rarr; Google's CSS &rarr; the woff2 files — with text blocked
+            behind all of them.
+          </p>
+        </div>
+        <div>
+          <h4>What to change</h4>
+          <p>
+            Move it out of CSS entirely and into <code>index.html</code>, where the preload scanner
+            can start the font fetch in parallel with the stylesheet rather than after it. Delete
+            line 1 of <code>_fonts.scss</code>.
+          </p>
+<pre><span class="add">+ &lt;link rel="preconnect" href="https://fonts.googleapis.com"&gt;</span>
+<span class="add">+ &lt;link rel="preconnect" href="https://fonts.gstatic.com" crossorigin&gt;</span>
+<span class="add">+ &lt;link rel="stylesheet"</span>
+<span class="add">+       href="https://fonts.googleapis.com/css2?family=Inter:wght@400..900&amp;display=swap"&gt;</span></pre>
+          <p>
+            Note the range syntax: <code>wght@400..900</code> requests the <strong>variable</strong>
+            font — one file of roughly 35&nbsp;KB — instead of the current
+            <code>400;500;600;700;800;900</code>, which is six separate static faces totalling well
+            over 100&nbsp;KB. The templates use all six weights
+            (<code>font-black</code>&nbsp;&times;48, <code>font-bold</code>&nbsp;&times;37,
+            <code>font-semibold</code>&nbsp;&times;9, <code>font-extrabold</code>&nbsp;&times;8,
+            <code>font-medium</code>&nbsp;&times;2), so trimming the list is not an option — but the
+            variable font covers all of them at a third of the weight.
+          </p>
+          <p>
+            For a booth app on venue wifi, self-hosting the woff2 in <code>src/assets/fonts/</code>
+            with a <code>&lt;link rel="preload"&gt;</code> removes the third-party origin from the
+            critical path altogether. That is the version I would ship.
+          </p>
+        </div>
+      </div>
+    </article>
+
+    <article class="finding sev-blocker">
+      <div class="f-head">
+        <span class="f-id">PERF-03</span>
+        <h3 class="f-title">The timer bar drives a full-app change detection pass 60 times a second for 90 seconds</h3>
+        <span class="f-sc">Render · game + sponsor rounds</span>
+      </div>
+      <div class="f-body">
+        <div>
+          <h4>What happens</h4>
+          <ul class="locs">
+            <li><b>game.page.ts</b>:165–177 — rAF loop calling <code>timerProgress.set()</code></li>
+            <li><b>game.page.html</b>:72 — <code>[style.width.%]="timeLeftPct()"</code></li>
+            <li><b>sponsor.page.ts</b>:249–262 — the same pattern, per sponsor question</li>
+          </ul>
+          <p>
+            Two things compound here. First, the app runs on zone.js
+            (<code>provideZoneChangeDetection</code>, <b>app.config.ts</b>:18), and zone.js patches
+            <code>requestAnimationFrame</code>. Every frame therefore schedules a change detection
+            tick. Over a 90-second round that is <strong>~5,400 full application checks</strong>,
+            each re-evaluating the whole game template — the two <code>translate</code> pipes, the
+            score, the streak, the answered count, all four answer cards and their five class
+            bindings.
+          </p>
+          <p>
+            Second, the property being animated is <code>width</code>. Width is a layout property:
+            each of those 5,400 updates invalidates layout and repaint for the bar and its
+            containing block, rather than staying on the compositor. The bar sits directly under a
+            <code>blur-3xl</code> decoration (line 43), which makes the repaint region more
+            expensive than the 6-pixel strip suggests.
+          </p>
+          <p>
+            The visible symptom is frame drops during play on mid-tier hardware — precisely when the
+            player is trying to read four answer options against a countdown.
+          </p>
+        </div>
+        <div>
+          <h4>What to change</h4>
+          <p>
+            The bar is a linear drain over a known duration. It does not need JavaScript at all —
+            hand it to the compositor and delete the rAF loop from both pages.
+          </p>
+<pre>.pm-timer-bar {
+  transform-origin: left center;
+  animation: pm-drain linear forwards;
+}
+@keyframes pm-drain { from { transform: scaleX(1) } to { transform: scaleX(0) } }</pre>
+<pre><span class="del">- &lt;div class="h-full bg-orange" [style.width.%]="timeLeftPct()"&gt;&lt;/div&gt;</span>
+<span class="add">+ &lt;div class="h-full bg-orange pm-timer-bar"</span>
+<span class="add">+      [style.animation-duration.s]="totalSeconds()"&gt;&lt;/div&gt;</span></pre>
+          <p>
+            <code>transform</code> is composited, so the animation runs off the main thread and
+            survives a busy tick. The binding is written once when the round starts instead of 60
+            times a second, and the existing 500&nbsp;ms <code>setInterval</code> continues to own
+            the MM:SS label and expiry detection — which is all it was ever needed for.
+          </p>
+          <p>
+            If the bar must stay JS-driven for some reason not visible in the source, at minimum run
+            the rAF loop outside Angular (<code>NgZone.runOutsideAngular</code>) and write to the
+            element's style directly rather than through a signal.
+          </p>
+        </div>
+      </div>
+    </article>
+
+    <article class="finding sev-blocker">
+      <div class="f-head">
+        <span class="f-id">PERF-04</span>
+        <h3 class="f-title"><code>polyfills.ts</code> is not in the build, so <code>__Zone_disable_customElements</code> never applies</h3>
+        <span class="f-sc">Dead configuration · Ionic</span>
+      </div>
+      <div class="f-body">
+        <div>
+          <h4>What happens</h4>
+          <ul class="locs">
+            <li><b>angular.json</b>:16 — <code>"polyfills": ["zone.js"]</code></li>
+            <li><b>src/polyfills.ts</b>:45 — <code>import './zone-flags'</code></li>
+            <li><b>src/zone-flags.ts</b>:6 — <code>__Zone_disable_customElements = true</code></li>
+          </ul>
+          <p>
+            The build's <code>polyfills</code> array names the <code>zone.js</code> package directly.
+            <code>src/polyfills.ts</code> is referenced only by <code>tsconfig.app.json</code> and
+            <code>tsconfig.spec.json</code> as a type-checking input — <strong>it is never
+            bundled</strong>. Neither is <code>zone-flags.ts</code>.
+          </p>
+          <p>
+            So the flag someone deliberately set, with a comment explaining that it
+            "prevents Angular change detection from running with certain Web Component callbacks",
+            has no effect. Ionic is built entirely from custom elements, so every
+            <code>connectedCallback</code>, <code>disconnectedCallback</code> and
+            <code>attributeChangedCallback</code> across every <code>ion-*</code> element on the page
+            is currently scheduling a change detection tick.
+          </p>
+          <p>
+            This is not a large file, but it is the kind of finding worth surfacing precisely because
+            the intent is already in the repo and everyone assumes it is live.
+          </p>
+        </div>
+        <div>
+          <h4>What to change</h4>
+          <p>
+            Point the build at the file that carries the flags:
+          </p>
+<pre><span class="del">- "polyfills": ["zone.js"],</span>
+<span class="add">+ "polyfills": ["src/polyfills.ts"],</span></pre>
+          <p>
+            <code>polyfills.ts</code> already imports <code>./zone-flags</code> before
+            <code>zone.js</code>, which is the required order — the flag must be on
+            <code>window</code> before zone.js reads it.
+          </p>
+          <p>
+            The strategic version of this fix is to leave zone.js behind altogether. The app is
+            already fully signal-based — every page is <code>OnPush</code>, state lives in
+            <code>@ngrx/signals</code> stores, and no template uses <code>*ngIf</code> or
+            <code>*ngFor</code>. Moving to <code>provideZonelessChangeDetection()</code> would delete
+            the <strong>34.6&nbsp;KB / 12.4&nbsp;KB gzip</strong> polyfills chunk outright and make
+            PERF-03's per-frame storm structurally impossible. That is a change worth its own
+            branch and a full regression pass over the Ionic overlays (toasts, the router outlet's
+            cached pages), not a drive-by — but it is the right destination.
+          </p>
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <!-- ══ SERIOUS ═══════════════════════════════════════════════════════ -->
+  <section>
+    <h2>Serious <span class="count">6 findings</span></h2>
+    <p class="sec-intro">
+      Code that ships to users and does nothing for them, and timers that keep running after the
+      screen that owns them is gone.
+    </p>
+
+    <article class="finding sev-serious">
+      <div class="f-head">
+        <span class="f-id">PERF-05</span>
+        <h3 class="f-title"><code>@ngrx/store</code> and Redux DevTools ship to production but the app never uses them</h3>
+        <span class="f-sc">Bundle · measured</span>
+      </div>
+      <div class="f-body">
+        <div>
+          <h4>What happens</h4>
+          <ul class="locs">
+            <li><b>app.config.ts</b>:36 — <code>provideStore()</code></li>
+            <li><b>app.config.ts</b>:37 — <code>provideStoreDevtools({ maxAge: 25, … })</code></li>
+          </ul>
+          <p>
+            All four stores in this app are <code>@ngrx/signals</code> <code>signalStore</code>s.
+            A repo-wide search for <code>@ngrx/store</code> returns exactly two hits: the two import
+            lines in <code>app.config.ts</code>. There is no reducer, no action, no selector, no
+            <code>Store</code> injection anywhere.
+          </p>
+          <p>
+            The classic Redux store is therefore instantiated at bootstrap, and the DevTools
+            extension bridge is installed and listening, to observe a store that will never receive
+            an action. I confirmed <code>REDUX_DEVTOOLS_EXTENSION</code> is present in the built
+            <code>main.js</code>. <code>logOnly: !isDevMode()</code> restricts time-travel in prod
+            but does not stop the instrumentation from loading.
+          </p>
+        </div>
+        <div>
+          <h4>What to change</h4>
+          <p>
+            Delete both providers and both imports. If Redux DevTools is wanted for signal stores,
+            <code>@ngrx/signals</code> has <code>withDevtools()</code>, which is the supported route
+            and can be applied per store.
+          </p>
+<pre><span class="del">- import { provideStore } from '@ngrx/store';</span>
+<span class="del">- import { provideStoreDevtools } from '@ngrx/store-devtools';</span>
+  …
+<span class="del">-   provideStore(),</span>
+<span class="del">-   provideStoreDevtools({ maxAge: 25, logOnly: !isDevMode() }),</span></pre>
+          <p>
+            Then drop <code>@ngrx/store</code> from <code>dependencies</code> and
+            <code>@ngrx/store-devtools</code> from <code>devDependencies</code> so they cannot creep
+            back in. Measured saving is given jointly with PERF-06 below.
+          </p>
+        </div>
+      </div>
+    </article>
+
+    <article class="finding sev-serious">
+      <div class="f-head">
+        <span class="f-id">PERF-06</span>
+        <h3 class="f-title">The 547-line mock interceptor and all its fixture data are in the production bundle</h3>
+        <span class="f-sc">Bundle · measured</span>
+      </div>
+      <div class="f-body">
+        <div>
+          <h4>What happens</h4>
+          <ul class="locs">
+            <li><b>app.config.ts</b>:13 — static <code>import { mockInterceptor }</code></li>
+            <li><b>app.config.ts</b>:24–26 — <code>environment.useMockApi ? […] : […]</code></li>
+            <li><b>mock.interceptor.ts</b> — 547 lines: mock player, questions, sponsors, leaderboard</li>
+          </ul>
+          <p>
+            <code>useMockApi</code> is <code>false</code> in all four environment files, so the
+            interceptor is never registered. But the <code>import</code> at the top of
+            <code>app.config.ts</code> is unconditional, and the guard is a runtime ternary on a
+            property of an imported object — which esbuild cannot fold away. The module is therefore
+            retained in full.
+          </p>
+          <p>
+            I verified this directly: <code>grep "Carbide end mill" www/main-*.js</code> matches.
+            The mock trivia questions are being downloaded by every real player.
+          </p>
+          <p>
+            Beyond the bytes, this is a small correctness exposure — mock fixtures, including
+            <code>MOCK_PLAYER</code> with a name, email, company and phone number, are readable in
+            production source.
+          </p>
+        </div>
+        <div>
+          <h4>What to change</h4>
+          <p>
+            Make the branch resolvable at build time. Since <code>useMockApi</code> is false in every
+            shipped configuration, the cleanest fix is to register mocks only from the local dev
+            environment via a dynamic import, or to drop the wiring from
+            <code>app.config.ts</code> and let the file be referenced only where it is used.
+          </p>
+<pre><span class="del">- import { mockInterceptor } from './core/interceptors/mock.interceptor';</span>
+  …
+<span class="del">-   withInterceptors(</span>
+<span class="del">-     environment.useMockApi ? [mockInterceptor, authInterceptor] : [authInterceptor],</span>
+<span class="del">-   ),</span>
+<span class="add">+   withInterceptors([authInterceptor]),</span></pre>
+          <h4 style="margin-top:16px;">Measured result</h4>
+          <p>
+            I applied PERF-05 and PERF-06 together and rebuilt with
+            <code>--configuration production</code>, then reverted:
+          </p>
+          <div class="tblwrap">
+            <table>
+              <thead><tr><th scope="col">Initial payload</th><th scope="col">Raw</th><th scope="col">Gzip</th></tr></thead>
+              <tbody>
+                <tr><td class="usage">Current</td><td class="ratio">638.2 KB</td><td class="ratio">190.0 KB</td></tr>
+                <tr><td class="usage">Without ngrx/store, devtools, mock</td><td class="ratio">604.0 KB</td><td class="ratio">178.1 KB</td></tr>
+                <tr style="font-weight:700;"><td class="usage">Saving</td><td class="ratio">34.1 KB</td><td class="ratio">11.8 KB</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p style="margin-top:12px;">
+            ~6% off the compressed initial payload, for deleting five lines and touching nothing that
+            runs.
+          </p>
+        </div>
+      </div>
+    </article>
+
+    <article class="finding sev-serious">
+      <div class="f-head">
+        <span class="f-id">PERF-07</span>
+        <h3 class="f-title">Three <code>setInterval</code>s are stored in local consts and never cleared on navigation</h3>
+        <span class="f-sc">Leak · timed screens</span>
+      </div>
+      <div class="f-body">
+        <div>
+          <h4>What happens</h4>
+          <ul class="locs">
+            <li><b>game.page.ts</b>:129 — <code>const tick</code>, the 3-2-1 pre-game countdown</li>
+            <li><b>sponsor.page.ts</b>:226 — <code>const poll</code>, the answer-result poll</li>
+            <li><b>sponsor.page.ts</b>:317 — <code>const tick</code>, the placeholder reel countdown</li>
+          </ul>
+          <p>
+            The codebase is careful about this elsewhere — <code>game.page.ts</code> holds
+            <code>timerRef</code>, <code>rafId</code>, <code>pollRef</code> and
+            <code>revealRef</code> as fields and clears them in both <code>ngOnDestroy</code> and
+            <code>ionViewWillLeave</code>, with a comment explaining exactly why the Ionic outlet
+            makes the latter necessary. These three intervals were missed.
+          </p>
+          <p>
+            The game countdown is the one with teeth. A player who backs out during the 3-2-1
+            sequence leaves an interval alive that will call <code>beginPlaying()</code> on a page
+            they are no longer on — starting the 90-second timer, the rAF loop from PERF-03, and
+            eventually forcing a navigation to the sponsor round or results from underneath whatever
+            screen they are actually looking at. This is the same class of bug the
+            <code>ionViewWillLeave</code> comment was written to fix.
+          </p>
+          <p>
+            On a booth tablet cycling players all day, these accumulate.
+          </p>
+        </div>
+        <div>
+          <h4>What to change</h4>
+          <p>
+            Promote each to a field and clear it alongside its siblings.
+          </p>
+<pre><span class="del">- const tick = setInterval(() =&gt; { … }, 1000);</span>
+<span class="add">+ this.countdownRef = setInterval(() =&gt; { … }, 1000);</span>
+
+  private clearTimer(): void {
+    …
+<span class="add">+   if (this.countdownRef) clearInterval(this.countdownRef);</span>
+<span class="add">+   this.countdownRef = null;</span>
+  }</pre>
+          <p>
+            The sponsor page also needs the <code>ionViewWillLeave</code> hook that the game page
+            already has — it currently relies on <code>ngOnDestroy</code> alone, which the comment
+            in <code>game.page.ts</code>:105–108 explains is not reliable under
+            <code>IonicRouteStrategy</code>. Its <code>setTimeout</code> at line 231 is untracked for
+            the same reason.
+          </p>
+        </div>
+      </div>
+    </article>
+
+    <article class="finding sev-serious">
+      <div class="f-head">
+        <span class="f-id">PERF-08</span>
+        <h3 class="f-title">The booth display polls forever with no teardown — on the screen designed to run for days</h3>
+        <span class="f-sc">Leak · booth display</span>
+      </div>
+      <div class="f-body">
+        <div>
+          <h4>What happens</h4>
+          <ul class="locs">
+            <li><b>booth-display.page.ts</b>:51–53 — <code>timer(0, 10_000).pipe(switchMap(…)).subscribe(…)</code></li>
+          </ul>
+          <p>
+            There is no <code>takeUntilDestroyed()</code>, no <code>Subscription</code> field, and no
+            <code>ngOnDestroy</code>. In fact <code>takeUntilDestroyed</code> appears
+            <strong>nowhere in the codebase</strong>. Most of the other bare
+            <code>.subscribe()</code> calls are one-shot HTTP requests that complete on their own, so
+            they are fine — this one is an infinite interval.
+          </p>
+          <p>
+            The component is also a <code>@Component</code> in an Ionic router outlet, so it is
+            cached rather than destroyed on navigation. Every visit to
+            <code>/booth-display/:id</code> starts another permanent 10-second polling loop against
+            the API, and they stack.
+          </p>
+          <p>
+            This is the screen the spec describes as an unattended TV left running at the booth. A
+            leak here is not theoretical.
+          </p>
+        </div>
+        <div>
+          <h4>What to change</h4>
+<pre>  ngOnInit(): void {
+    const eventId = this.route.snapshot.paramMap.get('id') ?? '';
+    timer(0, POLL_MS).pipe(
+      switchMap(() =&gt; this.api.getBoothDisplay(eventId)),
+<span class="add">+     takeUntilDestroyed(this.destroyRef),</span>
+    ).subscribe((res) =&gt; this.data.set(res));
+  }</pre>
+          <p>
+            Two further things worth doing on this screen specifically, given it runs for hours:
+            pause polling when the tab is hidden (<code>document.visibilityState</code>), and add
+            <code>retry</code> with a backoff — as written, a single failed request kills the
+            <code>switchMap</code> chain and the board silently freezes on stale data until someone
+            reloads the TV.
+          </p>
+        </div>
+      </div>
+    </article>
+
+    <article class="finding sev-serious">
+      <div class="f-head">
+        <span class="f-id">PERF-09</span>
+        <h3 class="f-title">Signal changes are detected by <code>setInterval</code> polling instead of effects</h3>
+        <span class="f-sc">Render · three pages</span>
+      </div>
+      <div class="f-body">
+        <div>
+          <h4>What happens</h4>
+          <ul class="locs">
+            <li><b>game.page.ts</b>:220–246 — polls <code>gameStore.lastResult()</code> every 100&nbsp;ms</li>
+            <li><b>sponsor.page.ts</b>:226–239 — polls <code>lastSponsorResult()</code> every 100&nbsp;ms</li>
+            <li><b>register.page.ts</b>:436–450 — polls <code>authStore.isPending()</code> every 200&nbsp;ms</li>
+          </ul>
+          <p>
+            All three watch a signal for a change by waking up on a timer and reading it. Under
+            zone.js each wake-up is a change detection tick regardless of whether the value moved, so
+            the game page runs ten extra full-tree checks per second for the entire duration of every
+            answer round-trip.
+          </p>
+          <p>
+            It also adds latency the player feels: up to 100&nbsp;ms of dead time between the answer
+            response arriving and the correct/wrong highlight appearing, on top of the deliberate
+            1,100&nbsp;ms reveal delay. The register page adds up to 200&nbsp;ms before navigating
+            into the game after login.
+          </p>
+          <p>
+            The correctness comments on <code>watchAuthAndNavigate()</code> are careful and the
+            reasoning about request status is right — it is only the detection mechanism that is
+            doing it the hard way.
+          </p>
+        </div>
+        <div>
+          <h4>What to change</h4>
+          <p>
+            <code>effect()</code> already does exactly this, synchronously, with no timer:
+          </p>
+<pre><span class="del">- this.pollRef = setInterval(() =&gt; {</span>
+<span class="del">-   const result = this.gameStore.lastResult();</span>
+<span class="del">-   if (!result) return;</span>
+<span class="del">-   … clearInterval(this.pollRef); …</span>
+<span class="del">- }, 100);</span>
+<span class="add">+ const ref = effect(() =&gt; {</span>
+<span class="add">+   const result = this.gameStore.lastResult();</span>
+<span class="add">+   if (!result) return;</span>
+<span class="add">+   ref.destroy();</span>
+<span class="add">+   untracked(() =&gt; this.revealAndAdvance(result));</span>
+<span class="add">+ }, { injector: this.injector });</span></pre>
+          <p>
+            The reveal <code>setTimeout</code> stays as-is — that delay is intentional UX. Only the
+            "has the answer landed yet" poll is replaced. The same shape applies to the sponsor page,
+            and to <code>register.page.ts</code> watching <code>isPending()</code>.
+          </p>
+        </div>
+      </div>
+    </article>
+
+    <article class="finding sev-serious">
+      <div class="f-head">
+        <span class="f-id">PERF-10</span>
+        <h3 class="f-title">No caching or compression headers, despite content-hashed filenames</h3>
+        <span class="f-sc">Delivery · Apache</span>
+      </div>
+      <div class="f-body">
+        <div>
+          <h4>What happens</h4>
+          <ul class="locs">
+            <li><b>.htaccess</b> — SPA rewrite rules only, seven lines</li>
+            <li><b>angular.json</b> — <code>"outputHashing": "all"</code> on prod, staging and demo</li>
+          </ul>
+          <p>
+            The build already names every asset by content hash
+            (<code>main-OGTL2PWG.js</code>, <code>styles-UBSWK2RB.css</code>), which is the hard half
+            of cache configuration and it is done. But the deployed <code>.htaccess</code> sets no
+            <code>Cache-Control</code> at all, so returning players — and the booth tablets being
+            reloaded between players all day — re-validate or re-download the full 638&nbsp;KB each
+            time, depending on whatever the host's defaults happen to be.
+          </p>
+          <p>
+            There is likewise no <code>mod_deflate</code> or <code>mod_brotli</code> configuration.
+            Compression may be enabled at the server level, but nothing in the repo guarantees it,
+            and the gap between 638&nbsp;KB and 190&nbsp;KB is the whole argument.
+          </p>
+        </div>
+        <div>
+          <h4>What to change</h4>
+          <p>
+            Hashed assets are immutable by construction and can be cached for a year;
+            <code>index.html</code> must never be cached or the hashes never update.
+          </p>
+<pre>&lt;IfModule mod_deflate.c&gt;
+  AddOutputFilterByType DEFLATE text/html text/css application/javascript
+                                application/json image/svg+xml
+&lt;/IfModule&gt;
+
+&lt;IfModule mod_headers.c&gt;
+  &lt;FilesMatch "\.(js|css|woff2|png|jpg|webp|svg)$"&gt;
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  &lt;/FilesMatch&gt;
+  &lt;FilesMatch "^index\.html$"&gt;
+    Header set Cache-Control "no-cache, must-revalidate"
+  &lt;/FilesMatch&gt;
+&lt;/IfModule&gt;</pre>
+          <p>
+            Worth confirming with the backend team which server actually terminates these requests —
+            if it is nginx or a CDN in front of Apache, the equivalent belongs there instead and the
+            <code>.htaccess</code> is not the file to edit.
+          </p>
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <!-- ══ MODERATE ══════════════════════════════════════════════════════ -->
+  <section>
+    <h2>Moderate <span class="count">6 findings</span></h2>
+    <p class="sec-intro">
+      Real costs with bounded blast radius — the kind of thing that shows up as "the app felt
+      sluggish at the booth" rather than as a number on a waterfall.
+    </p>
+
+    <article class="finding sev-moderate">
+      <div class="f-head">
+        <span class="f-id">PERF-11</span>
+        <h3 class="f-title">Question images and the sponsor video are known in advance but never prefetched</h3>
+        <span class="f-sc">Network · game + sponsor</span>
+      </div>
+      <div class="f-body">
+        <div>
+          <h4>What happens</h4>
+          <ul class="locs">
+            <li><b>game.page.html</b>:88–92 — <code>&lt;img [src]="q.imageUrl"&gt;</code></li>
+            <li><b>sponsor.page.html</b>:138–147 — <code>&lt;video [src]="…" preload="metadata"&gt;</code></li>
+            <li><b>game.store.ts</b>:54–67 — <code>fetchNextBatch</code> keeps a question buffer</li>
+          </ul>
+          <p>
+            The architecture here is good: the store buffers upcoming questions and refills after
+            each answer, exactly as the brief asks. But the buffer holds only the <em>JSON</em>. Each
+            question's image is not requested until the moment it is rendered, so the player watches
+            it stream in against a 90-second clock, on venue wifi shared with a trade-show floor.
+          </p>
+          <p>
+            The sponsor video is the sharper version of the same problem.
+            <code>gameStore.sponsorQuestions()</code> is populated at <code>startSession()</code>, so
+            the video URL is known a full 90 seconds before it is needed — and it is still fetched
+            from scratch when the sponsor round opens, with <code>preload="metadata"</code>. The
+            sponsor round is the part of this product a paying sponsor is watching.
+          </p>
+        </div>
+        <div>
+          <h4>What to change</h4>
+          <p>
+            When the buffer updates, warm the next image; when the game round starts, warm the
+            sponsor reel.
+          </p>
+<pre><span class="add">+ effect(() =&gt; {</span>
+<span class="add">+   const next = this.gameStore.questionBuffer()[0];</span>
+<span class="add">+   if (next?.imageUrl) { const i = new Image(); i.src = next.imageUrl; }</span>
+<span class="add">+ });</span></pre>
+          <p>
+            For the video, add <code>&lt;link rel="prefetch" as="video"&gt;</code> for the first
+            sponsor reel when the game phase begins, and switch the element to
+            <code>preload="auto"</code> once the player is inside the sponsor round. Both are
+            low-priority fetches that will not compete with the current question.
+          </p>
+        </div>
+      </div>
+    </article>
+
+    <article class="finding sev-moderate">
+      <div class="f-head">
+        <span class="f-id">PERF-12</span>
+        <h3 class="f-title">A universal selector sets <code>font-family</code> on every element in the document</h3>
+        <span class="f-sc">Style recalc</span>
+      </div>
+      <div class="f-body">
+        <div>
+          <h4>What happens</h4>
+          <ul class="locs">
+            <li><b>theme/custom/base/_fonts.scss</b>:3–5 — <code>* { font-family: var(--ion-font-family) }</code></li>
+          </ul>
+          <p>
+            <code>font-family</code> is an inherited property. Setting it on <code>*</code> defeats
+            that inheritance entirely: instead of one declaration cascading down, every element in
+            the tree — including everything inside Ionic's shadow-piercing styles — carries its own
+            declaration to be matched and resolved on each style recalculation.
+          </p>
+          <p>
+            On a page like the leaderboard, or the booth display with its list of players, that is a
+            few hundred extra selector matches per recalc. It also makes it impossible to use a
+            different family anywhere without <code>!important</code>, which is a maintenance cost as
+            much as a performance one.
+          </p>
+        </div>
+        <div>
+          <h4>What to change</h4>
+<pre><span class="del">- * { font-family: var(--ion-font-family); }</span>
+<span class="add">+ :root { font-family: var(--ion-font-family); }</span>
+<span class="add">+ input, button, textarea, select { font: inherit; }</span></pre>
+          <p>
+            The second line is the reason the <code>*</code> was probably reached for — form controls
+            do not inherit fonts by default. Naming them explicitly costs four selectors instead of
+            one per element.
+          </p>
+        </div>
+      </div>
+    </article>
+
+    <article class="finding sev-moderate">
+      <div class="f-head">
+        <span class="f-id">PERF-13</span>
+        <h3 class="f-title"><code>angularx-qrcode</code> pulls in a CommonJS dependency, causing an optimization bailout</h3>
+        <span class="f-sc">Bundle · two routes</span>
+      </div>
+      <div class="f-body">
+        <div>
+          <h4>What happens</h4>
+          <p>The production build reports:</p>
+<pre>▲ [WARNING] Module 'qrcode' used by 'node_modules/angularx-qrcode/fesm2022/angularx-qrcode.mjs'
+            is not ESM
+  CommonJS or AMD dependencies can cause optimization bailouts.</pre>
+          <p>
+            <code>QRCodeComponent</code> is used on the booth display and the sponsor outro. Because
+            the underlying <code>qrcode</code> package is CommonJS, esbuild cannot tree-shake it and
+            includes the whole library — encoder, all error-correction levels, and the canvas and
+            terminal renderers — in those two lazy chunks.
+          </p>
+          <p>
+            Both chunks are lazy-loaded, so this does not touch first paint. It is listed here
+            because the booth display is the route that most needs to start fast on a TV browser
+            after a power cycle.
+          </p>
+        </div>
+        <div>
+          <h4>What to change</h4>
+          <p>
+            The lowest-effort option is to accept it and silence the warning via
+            <code>allowedCommonJsDependencies</code> in <code>angular.json</code>, so it stops
+            masking future bailouts that do matter.
+          </p>
+          <p>
+            The better option, if either QR gets attention for another reason: both call sites render
+            a static URL into a fixed-size square. A small ESM QR encoder, or generating the SVG
+            server-side alongside <code>registrationToken</code> in the booth-display response, drops
+            the dependency entirely. The backend already owns the token — returning a
+            <code>qrSvg</code> with it would be a clean contract change.
+          </p>
+        </div>
+      </div>
+    </article>
+
+    <article class="finding sev-moderate">
+      <div class="f-head">
+        <span class="f-id">PERF-14</span>
+        <h3 class="f-title"><code>backdrop-blur</code> sits over a playing video, with a <code>timeupdate</code> handler behind it</h3>
+        <span class="f-sc">Compositing · sponsor round</span>
+      </div>
+      <div class="f-body">
+        <div>
+          <h4>What happens</h4>
+          <ul class="locs">
+            <li><b>sponsor.page.html</b>:150 — mute button, <code>backdrop-blur-sm</code></li>
+            <li><b>sponsor.page.html</b>:197 — countdown badge, <code>backdrop-blur-sm</code></li>
+            <li><b>sponsor.page.ts</b>:196–200 — <code>onTimeUpdate()</code> on <code>(timeupdate)</code></li>
+          </ul>
+          <p>
+            <code>backdrop-filter</code> must re-sample whatever is painted beneath it. When that is
+            a playing video, the blurred region is recomputed on <em>every video frame</em> — two
+            such regions here, both overlaid on the reel.
+          </p>
+          <p>
+            Compounding it, <code>timeupdate</code> fires between 4 and 60 times a second depending
+            on the browser, and each one writes <code>secondsLeft</code>, which under zone.js is
+            another change detection tick. The handler only needs whole seconds.
+          </p>
+          <p>
+            This is the screen where the sponsor's brand is on display, so smooth playback has
+            commercial weight beyond the usual.
+          </p>
+        </div>
+        <div>
+          <h4>What to change</h4>
+          <p>
+            Replace both backdrop blurs with a flat translucent fill —
+            <code>bg-black/60</code> already provides most of the legibility, and the blur is barely
+            perceptible at 36&nbsp;px. Then guard the handler so it only writes on a real change:
+          </p>
+<pre>  onTimeUpdate(): void {
+    const video = this.videoRef()?.nativeElement;
+    if (!video) return;
+    const left = Math.max(0, Math.ceil(video.duration - video.currentTime));
+<span class="add">+   if (left === this.secondsLeft()) return;</span>
+    this.secondsLeft.set(left);
+  }</pre>
+        </div>
+      </div>
+    </article>
+
+    <article class="finding sev-moderate">
+      <div class="f-head">
+        <span class="f-id">PERF-15</span>
+        <h3 class="f-title">No image carries intrinsic dimensions, so every one can shift layout as it loads</h3>
+        <span class="f-sc">CLS · nine call sites</span>
+      </div>
+      <div class="f-body">
+        <div>
+          <h4>What happens</h4>
+          <ul class="locs">
+            <li><b>pm-header.component.html</b>:3, 12, 16 — logos, on every page</li>
+            <li><b>game.page.html</b>:89 — question image</li>
+            <li><b>sponsor.page.html</b>:111, 128, 270 — sponsor logos</li>
+            <li><b>booth-display.page.html</b>:13, 88 — TV logo, sponsor logos</li>
+          </ul>
+          <p>
+            None of the nine <code>&lt;img&gt;</code> elements has <code>width</code>/
+            <code>height</code> attributes or an <code>aspect-ratio</code>. The browser therefore
+            reserves no space until the bytes arrive, and the content below jumps when they do.
+          </p>
+          <p>
+            The game question image is the one that hurts. It appears above the prompt and answers,
+            so a late-arriving image pushes all four answer cards down — under a countdown, with a
+            finger already moving toward a choice. That is a misclick, not just a layout metric.
+          </p>
+        </div>
+        <div>
+          <h4>What to change</h4>
+          <p>
+            Add intrinsic dimensions where they are known, and reserve the box with
+            <code>aspect-ratio</code> where they are not:
+          </p>
+<pre><span class="del">- &lt;img [src]="q.imageUrl" class="mt-5 w-full object-cover rounded-2xl …" alt="" /&gt;</span>
+<span class="add">+ &lt;img [src]="q.imageUrl" class="mt-5 w-full aspect-video object-cover rounded-2xl …"</span>
+<span class="add">+      decoding="async" alt="" /&gt;</span></pre>
+          <p>
+            If the backend can return <code>imageWidth</code>/<code>imageHeight</code> alongside
+            <code>imageUrl</code>, bind those instead — it is a two-field addition to the question
+            DTO and removes the guess. Worth raising with the backend team while the question schema
+            is still in flight.
+          </p>
+        </div>
+      </div>
+    </article>
+
+    <article class="finding sev-moderate">
+      <div class="f-head">
+        <span class="f-id">PERF-16</span>
+        <h3 class="f-title">The demo build ships 45&nbsp;MB of sample video, and one component stylesheet is over budget</h3>
+        <span class="f-sc">Build config</span>
+      </div>
+      <div class="f-body">
+        <div>
+          <h4>What happens</h4>
+          <ul class="locs">
+            <li><b>public/video_demo1.mp4</b> — 37.5 MB</li>
+            <li><b>public/video_demo.mp4</b> — 7.8 MB · <b>video_demo.png</b> — 658 KB</li>
+            <li><b>angular.json</b> — <code>demo</code> and <code>development</code> add <code>public/</code> to assets</li>
+          </ul>
+          <p>
+            Production and staging use the base <code>assets</code> array and correctly exclude
+            <code>public/</code>. The <code>demo</code> configuration adds it, so
+            <code>build:web:demo</code> copies <strong>45&nbsp;MB of sample video</strong> into the
+            deployed output. It is not referenced by the app — the sponsor video comes from the
+            backend as a URL — so nothing downloads it, but it inflates every demo deploy and the
+            repo itself.
+          </p>
+          <p>
+            Separately, the build warns that
+            <code>booth-display.page.scss</code> is 5.89&nbsp;KB against a 4&nbsp;KB
+            <code>anyComponentStyle</code> budget. Component styles are inlined into the lazy chunk,
+            so this is 1.9&nbsp;KB of extra JavaScript-embedded CSS on the TV route.
+          </p>
+        </div>
+        <div>
+          <h4>What to change</h4>
+          <p>
+            Give the demo configuration a narrowed glob rather than the whole directory:
+          </p>
+<pre><span class="del">- { "glob": "**/*", "input": "public", "output": "public" }</span>
+<span class="add">+ { "glob": "**/*.{png,svg,ico,webmanifest}", "input": "public", "output": "public" }</span></pre>
+          <p>
+            And move the demo videos out of the repo to wherever the mock backend serves media from —
+            they are fixture data for <code>backend-mock</code>, not app assets. For the stylesheet,
+            most of its bulk is layout that Tailwind utilities already express; a pass over it will
+            bring it under budget without raising the ceiling.
+          </p>
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <!-- ══ ADVISORY ══════════════════════════════════════════════════════ -->
+  <section>
+    <h2>Advisory <span class="count">4 findings</span></h2>
+    <p class="sec-intro">
+      Recorded so the decision is deliberate rather than accidental. None of these needs action this
+      sprint.
+    </p>
+
+    <article class="finding sev-advisory">
+      <div class="f-head">
+        <span class="f-id">PERF-17</span>
+        <h3 class="f-title">Leaderboard polling continues while the page is cached by the Ionic outlet</h3>
+        <span class="f-sc">Background work</span>
+      </div>
+      <div class="f-body">
+        <div>
+          <h4>What happens</h4>
+          <ul class="locs">
+            <li><b>leaderboard.store.ts</b>:60–77 — 10-second poll, keyed by scope</li>
+            <li><b>leaderboard.page.ts</b>:16 — <code>providers: [LeaderboardStore]</code></li>
+          </ul>
+          <p>
+            Scoping the store to the component is the right call and means the poll dies with the
+            component. But <code>IonicRouteStrategy</code> keeps pages in the outlet stack rather
+            than destroying them, so navigating from the leaderboard to register leaves the poll
+            running against an off-screen view.
+          </p>
+          <p>
+            One request every ten seconds is not a problem in itself. It is worth knowing about
+            because it interacts with PERF-08 — the same caching behaviour, on a screen that runs
+            much longer.
+          </p>
+        </div>
+        <div>
+          <h4>What to change</h4>
+          <p>
+            Stop the poll in <code>ionViewWillLeave</code> and restart it in
+            <code>ionViewWillEnter</code>, which is the pattern the register page already uses for
+            its own lifecycle work. A <code>document.visibilityState</code> guard in the store would
+            cover the backgrounded-tab case at the same time.
+          </p>
+        </div>
+      </div>
+    </article>
+
+    <article class="finding sev-advisory">
+      <div class="f-head">
+        <span class="f-id">PERF-18</span>
+        <h3 class="f-title">The translation guard blocks the first route on an HTTP round trip</h3>
+        <span class="f-sc">First paint</span>
+      </div>
+      <div class="f-body">
+        <div>
+          <h4>What happens</h4>
+          <ul class="locs">
+            <li><b>translation.guard.ts</b>:13–18 — awaits <code>translate.use('en')</code></li>
+            <li><b>app.config.ts</b>:32–35 — loader fetches <code>/assets/i18n/en.json</code></li>
+            <li><b>app.component.ts</b>:18–19 — calls <code>setDefaultLang</code> / <code>use</code> again</li>
+          </ul>
+          <p>
+            Every route is gated on <code>translationGuard</code>, and on the very first navigation
+            it waits for <code>en.json</code> over the network before the register page can render.
+            That is a serialised round trip inserted between bootstrap and first contentful paint.
+            Subsequent routes short-circuit on <code>currentLang</code>, so the cost is paid once.
+          </p>
+          <p>
+            The file is 8&nbsp;KB and the app ships a single language, so this is small — but it is
+            on the critical path and it is avoidable.
+          </p>
+        </div>
+        <div>
+          <h4>What to change</h4>
+          <p>
+            Add <code>&lt;link rel="preload" as="fetch" href="/assets/i18n/en.json" crossorigin&gt;</code>
+            to <code>index.html</code> so the fetch starts with the HTML rather than after the router
+            boots. That is a one-line change with no risk.
+          </p>
+          <p>
+            While in there: <code>AppComponent.ngOnInit</code> calls <code>translate.use('en')</code>
+            a second time, duplicating what the guard already did. Harmless, but it makes the loading
+            order harder to reason about than it needs to be.
+          </p>
+        </div>
+      </div>
+    </article>
+
+    <article class="finding sev-advisory">
+      <div class="f-head">
+        <span class="f-id">PERF-19</span>
+        <h3 class="f-title">Large blur radii on decorative elements across six pages</h3>
+        <span class="f-sc">Paint</span>
+      </div>
+      <div class="f-body">
+        <div>
+          <h4>What happens</h4>
+          <ul class="locs">
+            <li><b>register.page.html</b>:9, 12 — <code>blur-[60px]</code> at 467&times;341, <code>blur-[80px]</code> at 620&times;520</li>
+            <li><b>game / leaderboard / results / sponsor</b> — <code>blur-3xl</code> (64px) glows</li>
+          </ul>
+          <p>
+            Each is a single static <code>filter: blur()</code> on a large rounded div, painted once
+            and then composited. The cost is a one-off at page entry rather than per frame, so it
+            does not show up during play.
+          </p>
+          <p>
+            On the register page there are two overlapping, the larger at 620&times;520 with an
+            80&nbsp;px radius — that is a meaningful first-paint cost on the entry screen of the app,
+            on the lowest-powered device likely to run it.
+          </p>
+        </div>
+        <div>
+          <h4>What to change</h4>
+          <p>
+            Nothing urgent. If the register page's paint time proves slow when measured on a real
+            mid-tier Android device, swap the blurred divs for a pre-baked
+            <code>radial-gradient</code> background, which produces a near-identical result with no
+            filter pass. Measure before changing — this is a "confirm, then act" item, not a defect.
+          </p>
+        </div>
+      </div>
+    </article>
+
+    <article class="finding sev-advisory">
+      <div class="f-head">
+        <span class="f-id">PERF-20</span>
+        <h3 class="f-title">No service worker, on an app whose defining constraint is trade-show wifi</h3>
+        <span class="f-sc">Delivery strategy</span>
+      </div>
+      <div class="f-body">
+        <div>
+          <h4>What happens</h4>
+          <p>
+            There is a <code>site.webmanifest</code> and full icon set, but no
+            <code>@angular/pwa</code> and no service worker. Every player at the booth downloads the
+            full 638&nbsp;KB over the same congested venue connection, and a booth tablet reloaded
+            between players does so repeatedly.
+          </p>
+          <p>
+            PERF-10's cache headers address most of this more simply, which is why this is advisory
+            rather than serious — a correct <code>Cache-Control</code> policy gets the repeat-visit
+            case nearly all the way there.
+          </p>
+        </div>
+        <div>
+          <h4>What to change</h4>
+          <p>
+            Do PERF-10 first and measure. If repeat loads at the venue are still slow,
+            <code>ng add @angular/pwa</code> with a <code>freshness</code> strategy for the API and
+            <code>performance</code> for the app shell would make the tablets effectively
+            instant-loading.
+          </p>
+          <p>
+            Note the interaction with the booth display: a cached shell must not cache the
+            <code>/booth-display/:id</code> API response, or the TV will show a frozen leaderboard.
+            Scope the data strategy carefully if this is taken up.
+          </p>
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <!-- ══ PLAN ══════════════════════════════════════════════════════════ -->
+  <section>
+    <h2>Suggested order of work <span class="count">Sequenced</span></h2>
+    <p class="sec-intro">
+      Ordered by measured impact per hour. The first two steps are roughly an afternoon between them
+      and account for most of the available first-load improvement.
+    </p>
+
+    <ol class="plan">
+      <li>
+        <div>
+          <h4>Fix the asset pipeline</h4>
+          <p>
+            Re-export <code>pm-logo.png</code>, <code>tv-logo.png</code> and the manifest icon at the
+            sizes they are used, as WebP or SVG, with <code>width</code>/<code>height</code>
+            attributes. This is an image-editor task, not an engineering one, and it removes both the
+            largest transfer on the page and a 39&nbsp;MB per-page decode.
+          </p>
+          <span class="refs">PERF-01 · PERF-15 — ~2 hours</span>
+        </div>
+      </li>
+      <li>
+        <div>
+          <h4>Move the font out of CSS and delete the dead providers</h4>
+          <p>
+            Relocate the Inter <code>@import</code> to <code>index.html</code> as a preconnected
+            stylesheet link using the variable-font range, and remove
+            <code>provideStore</code>, <code>provideStoreDevtools</code> and the mock interceptor
+            import. Measured at <strong>11.8&nbsp;KB gzip</strong> for the second half alone, plus
+            whatever the font fix is worth — which may be the difference between the design rendering
+            and not.
+          </p>
+          <span class="refs">PERF-02 · PERF-05 · PERF-06 — ~1 hour</span>
+        </div>
+      </li>
+      <li>
+        <div>
+          <h4>Take the timer off the main thread and stop the leaks</h4>
+          <p>
+            Replace both rAF loops with a composited CSS <code>scaleX</code> animation, promote the
+            three orphaned intervals to fields, add <code>ionViewWillLeave</code> to the sponsor
+            page, and put <code>takeUntilDestroyed</code> on the booth display poll. This is the set
+            that makes the 90-second round feel smooth and stops a booth tablet degrading over a day.
+          </p>
+          <span class="refs">PERF-03 · PERF-07 · PERF-08 — ~half a day</span>
+        </div>
+      </li>
+      <li>
+        <div>
+          <h4>Wire up delivery and prefetching</h4>
+          <p>
+            Add compression and <code>Cache-Control</code> to the server config, preload
+            <code>en.json</code>, prefetch the next question image and the sponsor reel, and narrow
+            the demo build's asset glob. Mostly configuration, high value on venue wifi.
+          </p>
+          <span class="refs">PERF-10 · PERF-11 · PERF-16 · PERF-18 — ~3 hours</span>
+        </div>
+      </li>
+      <li>
+        <div>
+          <h4>Clean up the render path</h4>
+          <p>
+            Swap the three polling loops for effects, fix the universal <code>font-family</code>
+            selector, drop the <code>backdrop-blur</code> over the video, and guard
+            <code>onTimeUpdate</code>. Individually small; together they remove most of the
+            gratuitous change detection left in the app.
+          </p>
+          <span class="refs">PERF-09 · PERF-12 · PERF-14 — ~3 hours</span>
+        </div>
+      </li>
+      <li>
+        <div>
+          <h4>Decide on zone.js</h4>
+          <p>
+            Point <code>angular.json</code> at <code>src/polyfills.ts</code> as an immediate
+            one-line fix so the existing custom-elements flag actually takes effect. Then treat
+            zoneless as its own piece of work: the app is already structurally ready for it — full
+            <code>OnPush</code>, signal stores, no legacy structural directives — and it removes
+            <strong>12.4&nbsp;KB gzip</strong> plus an entire class of change-detection surprise.
+            Needs a full pass over the Ionic overlays and the cached-page lifecycle before it ships.
+          </p>
+          <span class="refs">PERF-04 · PERF-13 · PERF-17 · PERF-19 · PERF-20 — separate branch</span>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <!-- ══ METHOD ════════════════════════════════════════════════════════ -->
+  <section>
+    <h2>Scope and method <span class="count">Read this before quoting the result</span></h2>
+    <div class="method">
+      <h4>What was done</h4>
+      <p>
+        A full static read of <code>trivia-app/src</code> — 89 source files across pages, stores,
+        guards, interceptors and the theme layer — plus measurement against a real
+        <code>ng build --configuration production</code>. Byte sizes and gzip figures are taken from
+        build output, not estimated. Image dimensions are read from PNG headers. The bundle saving
+        quoted in PERF-06 comes from applying the change, rebuilding, diffing, and reverting; the
+        working tree is unchanged.
+      </p>
+
+      <h4>What was not done</h4>
+      <p>
+        <strong>No runtime profiling.</strong> Nothing here comes from Lighthouse, a Chrome
+        performance trace, or a real device. Frame-rate and decode claims are reasoned from the code
+        and the asset dimensions — they are well-founded, but they are predictions, not measurements.
+        Before and after the work above, run a trace on the lowest-spec Android phone you expect at
+        the booth, throttled to the venue's realistic bandwidth. Two numbers matter: time to first
+        contentful paint on <code>/register</code>, and dropped frames during a 90-second game round.
+      </p>
+      <p>
+        The backend was not examined. Payload sizes from <code>/sessions/start</code>,
+        <code>/questions/next</code> and <code>/leaderboard</code>, and their server-side latency,
+        are outside this pass and could easily dominate the client-side numbers above during a busy
+        session. Worth a look at <code>pm-trivia-BE</code> before the event.
+      </p>
+      <p>
+        PERF-02's claim that Inter never loads is inferred from the build's own
+        <code>invalid-@import</code> warning and the CSS specification. It should be confirmed in
+        thirty seconds by opening the deployed site and checking whether the Network panel shows a
+        <code>fonts.gstatic.com</code> request — do that before treating it as fact.
+      </p>
+
+      <h4>What is already right</h4>
+      <p>
+        Worth stating plainly, because an audit reads as a list of failures. Every route is lazy
+        (<code>loadComponent</code>), every component is <code>ChangeDetectionStrategy.OnPush</code>
+        with no exceptions, every <code>@for</code> has a <code>track</code>, there is not a single
+        <code>*ngIf</code> or <code>*ngFor</code> left in the templates, state is properly
+        signal-based, and the question-buffering design does exactly what the brief asks. The
+        structure is in good shape — which is why the findings above are concentrated in assets,
+        configuration, and two timer loops rather than in the architecture.
+      </p>
+    </div>
+  </section>
+
+</div>
+
+</body>
+</html>
