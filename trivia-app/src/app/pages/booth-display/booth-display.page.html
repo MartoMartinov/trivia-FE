@@ -86,9 +86,9 @@
         </div>
 
         <!-- Sponsors -->
-        @if (d.sponsorCards.length) {
+        @if (sponsorCards().length) {
         <p class="sponsor-heading">TODAY'S GAME IS SPONSORED BY</p>
-        @for (s of d.sponsorCards; track s.id) {
+        @for (s of sponsorCards(); track s.id) {
         <div class="sponsor-card">
           <div class="sponsor-stripe"
                [style.background-color]="s.primaryColor"></div>

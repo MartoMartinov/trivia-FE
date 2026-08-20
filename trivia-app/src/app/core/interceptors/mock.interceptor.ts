@@ -201,6 +201,9 @@ const MOCK_SPONSOR_QUESTIONS = [MOCK_SPONSOR_QUESTION, MOCK_SPONSOR_QUESTION_2];
 // Correct answer index per sponsor question id
 const SPONSOR_CORRECT_ANSWERS: Record<number, number> = { 1: 1, 2: 2 };
 
+// The third entry deliberately repeats id 1's name with a different id: that is
+// what a database written before sponsor reuse was enforced looks like, and the
+// booth display must collapse it to a single card.
 const MOCK_SPONSOR_CARDS = [
   {
     id: 1,
@@ -214,6 +217,13 @@ const MOCK_SPONSOR_CARDS = [
     name: 'Haas Automation',
     tagline: 'Built for the shop floor.',
     primaryColor: '#C8102E',
+    logoUrl: '',
+  },
+  {
+    id: 3,
+    name: 'Sandvik Coromant',
+    tagline: 'Precision milling, perfected.',
+    primaryColor: '#DE0016',
     logoUrl: '',
   },
 ];

@@ -6,7 +6,7 @@ import { timer, switchMap } from 'rxjs';
 
 import { ApiService } from '../../core/services/api.service';
 import { AppConfigStore } from '../../core/stores/app-config/app-config.store';
-import type { BoothDisplayResponse } from '../../core/models/api.models';
+import type { BoothDisplayResponse, SponsorCardDto } from '../../core/models/api.models';
 import { formatCountdown } from '../../shared/utils/format-countdown.util';
 
 const POLL_MS = 10_000;
@@ -38,6 +38,24 @@ export class BoothDisplayPage implements OnInit {
     if (!token) return '';
     const origin = typeof window !== 'undefined' ? window.location.origin : '';
     return `${origin}/register?token=${encodeURIComponent(token)}`;
+  });
+
+  /**
+   * Sponsor cards, deduplicated by name. Sponsors are global records shared
+   * across sponsor questions, but a database written before that was enforced
+   * can hold one row per question — same name, different id — which rendered
+   * the same sponsor as several cards. Keyed on name rather than id for exactly
+   * that reason. The highest id wins, so the most recently uploaded logo is the
+   * one kept — matching how the backend resolves the same collision.
+   */
+  readonly sponsorCards = computed<SponsorCardDto[]>(() => {
+    const byName = new Map<string, SponsorCardDto>();
+    for (const s of this.data()?.sponsorCards ?? []) {
+      const key = s.name.trim().toLowerCase();
+      const kept = byName.get(key);
+      if (!kept || s.id > kept.id) byName.set(key, s);
+    }
+    return [...byName.values()].sort((a, b) => a.id - b.id);
   });
 
   /** Falls back to the generic "midnight" copy only until the first response arrives. */

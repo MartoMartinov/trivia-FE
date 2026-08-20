@@ -1,4 +1,4 @@
-import { ApplicationConfig, provideZoneChangeDetection, isDevMode } from '@angular/core';
+import { ApplicationConfig, provideZoneChangeDetection } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { RouteReuseStrategy } from '@angular/router';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
@@ -34,6 +34,6 @@ export const appConfig: ApplicationConfig = {
       suffix: '.json',
     }),
     provideStore(),
-    provideStoreDevtools({ maxAge: 25, logOnly: !isDevMode() }),
+    ...(environment.production ? [] : [provideStoreDevtools({ maxAge: 25, logOnly: false })]),
   ],
 };
