@@ -13,6 +13,8 @@
     "start:web:demo": "npm run tw && concurrently \"npm run tw:watch\" \"ng serve --configuration demo\"",
     "build:web:staging": "npm run tw && ng build --configuration staging",
     "start:web:staging": "npm run tw && concurrently \"npm run tw:watch\" \"ng serve --configuration staging\"",
+    "build:web:live": "npm run tw && ng build --configuration production",
+    "start:web:live": "npm run tw && concurrently \"npm run tw:watch\" \"ng serve --configuration production\"",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "lint": "ng lint"

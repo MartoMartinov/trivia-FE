@@ -9,7 +9,8 @@ import { AppConfigStore } from '../../core/stores/app-config/app-config.store';
 import type { BoothDisplayResponse, SponsorCardDto } from '../../core/models/api.models';
 import { formatCountdown } from '../../shared/utils/format-countdown.util';
 
-const POLL_MS = 10_000;
+const POLL_MS = 30_000;
+const SPONSOR_ROTATE_MS = 3_000;
 const QR_SIZE = 220;
 
 @Component({
@@ -58,6 +59,15 @@ export class BoothDisplayPage implements OnInit {
     return [...byName.values()].sort((a, b) => a.id - b.id);
   });
 
+  private readonly activeSponsorIndex = signal(0);
+
+  /** The one sponsor card visible at a time, cycling through `sponsorCards()` on a timer. */
+  readonly activeSponsor = computed<SponsorCardDto | null>(() => {
+    const list = this.sponsorCards();
+    if (!list.length) return null;
+    return list[this.activeSponsorIndex() % list.length];
+  });
+
   /** Falls back to the generic "midnight" copy only until the first response arrives. */
   readonly resetsInLabel = computed(() => {
     const countdown = formatCountdown(this.data()?.resetsAt);
@@ -69,6 +79,10 @@ export class BoothDisplayPage implements OnInit {
     timer(0, POLL_MS).pipe(
       switchMap(() => this.api.getBoothDisplay(eventId)),
     ).subscribe((res) => this.data.set(res));
+
+    timer(SPONSOR_ROTATE_MS, SPONSOR_ROTATE_MS).subscribe(() => {
+      this.activeSponsorIndex.update(i => i + 1);
+    });
   }
 
   initials(displayName: string): string {

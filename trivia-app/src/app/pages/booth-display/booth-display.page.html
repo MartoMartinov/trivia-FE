@@ -88,7 +88,7 @@
         <!-- Sponsors -->
         @if (sponsorCards().length) {
         <p class="sponsor-heading">TODAY'S GAME IS SPONSORED BY</p>
-        @for (s of sponsorCards(); track s.id) {
+        @for (s of [activeSponsor()!]; track s.id) {
         <div class="sponsor-card">
           <div class="sponsor-stripe"
                [style.background-color]="s.primaryColor"></div>
@@ -107,6 +107,14 @@
             <span class="sponsor-name">{{ s.name }}</span>
             <span class="sponsor-tagline">{{ s.tagline }}</span>
           </div>
+        </div>
+        }
+        @if (sponsorCards().length > 1) {
+        <div class="sponsor-dots">
+          @for (c of sponsorCards(); track c.id) {
+          <span class="sponsor-dot"
+                [class.active]="c.id === activeSponsor()?.id"></span>
+          }
         </div>
         }
         }

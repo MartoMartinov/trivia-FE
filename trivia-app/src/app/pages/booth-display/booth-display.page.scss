@@ -379,6 +379,16 @@ ion-content {
   text-transform: uppercase;
 }
 
+@keyframes sponsor-card-fade-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
 .sponsor-card {
   position: relative;
   background: #1a2033;
@@ -389,6 +399,7 @@ ion-content {
   gap: 0.83vw;
   padding: 1.25vw 1.04vw 1.04vw;
   flex-shrink: 0;
+  animation: sponsor-card-fade-in 0.5s ease;
 
   .sponsor-stripe {
     position: absolute;
@@ -470,5 +481,24 @@ ion-content {
       overflow: hidden;
       text-overflow: ellipsis;
     }
+  }
+}
+
+.sponsor-dots {
+  display: flex;
+  justify-content: center;
+  gap: 0.42vw;
+  flex-shrink: 0;
+}
+
+.sponsor-dot {
+  width: 0.42vw;
+  height: 0.42vw;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.25);
+  transition: background-color 0.3s ease;
+
+  &.active {
+    background: #f34d23;
   }
 }
