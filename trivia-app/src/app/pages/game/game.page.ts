@@ -20,6 +20,8 @@ type GamePhase = 'loading' | 'countdown' | 'playing';
 const DEFAULT_DURATION_SECONDS = 90;
 const REVEAL_DELAY_MS = 1100;
 const START_ERROR_TOAST_DURATION_MS = 10000;
+const NO_QUESTIONS_TIMEOUT_MS = 5000;
+const NO_QUESTIONS_REDIRECT_DELAY_MS = 3000;
 
 @Component({
   selector: 'app-game',
@@ -57,6 +59,11 @@ export class GamePage implements OnInit, OnDestroy, ViewWillLeave {
 
   private pollRef: ReturnType<typeof setInterval> | null = null;
   private revealRef: ReturnType<typeof setTimeout> | null = null;
+  private noQuestionsTimeoutRef: ReturnType<typeof setTimeout> | null = null;
+  private noQuestionsRedirectRef: ReturnType<typeof setTimeout> | null = null;
+  // Guards showStartErrorToast/showNoQuestionsToast against firing twice (e.g. the load
+  // timeout elapsing right as a late error/question arrives) and both trying to navigate away.
+  private hasLeftForStartFailure = false;
 
   constructor() {
     // Once the session has loaded its first question, kick off the pre-game countdown.
@@ -64,6 +71,7 @@ export class GamePage implements OnInit, OnDestroy, ViewWillLeave {
       if (this.phase() !== 'loading') return;
       if (this.gameStore.isLoading()) return;
       if (!this.gameStore.currentQuestion()) return;
+      this.clearNoQuestionsTimeout();
       this.beginCountdown();
     });
 
@@ -76,6 +84,9 @@ export class GamePage implements OnInit, OnDestroy, ViewWillLeave {
   }
 
   private async showStartErrorToast(): Promise<void> {
+    if (this.hasLeftForStartFailure) return;
+    this.hasLeftForStartFailure = true;
+    this.clearNoQuestionsTimeout();
     const fallback = `${this.translate.instant('GAME.START_ERROR_1')}\n${this.translate.instant('GAME.START_ERROR_2')}`;
     const msg = this.gameStore.errorMessage() ?? fallback;
     const toast = await this.toastCtrl.create({
@@ -93,13 +104,62 @@ export class GamePage implements OnInit, OnDestroy, ViewWillLeave {
     this.router.navigate(['/register']);
   }
 
+  // startSession() can resolve successfully with an empty buffer (e.g. the event has no
+  // questions configured yet) — that never sets hasError(), so it wouldn't otherwise be
+  // caught. If we're still stuck on "loading" with no question after a few seconds, treat
+  // it the same as a start failure and bounce back to register instead of hanging forever.
+  private async showNoQuestionsToast(): Promise<void> {
+    if (this.hasLeftForStartFailure) return;
+    this.hasLeftForStartFailure = true;
+    const msg = `${this.translate.instant('GAME.NO_QUESTIONS_1')}\n${this.translate.instant('GAME.NO_QUESTIONS_2')}`;
+    const toast = await this.toastCtrl.create({
+      message: msg,
+      duration: START_ERROR_TOAST_DURATION_MS,
+      position: 'top',
+      cssClass: 'pm-toast-warning',
+      icon: 'alert-circle',
+      buttons: [{ icon: 'close', role: 'cancel' }],
+    });
+    await toast.present();
+    // Unlike showStartErrorToast, give the player a moment to actually read the message
+    // before leaving — there's no follow-up action (like scanning a QR code) to rush toward.
+    // But if they dismiss it themselves (the close button), honor that and leave right away
+    // instead of making them wait out the rest of the delay.
+    const redirect = () => {
+      this.clearNoQuestionsRedirect();
+      this.router.navigate(['/register']);
+    };
+    this.noQuestionsRedirectRef = setTimeout(redirect, NO_QUESTIONS_REDIRECT_DELAY_MS);
+    void toast.onDidDismiss().then(({ role }) => {
+      if (role === 'cancel') redirect();
+    });
+  }
+
+  private clearNoQuestionsTimeout(): void {
+    if (this.noQuestionsTimeoutRef) clearTimeout(this.noQuestionsTimeoutRef);
+    this.noQuestionsTimeoutRef = null;
+  }
+
+  private clearNoQuestionsRedirect(): void {
+    if (this.noQuestionsRedirectRef) clearTimeout(this.noQuestionsRedirectRef);
+    this.noQuestionsRedirectRef = null;
+  }
+
   ngOnInit(): void {
     this.gameStore.startSession(undefined);
+    this.noQuestionsTimeoutRef = setTimeout(() => {
+      this.noQuestionsTimeoutRef = null;
+      if (this.phase() !== 'loading') return;
+      if (this.gameStore.currentQuestion()) return;
+      this.showNoQuestionsToast();
+    }, NO_QUESTIONS_TIMEOUT_MS);
   }
 
   ngOnDestroy(): void {
     this.clearTimer();
     this.clearAnswerCycle();
+    this.clearNoQuestionsTimeout();
+    this.clearNoQuestionsRedirect();
   }
 
   // Ionic's router outlet keeps this page instance alive (for swipe-back/animations)
@@ -109,6 +169,8 @@ export class GamePage implements OnInit, OnDestroy, ViewWillLeave {
   ionViewWillLeave(): void {
     this.clearTimer();
     this.clearAnswerCycle();
+    this.clearNoQuestionsTimeout();
+    this.clearNoQuestionsRedirect();
   }
 
   private clearAnswerCycle(): void {

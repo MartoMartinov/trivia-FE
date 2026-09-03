@@ -77,6 +77,8 @@
     "ANSWERED": "ANSWERED",
     "START_ERROR_1": "We couldn't start your game.",
     "START_ERROR_2": "Please scan the booth QR code to try again.",
+    "NO_QUESTIONS_1": "No questions available right now.",
+    "NO_QUESTIONS_2": "Please try again later.",
     "SESSION_ENDED_1": "Your game session has ended.",
     "SESSION_ENDED_2": "Start a new game whenever you're ready to play again."
   },
